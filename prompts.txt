@@ -1,0 +1,2 @@
+read goal.md and create design plan ; run adversarial review ; then refine plan based on feedback ; iterate until converged
+
