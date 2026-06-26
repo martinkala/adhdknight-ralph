@@ -1,0 +1,28 @@
+# Build outputs
+/build/
+*/build/
+**/build/
+
+# Android/Gradle
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.so
+*.o
+*.obj
+*.bin
+
+# Generated
+*.iml
+.idea/
+.gradle/
+local.properties
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
