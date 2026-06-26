@@ -10,6 +10,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,9 +26,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(repository: TrackerRepository) {
+fun SettingsScreen(
+    repository: TrackerRepository,
+    onOpenNotifications: () -> Unit = {}
+) {
     val context = LocalContext.current
     val detailed = remember { mutableStateOf(true) }
+    val syncEnabled = remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text(text = "Nastavenia", style = MaterialTheme.typography.titleLarge)
@@ -35,10 +40,30 @@ fun SettingsScreen(repository: TrackerRepository) {
 
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(modifier = Modifier.padding(12.dp)) {
+                Text(text = "Notifikacie", style = MaterialTheme.typography.titleMedium)
+                Text(text = "Nastav jemne pripomenutia a tiche okno.", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(6.dp))
+                TextButton(onClick = onOpenNotifications) { Text("Otvorit nastavenia") }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(text = "Detailný režim 1–5", style = MaterialTheme.typography.titleMedium)
                 Text(text = "Zapne detailné hodnotenie namiesto 0/1.", style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 Switch(checked = detailed.value, onCheckedChange = { detailed.value = it })
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(text = "Sync", style = MaterialTheme.typography.titleMedium)
+                Text(text = "Sync je v MVP len stub bez efektu.", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(6.dp))
+                Switch(checked = syncEnabled.value, onCheckedChange = { syncEnabled.value = it })
             }
         }
 

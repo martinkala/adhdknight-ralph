@@ -1,5 +1,6 @@
 package com.example.madhdtracker.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,7 +37,11 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrackerScreen(viewModel: TrackerViewModel, onSaved: () -> Unit = {}) {
+fun TrackerScreen(
+    viewModel: TrackerViewModel,
+    onSaved: () -> Unit = {},
+    onActivityClick: (String) -> Unit = {}
+) {
     val formatter = remember { DateTimeFormatter.ISO_LOCAL_DATE }
     val showDatePicker = remember { mutableStateOf(false) }
 
@@ -67,7 +72,11 @@ fun TrackerScreen(viewModel: TrackerViewModel, onSaved: () -> Unit = {}) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = element.label, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = element.label,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.clickable { onActivityClick(element.key) }
+                    )
 
                     if (element.isSatisfaction) {
                         Text(text = "Povinné hodnotenie 1–5", style = MaterialTheme.typography.labelMedium)

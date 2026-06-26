@@ -1,5 +1,8 @@
 package com.example.madhdtracker.data
 
+import com.example.madhdtracker.domain.logic.IndexCalculator
+import com.example.madhdtracker.domain.logic.WeeklySummaryCalculator
+import com.example.madhdtracker.notifications.NotificationRules
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.Locale
@@ -55,18 +58,8 @@ class TrackerRepository(
         val weights = db.weightsDao().getAll().associateBy { it.elementKey }
         if (values.isEmpty() || weights.isEmpty()) return
 
-        var weightedSum = 0.0
-        var weightSum = 0.0
-        values.forEach { v ->
-            val weight = weights[v.elementKey]?.weightPersonal ?: weights[v.elementKey]?.weightDefault
-            if (weight != null) {
-                val effective = if (v.elementKey in DefaultWeights.negativeKeys) 1.0 - v.valueEffective else v.valueEffective
-                weightedSum += weight * effective
-                weightSum += weight
-            }
-        }
-        if (weightSum <= 0.0) return
-        val indexValue = (weightedSum / weightSum) * 100.0
+        val indexValue = IndexCalculator.computeDailyIndex(values, weights, DefaultWeights.negativeKeys)
+            ?: return
         db.indexDao().insertDaily(IndexDailyEntity(eventDayId = dayId, indexValue = indexValue))
     }
 
@@ -94,9 +87,9 @@ class TrackerRepository(
     suspend fun computeAndSaveWeeklyIndex() {
         val recent = db.indexDao().getLatestDailyWithDate(7)
         if (recent.isEmpty()) return
-        val avg = recent.map { it.indexValue }.average()
-        val weekStart = recent.last().date
-        val weekEnd = recent.first().date
+        val avg = WeeklySummaryCalculator.average(recent) ?: return
+        val weekStart = WeeklySummaryCalculator.weekStart(recent) ?: return
+        val weekEnd = WeeklySummaryCalculator.weekEnd(recent) ?: return
         db.indexDao().insertWeekly(IndexWeeklyEntity(weekStart = weekStart, weekEnd = weekEnd, indexValue = avg))
     }
 
@@ -121,44 +114,21 @@ class TrackerRepository(
         if (last != null && last.sentAt.startsWith(today)) return null
 
         val todayDay = db.eventDayDao().getByDate(today)
-        if (todayDay == null) {
-            return NotificationDecision(
-                type = "daily_reminder",
-                message = "Nezabudni na dnešný tracker (1–2 min)."
-            )
+        if (NotificationRules.dailyReminderNeeded(todayDay)) {
+            return NotificationRules.buildDailyDecision()
         }
 
         val days = db.eventDayDao().getLatestDays(3)
         if (days.size < 3) return null
         val valuesByDay = days.associate { day -> day.id to db.eventValueDao().getByDay(day.id) }
 
-        val stressRecovery = days.all { day ->
-            val values = valuesByDay[day.id] ?: emptyList()
-            val stressHigh = listOf("stress_work", "stress_personal").any { key ->
-                values.firstOrNull { it.elementKey == key }?.valueScale?.let { it >= 4 } ?: false
-            }
-            val mindfulnessZero = (values.firstOrNull { it.elementKey == "mindfulness" }?.valueEffective ?: 0.0) == 0.0
-            stressHigh && mindfulnessZero
-        }
-        if (stressRecovery) {
-            return NotificationDecision(
-                type = "stress_recovery",
-                message = "Stres je vyššie a relax nízky. Skús dnes 5–10 min mindfulness."
-            )
+        if (NotificationRules.stressRecoveryNeeded(days, valuesByDay)) {
+            return NotificationRules.buildStressDecision()
         }
 
-        val keys = DefaultWeights.weights.keys.filter { it != "overall_feeling" }
-        for (key in keys) {
-            val allZero = days.all { day ->
-                val values = valuesByDay[day.id] ?: emptyList()
-                (values.firstOrNull { it.elementKey == key }?.valueEffective ?: 0.0) == 0.0
-            }
-            if (allZero) {
-                return NotificationDecision(
-                    type = "neglected_area",
-                    message = "Zdá sa, že $key bol posledné dni nízko. Skús malý krok."
-                )
-            }
+        val neglectedKey = NotificationRules.neglectedArea(days, valuesByDay)
+        if (neglectedKey != null) {
+            return NotificationRules.buildNeglectedDecision(neglectedKey)
         }
 
         return null

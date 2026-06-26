@@ -7,6 +7,9 @@ import androidx.work.workDataOf
 import androidx.room.Room
 import com.example.madhdtracker.data.AppDatabase
 import com.example.madhdtracker.data.TrackerRepository
+import com.example.madhdtracker.data.repository.PreferencesRepository
+import com.example.madhdtracker.notifications.NotificationRules
+import java.time.LocalTime
 
 class NotificationWorker(
     appContext: Context,
@@ -14,6 +17,10 @@ class NotificationWorker(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
+        val prefs = PreferencesRepository(applicationContext)
+        if (!prefs.areNotificationsEnabled()) return Result.success()
+        if (NotificationRules.isQuietWindow(LocalTime.now())) return Result.success()
+
         val db = Room.databaseBuilder(applicationContext, AppDatabase::class.java, "adhd_tracker.db")
             .fallbackToDestructiveMigration()
             .build()

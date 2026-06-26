@@ -4,10 +4,10 @@ object DefaultWeights {
     val weights: Map<String, Double> = mapOf(
         "overall_feeling" to 13.0,
         "sleep" to 15.0,
-        "activity" to 11.0,
+        "physical_activity" to 11.0,
         "stress_work" to 13.0,
         "stress_personal" to 13.0,
-        "protein" to 8.0,
+        "nutrition_protein" to 8.0,
         "caffeine" to 6.0,
         "alcohol" to 10.0,
         "mindfulness" to 11.0

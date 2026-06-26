@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.madhdtracker.data.EventValueEntity
 import com.example.madhdtracker.data.SatisfactionEntity
 import com.example.madhdtracker.data.TrackerRepository
+import com.example.madhdtracker.domain.logic.IndexCalculator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -23,10 +24,10 @@ class TrackerViewModel(
     val elements = listOf(
         ElementUiState("overall_feeling", "Celkový pocit", true),
         ElementUiState("sleep", "Spánok", false),
-        ElementUiState("activity", "Fyzická aktivita", false),
+        ElementUiState("physical_activity", "Fyzická aktivita", false),
         ElementUiState("stress_work", "Stres v práci", false),
         ElementUiState("stress_personal", "Stres v osobnom živote", false),
-        ElementUiState("protein", "Strava proteíny", false),
+        ElementUiState("nutrition_protein", "Strava proteíny", false),
         ElementUiState("caffeine", "Čaj/káva", false),
         ElementUiState("alcohol", "Alkohol", false),
         ElementUiState("mindfulness", "Mindfulness/relax", false)
@@ -82,7 +83,7 @@ class TrackerViewModel(
 
             val now = OffsetDateTime.now().toString()
             val eventValues = values.map { input ->
-                val effective = input.valueScale?.let { (it - 1) / 4.0 } ?: input.valueBinary.toDouble()
+                val effective = IndexCalculator.valueEffective(input.valueBinary, input.valueScale)
                 EventValueEntity(
                     eventDayId = day.id,
                     elementKey = input.elementKey,
@@ -92,7 +93,7 @@ class TrackerViewModel(
                 )
             }
 
-            val satisfactionEffective = (satisfactionScale - 1) / 4.0
+            val satisfactionEffective = IndexCalculator.valueEffective(0, satisfactionScale)
             val satisfaction = SatisfactionEntity(
                 eventDayId = day.id,
                 valueScale = satisfactionScale,

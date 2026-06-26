@@ -31,6 +31,7 @@ fun HomeScreen(viewModel: HomeViewModel) {
     val satisfactionText = viewModel.satisfactionValue.value?.toString() ?: "—"
     val completionText = viewModel.completionText.value ?: "—"
     val entities = viewModel.vectorEntities.value
+    val hasData = viewModel.indexValue.value != null
 
     Column(
         modifier = Modifier
@@ -54,6 +55,16 @@ fun HomeScreen(viewModel: HomeViewModel) {
                         Text(text = "Splnené", style = MaterialTheme.typography.labelMedium)
                         Text(text = completionText, style = MaterialTheme.typography.titleMedium)
                     }
+                }
+            }
+        }
+
+        if (!hasData) {
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f))) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "Zatiaľ bez dát", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(text = "Vyplň dnešný tracker a zobrazí sa index.", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

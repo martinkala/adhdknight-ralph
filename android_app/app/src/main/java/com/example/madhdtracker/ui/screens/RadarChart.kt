@@ -17,8 +17,8 @@ import kotlin.math.sin
 
 val RADAR_AXES = listOf(
     "sleep"             to "Spánok",
-    "activity"          to "Aktivita",
-    "protein"           to "Proteíny",
+    "physical_activity" to "Aktivita",
+    "nutrition_protein" to "Proteíny",
     "mindfulness"       to "Mindful.",
     "caffeine"          to "Kofeín",
     "alcohol"           to "Alkohol",
