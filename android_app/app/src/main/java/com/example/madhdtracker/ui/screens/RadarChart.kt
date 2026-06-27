@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import com.example.madhdtracker.data.DefaultWeights
 import com.example.madhdtracker.data.EventValueEntity
 import kotlin.math.PI
 import kotlin.math.cos
@@ -39,10 +40,8 @@ fun RadarChart(
     labels: List<String>,
     modifier: Modifier = Modifier
 ) {
-    val fillColor   = Color(0xFF3A6EA5)
     val gridColor   = Color(0xFFCCCCCC)
     val axisColor   = Color(0xFFAAAAAA)
-    val strokeColor = Color(0xFF1A4A80)
     val labelColor  = Color(0xFF222222)
 
     Canvas(modifier = modifier) {
@@ -77,20 +76,41 @@ fun RadarChart(
             drawLine(axisColor, Offset(cx, cy), pointOnAxis(i, radius), strokeWidth = 1.5f)
         }
 
-        val dataPath = Path()
+        val positiveColor = Color(0xFF81C784)
+        val positiveStroke = Color(0xFF4CAF50)
+        val negativeColor = Color(0xFFE57373)
+        val negativeStroke = Color(0xFFF44336)
+
+        val positivePath = Path()
+        val negativePath = Path()
+        var firstPositive = true
+        var firstNegative = true
         values.forEachIndexed { i, v ->
+            val key = RADAR_AXES[i].first
             val r = (v.coerceIn(0.0, 1.0) * radius).toFloat()
             val p = pointOnAxis(i, r)
-            if (i == 0) dataPath.moveTo(p.x, p.y) else dataPath.lineTo(p.x, p.y)
+            if (key in DefaultWeights.negativeKeys) {
+                if (firstNegative) { negativePath.moveTo(p.x, p.y); firstNegative = false }
+                else negativePath.lineTo(p.x, p.y)
+            } else {
+                if (firstPositive) { positivePath.moveTo(p.x, p.y); firstPositive = false }
+                else positivePath.lineTo(p.x, p.y)
+            }
         }
-        dataPath.close()
-        drawPath(dataPath, color = fillColor.copy(alpha = 0.35f))
-        drawPath(dataPath, color = strokeColor, style = Stroke(width = 3f))
+        positivePath.close()
+        negativePath.close()
+
+        drawPath(positivePath, color = positiveColor.copy(alpha = 0.25f))
+        drawPath(negativePath, color = negativeColor.copy(alpha = 0.25f))
+        drawPath(positivePath, color = positiveStroke, style = Stroke(width = 2.5f))
+        drawPath(negativePath, color = negativeStroke, style = Stroke(width = 2.5f))
 
         values.forEachIndexed { i, v ->
+            val key = RADAR_AXES[i].first
+            val dotColor = if (key in DefaultWeights.negativeKeys) negativeStroke else positiveStroke
             val r = (v.coerceIn(0.0, 1.0) * radius).toFloat()
             val p = pointOnAxis(i, r)
-            drawCircle(color = strokeColor, radius = 6f, center = p)
+            drawCircle(color = dotColor, radius = 6f, center = p)
             drawCircle(color = Color.White, radius = 3f, center = p)
         }
 

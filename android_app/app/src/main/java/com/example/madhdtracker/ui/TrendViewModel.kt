@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.madhdtracker.data.DailyIndexRow
+import com.example.madhdtracker.data.DailySubIndexRow
 import com.example.madhdtracker.data.TrackerRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,6 +16,7 @@ class TrendViewModel(
 ) : ViewModel() {
     val series = mutableStateOf<List<DailyIndexRow>>(emptyList())
     val weeklyAverage = mutableStateOf<Double?>(null)
+    val dualSeries = mutableStateOf<List<DailySubIndexRow>>(emptyList())
 
     init {
         refresh()
@@ -24,9 +26,11 @@ class TrendViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val data = repository.getLatestDailySeries(7)
             val avg = if (data.isNotEmpty()) data.map { it.indexValue }.average() else null
+            val dual = repository.getLatestDualIndexSeries(7)
             withContext(Dispatchers.Main) {
                 series.value = data.reversed()
                 weeklyAverage.value = avg
+                dualSeries.value = dual.reversed()
             }
         }
     }

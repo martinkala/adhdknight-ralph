@@ -3,6 +3,7 @@ package com.example.madhdtracker
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.NavigationBar
@@ -63,7 +64,6 @@ private fun AppRoot() {
     val context = LocalContext.current
     val db = remember {
         Room.databaseBuilder(context, AppDatabase::class.java, "adhd_tracker.db")
-            .fallbackToDestructiveMigration()
             .build()
     }
     val repository = remember { TrackerRepository(db) }
@@ -98,14 +98,16 @@ private fun AppRoot() {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        AppNavGraph(
-            navController = navController,
-            trackerViewModel = trackerViewModel,
-            homeViewModel = homeViewModel,
-            trendViewModel = trendViewModel,
-            vectorViewModel = vectorViewModel,
-            repository = repository
-        )
+        Box(modifier = Modifier.weight(1f)) {
+            AppNavGraph(
+                navController = navController,
+                trackerViewModel = trackerViewModel,
+                homeViewModel = homeViewModel,
+                trendViewModel = trendViewModel,
+                vectorViewModel = vectorViewModel,
+                repository = repository
+            )
+        }
 
         val navBackStackEntry = navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry.value?.destination?.route

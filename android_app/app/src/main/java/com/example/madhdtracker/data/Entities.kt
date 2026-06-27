@@ -79,7 +79,9 @@ data class WeightEntity(
 data class IndexDailyEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val eventDayId: Long,
-    val indexValue: Double
+    val indexValue: Double,
+    val positiveIndex: Double? = null,
+    val negativeIndex: Double? = null
 )
 
 @Entity(tableName = "index_weekly")

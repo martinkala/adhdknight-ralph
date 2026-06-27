@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import com.example.madhdtracker.ui.HomeViewModel
@@ -32,6 +33,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
     val completionText = viewModel.completionText.value ?: "—"
     val entities = viewModel.vectorEntities.value
     val hasData = viewModel.indexValue.value != null
+    val positiveText = viewModel.positiveIndex.value?.let { it.roundToInt().toString() } ?: "—"
+    val negativeText = viewModel.negativeIndex.value?.let { it.roundToInt().toString() } ?: "—"
 
     Column(
         modifier = Modifier
@@ -45,6 +48,17 @@ fun HomeScreen(viewModel: HomeViewModel) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(text = "Denný ADHD index", style = MaterialTheme.typography.labelMedium)
                 Text(text = indexText, style = MaterialTheme.typography.displaySmall)
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column {
+                        Text(text = "Pozitívne ↑", style = MaterialTheme.typography.labelSmall, color = Color(0xFF388E3C))
+                        Text(text = positiveText, style = MaterialTheme.typography.titleMedium, color = Color(0xFF81C784))
+                    }
+                    Column {
+                        Text(text = "Negatívne ↓", style = MaterialTheme.typography.labelSmall, color = Color(0xFFC62828))
+                        Text(text = negativeText, style = MaterialTheme.typography.titleMedium, color = Color(0xFFE57373))
+                    }
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Column {

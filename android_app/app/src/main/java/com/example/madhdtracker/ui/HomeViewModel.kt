@@ -17,6 +17,8 @@ class HomeViewModel(
     val satisfactionValue = mutableStateOf<Int?>(null)
     val completionText = mutableStateOf<String?>(null)
     val vectorEntities = mutableStateOf<Map<String, EventValueEntity>>(emptyMap())
+    val positiveIndex = mutableStateOf<Double?>(null)
+    val negativeIndex = mutableStateOf<Double?>(null)
 
     init {
         refresh()
@@ -28,11 +30,14 @@ class HomeViewModel(
             val satisfaction = repository.getLatestSatisfaction()
             val completion = repository.getLatestCompletionCounts()
             val entities = repository.getLatestVectorEntities()
+            val subIndices = repository.getLatestSubIndices()
             withContext(Dispatchers.Main) {
                 indexValue.value = index
                 satisfactionValue.value = satisfaction
                 completionText.value = completion?.let { "${it.first} z ${it.second}" }
                 vectorEntities.value = entities
+                positiveIndex.value = subIndices.first
+                negativeIndex.value = subIndices.second
             }
         }
     }

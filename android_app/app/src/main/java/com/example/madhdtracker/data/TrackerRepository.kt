@@ -60,7 +60,26 @@ class TrackerRepository(
 
         val indexValue = IndexCalculator.computeDailyIndex(values, weights, DefaultWeights.negativeKeys)
             ?: return
-        db.indexDao().insertDaily(IndexDailyEntity(eventDayId = dayId, indexValue = indexValue))
+        val positiveKeys = DefaultWeights.weights.keys - DefaultWeights.negativeKeys
+        val positiveIndex = IndexCalculator.computePositiveIndex(values, weights, positiveKeys)
+        val negativeIndex = IndexCalculator.computeNegativeIndex(values, weights, DefaultWeights.negativeKeys)
+        db.indexDao().insertDaily(
+            IndexDailyEntity(
+                eventDayId = dayId,
+                indexValue = indexValue,
+                positiveIndex = positiveIndex,
+                negativeIndex = negativeIndex
+            )
+        )
+    }
+
+    suspend fun getLatestSubIndices(): Pair<Double?, Double?> {
+        val latest = db.indexDao().getLatestDaily() ?: return Pair(null, null)
+        return Pair(latest.positiveIndex, latest.negativeIndex)
+    }
+
+    suspend fun getLatestDualIndexSeries(limit: Int): List<DailySubIndexRow> {
+        return db.indexDao().getLatestDualWithDate(limit)
     }
 
     suspend fun getLatestDailyIndex(): Double? {

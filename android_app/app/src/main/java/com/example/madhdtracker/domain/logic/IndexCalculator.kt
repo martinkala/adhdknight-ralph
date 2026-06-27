@@ -58,6 +58,46 @@ object IndexCalculator {
         return updated.mapValues { (_, value) -> value * scale }
     }
 
+    fun computePositiveIndex(
+        values: List<EventValueEntity>,
+        weights: Map<String, WeightEntity>,
+        positiveKeys: Set<String>
+    ): Double? {
+        val filtered = values.filter { it.elementKey in positiveKeys }
+        if (filtered.isEmpty()) return null
+        var weightedSum = 0.0
+        var weightSum = 0.0
+        filtered.forEach { v ->
+            val weight = weights[v.elementKey]?.weightPersonal ?: weights[v.elementKey]?.weightDefault
+            if (weight != null) {
+                weightedSum += weight * v.valueEffective
+                weightSum += weight
+            }
+        }
+        if (weightSum <= 0.0) return null
+        return (weightedSum / weightSum) * 100.0
+    }
+
+    fun computeNegativeIndex(
+        values: List<EventValueEntity>,
+        weights: Map<String, WeightEntity>,
+        negativeKeys: Set<String>
+    ): Double? {
+        val filtered = values.filter { it.elementKey in negativeKeys }
+        if (filtered.isEmpty()) return null
+        var weightedSum = 0.0
+        var weightSum = 0.0
+        filtered.forEach { v ->
+            val weight = weights[v.elementKey]?.weightPersonal ?: weights[v.elementKey]?.weightDefault
+            if (weight != null) {
+                weightedSum += weight * v.valueEffective
+                weightSum += weight
+            }
+        }
+        if (weightSum <= 0.0) return null
+        return (weightedSum / weightSum) * 100.0
+    }
+
     private fun clamp(value: Double, minValue: Double, maxValue: Double): Double {
         return max(minValue, min(maxValue, value))
     }

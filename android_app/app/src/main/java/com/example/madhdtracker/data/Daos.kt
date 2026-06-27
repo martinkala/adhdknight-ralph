@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.example.madhdtracker.data.DailySubIndexRow
 
 @Dao
 interface EventDayDao {
@@ -75,6 +76,17 @@ interface IndexDao {
         """
     )
     suspend fun getLatestDailyWithDate(limit: Int): List<DailyIndexRow>
+
+    @Query(
+        """
+        SELECT event_day.date as date, index_daily.positiveIndex as positiveIndex, index_daily.negativeIndex as negativeIndex
+        FROM index_daily
+        INNER JOIN event_day ON index_daily.eventDayId = event_day.id
+        ORDER BY event_day.date DESC
+        LIMIT :limit
+        """
+    )
+    suspend fun getLatestDualWithDate(limit: Int): List<DailySubIndexRow>
 }
 
 @Dao
