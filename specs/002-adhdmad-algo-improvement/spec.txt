@@ -1,0 +1,56 @@
+Aktualny krok ma 3 hlavne body
+
+Cielom 1 je rozsirit monitorovane entity na viac parametrov.
+Kazdy parameter moze mat viac podparametrov
+Strava bud mat
+    - proteiny
+    - vytaminy - b12, d zinok, horcik
+
+Aktivita (polozka) - Health
+    - cvicenie
+    - joga
+    - stretching
+
+Mindfulness
+    - mindfulnes
+    - meditation
+    - joga
+
+Pridaj polozku brain train
+    - book read
+    - learning (ex language)
+    - mental activity
+
+Pridaj polozku Social contact
+
+Pridaj polozku zavislosti (negative )
+    -
+
+Pre vyssie uvedene polozky mi urob research aky vplyv na adhd bude mat dana polozka.
+Na zaklade researchu nastvime vahy, alebo model prepocitavania.
+
+
+Cielom 2 je narvh servera na prepocitavania vektora  adhd V aktualnej verzii bude prepocecet
+vah identicky s prepoctom v aplikacii.
+Hlavny ucel bude testovanie vah a output na backende ez toho aby sme museli pouzivat aplikaciu.
+Vhodne na automatozivane, regression testy prepocitavania vah.
+V buducnosti bude server pouzity ako hlavna autorita prepocitavania vah .
+
+Osobne by som na server preferoval python pre jeho citatlenost, ale necham si poradit od teba 3 moznosti
+ako by sme to v buducnosti mohli riesit. Zatial sa bude jednat len o navrh.
+
+Sucastou serveroveho riesiesenia bude bude navrh vstupu a vystupu pre server idealny pre api based komunikaciu.
+Zase moja preferencia je json , ale necham si poradit 3 moznosti, ktore su podla teba najlepsie
+
+Vystup zo servera navrhni z datoveho pohladu tak , aby bol spatne kompatibilny aj v dalsich verziach.
+Tj aby sa pri pridavani poloziek, atribudov zachovala moznost exportovat a importovat starsie verzie.
+
+Ciel 2.1 navrhni algoritmus ako prepocitavat vektor ked niektora z poloziek bude mat subpolozky a nedoslo
+k stavu ze polozka z viac subpolozkami bude mat vacsiu vahu. Idealne by sa malo jednat o nejaky typ
+vazeneho premeru. Navrhni mi 3 najlepsie moznosti
+
+
+Cielom 3 navrhni testovacie scenare z seriou dat 1,3,5,15,30 dni kde input bude vo finalnej forme na akej
+sa dohodneme v kroku 2
+Zaroven by mal byt vstup do testov natolko prehladny , aby som ho vedel ako human editovat a navrhnut scenare.
+

@@ -212,3 +212,9 @@ Task: "Implement activity detail UI in android_app/app/src/main/java/com/adhdtra
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
+
+---
+
+## Phase 8: Convergence
+
+- [ ] T035 Fix Gradle toolchain to provide JAVA_COMPILER for CLI builds per plan: configure JDK 17 in `android_app/gradle.properties` or install a full JDK (missing javac) (missing)

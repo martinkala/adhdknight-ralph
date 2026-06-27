@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-27
 
-**Status**: Draft
+**Status**: Done
 
 **Input**: User description: "rozdelit vypocet ADHD vektora na pozitivnu cast (sleep, physical_activity, nutrition_protein, mindfulness - chceme maximalizovat) a negativnu cast (stress_work, stress_personal, alcohol, caffeine - chceme minimalizovat). Trend screen zobrazuje oba vektory ako dual-bar chart (zelene a cervene stlpce per den). Home screen zobrazuje oba sub-indexy. Radar chart kreslí dva oddělene polygóny - zeleny pre pozitívne elementy, červený pre negatívne. DB migrácia v1 na v2."
 

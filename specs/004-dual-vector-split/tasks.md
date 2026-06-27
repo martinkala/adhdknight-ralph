@@ -100,7 +100,7 @@
 
 - [x] T025 [P] Validovať scenár 4 (historické dáta pred migráciou) z `specs/004-dual-vector-split/quickstart.md` — kód overený: HomeScreen zobrazuje "—" pre null indexy, TrendScreen vykresľuje sivý placeholder stĺpec pre dni bez dát, fallbackToDestructiveMigration odstránený
 - [ ] T026 [P] Overiť, že `HomeScreen` ostáva viditeľný bez scrollovania po pridaní dual-index Row — otestovať na malom emulátore (napr. Pixel 3a, 5.6")
-- [ ] T027 Spustiť `./gradlew test` z `android_app/` — všetky unit testy vrátane T007 gate testov a T013 migration testu musia prejsť
+- [x] T027 Spustiť `./gradlew test` z `android_app/` — všetky unit testy vrátane T007 gate testov a T013 migration testu musia prejsť
 - [x] T028 Skontrolovať, že `SimpleBarChart` (pôvodný) nie je referencovaný nikde inde pred prípadným odstránením z `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/TrendScreen.kt`
 
 ---

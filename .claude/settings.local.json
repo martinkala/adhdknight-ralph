@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(bash .specify/scripts/bash/setup-plan.sh --json 2>&1)"
     ]
   }
 }
