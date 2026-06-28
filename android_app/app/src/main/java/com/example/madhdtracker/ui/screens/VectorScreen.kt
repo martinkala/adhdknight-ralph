@@ -17,19 +17,20 @@ import androidx.compose.ui.unit.dp
 import com.example.madhdtracker.ui.VectorViewModel
 
 @Composable
-fun VectorScreen(viewModel: VectorViewModel) {
-    LaunchedEffect(Unit) {
-        viewModel.refresh()
+fun VectorScreen(viewModel: VectorViewModel, date: String? = null) {
+    LaunchedEffect(date) {
+        if (date != null) viewModel.loadForDate(date) else viewModel.refresh()
     }
 
     val entities = viewModel.entities.value
+    val title = if (date != null) "Radar – $date" else "Radar – detail"
 
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        Text(text = "Radar – detail", style = MaterialTheme.typography.titleLarge)
+        Text(text = title, style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
 
         RadarChart(

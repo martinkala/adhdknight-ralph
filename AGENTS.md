@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/004-dual-vector-split/plan.md`
+`specs/006-visual-updates-1/plan.md`
 <!-- SPECKIT END -->

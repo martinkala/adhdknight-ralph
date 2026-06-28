@@ -14,12 +14,24 @@ class VectorViewModel(
     private val repository: TrackerRepository
 ) : ViewModel() {
     val entities = mutableStateOf<Map<String, EventValueEntity>>(emptyMap())
+    val loadedDate = mutableStateOf<String?>(null)
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
             val map = repository.getLatestVectorEntities()
             withContext(Dispatchers.Main) {
                 entities.value = map
+                loadedDate.value = null
+            }
+        }
+    }
+
+    fun loadForDate(date: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val map = repository.getValuesForDate(date)
+            withContext(Dispatchers.Main) {
+                entities.value = map
+                loadedDate.value = date
             }
         }
     }

@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
 }
 
 enum class Screen {
-    HOME, TRACKER, TREND, VECTOR, SETTINGS
+    HOME, TRACKER, TREND, SETTINGS
 }
 
 @Composable
@@ -118,7 +118,6 @@ private fun AppRoot() {
                     Screen.HOME -> AppRoutes.HOME
                     Screen.TRACKER -> AppRoutes.TRACKER
                     Screen.TREND -> AppRoutes.TREND
-                    Screen.VECTOR -> AppRoutes.VECTOR
                     Screen.SETTINGS -> AppRoutes.SETTINGS
                 }
                 NavigationBarItem(

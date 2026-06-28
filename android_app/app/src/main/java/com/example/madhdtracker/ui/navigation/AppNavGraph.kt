@@ -24,11 +24,13 @@ object AppRoutes {
     const val TRACKER = "tracker"
     const val TREND = "trend"
     const val VECTOR = "vector"
+    const val VECTOR_DATE = "vector/{date}"
     const val SETTINGS = "settings"
     const val NOTIFICATIONS = "notifications"
     const val ACTIVITY_DETAIL = "activity/{key}"
 
     fun activityDetail(key: String): String = "activity/$key"
+    fun vectorForDate(date: String): String = "vector/$date"
 }
 
 @Composable
@@ -49,7 +51,9 @@ fun AppNavGraph(
         startDestination = AppRoutes.HOME
     ) {
         composable(AppRoutes.HOME) {
-            HomeScreen(homeViewModel)
+            HomeScreen(homeViewModel, onEditClick = {
+                navController.navigate(AppRoutes.TRACKER)
+            })
         }
         composable(AppRoutes.TRACKER) {
             TrackerScreen(trackerViewModel, onSaved = {
@@ -60,8 +64,19 @@ fun AppNavGraph(
                 navController.navigate(AppRoutes.activityDetail(key))
             })
         }
-        composable(AppRoutes.TREND) { TrendScreen(trendViewModel) }
+        composable(AppRoutes.TREND) {
+            TrendScreen(trendViewModel, onDayClick = { date ->
+                navController.navigate(AppRoutes.vectorForDate(date))
+            })
+        }
         composable(AppRoutes.VECTOR) { VectorScreen(vectorViewModel) }
+        composable(
+            route = AppRoutes.VECTOR_DATE,
+            arguments = listOf(navArgument("date") { defaultValue = "" })
+        ) { entry ->
+            val date = entry.arguments?.getString("date")?.ifEmpty { null }
+            VectorScreen(vectorViewModel, date = date)
+        }
         composable(AppRoutes.SETTINGS) {
             SettingsScreen(repository, onOpenNotifications = {
                 navController.navigate(AppRoutes.NOTIFICATIONS)

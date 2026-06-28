@@ -1,6 +1,7 @@
 package com.example.madhdtracker.ui.screens
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,13 +26,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.roundToInt
 import com.example.madhdtracker.data.DailySubIndexRow
 import com.example.madhdtracker.ui.TrendViewModel
 
 @Composable
-fun TrendScreen(viewModel: TrendViewModel) {
+fun TrendScreen(viewModel: TrendViewModel, onDayClick: (String) -> Unit = {}) {
     LaunchedEffect(Unit) {
         viewModel.refresh()
     }
@@ -47,7 +53,7 @@ fun TrendScreen(viewModel: TrendViewModel) {
 
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(modifier = Modifier.padding(12.dp)) {
-                DualBarChart(dualSeries)
+                DualBarChart(dualSeries, onDayClick = onDayClick)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -80,61 +86,92 @@ fun TrendScreen(viewModel: TrendViewModel) {
 }
 
 @Composable
-private fun DualBarChart(items: List<DailySubIndexRow>) {
+private fun DualBarChart(items: List<DailySubIndexRow>, onDayClick: (String) -> Unit = {}) {
     val maxTotal = (items.map {
         (it.positiveIndex ?: 0.0) + (it.negativeIndex ?: 0.0)
     }.maxOrNull() ?: 100.0).coerceAtLeast(1.0)
 
-    Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(160.dp)
-    ) {
-        if (items.isEmpty()) return@Canvas
-        val colWidth = size.width / items.size
-        val barWidth = colWidth * 0.72f
-        val barX0 = (colWidth - barWidth) / 2f
-        val textPaint = android.graphics.Paint().apply {
-            isAntiAlias = true
-            textAlign = android.graphics.Paint.Align.CENTER
-            textSize = (barWidth * 0.34f).coerceIn(24f, 36f)
-            isFakeBoldText = true
-        }
-
-        items.forEachIndexed { idx, row ->
-            val pos = row.positiveIndex ?: 0.0
-            val neg = row.negativeIndex ?: 0.0
-            val posH = ((pos / maxTotal) * size.height).toFloat()
-            val negH = ((neg / maxTotal) * size.height).toFloat()
-            val x = idx * colWidth + barX0
-            val barCx = x + barWidth / 2f
-
-            if (row.positiveIndex == null && row.negativeIndex == null) {
-                // pre-migration day: draw a subtle placeholder column
-                val placeholderH = size.height * 0.06f
-                drawRect(Color(0xFFDDDDDD), Offset(x, size.height - placeholderH), Size(barWidth, placeholderH))
-            } else {
-                if (pos > 0) {
-                    val top = size.height - posH - negH
-                    drawRect(Color(0xFF81C784), Offset(x, top), Size(barWidth, posH))
-                    if (posH > textPaint.textSize * 1.4f) {
-                        textPaint.color = android.graphics.Color.parseColor("#1B5E20")
-                        drawContext.canvas.nativeCanvas.drawText(
-                            pos.toInt().toString(), barCx, top + posH / 2f + textPaint.textSize / 3f, textPaint
-                        )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .pointerInput(items) {
+                    detectTapGestures { offset ->
+                        if (items.isEmpty()) return@detectTapGestures
+                        val colWidth = size.width.toFloat() / items.size
+                        val idx = (offset.x / colWidth).toInt().coerceIn(0, items.lastIndex)
+                        onDayClick(items[idx].date)
                     }
                 }
-                if (neg > 0) {
-                    val top = size.height - negH
-                    drawRect(Color(0xFFE57373), Offset(x, top), Size(barWidth, negH))
-                    if (negH > textPaint.textSize * 1.4f) {
-                        textPaint.color = android.graphics.Color.parseColor("#B71C1C")
-                        drawContext.canvas.nativeCanvas.drawText(
-                            neg.toInt().toString(), barCx, top + negH / 2f + textPaint.textSize / 3f, textPaint
-                        )
+        ) {
+            if (items.isEmpty()) return@Canvas
+            val colWidth = size.width / items.size
+            val barWidth = colWidth * 0.72f
+            val barX0 = (colWidth - barWidth) / 2f
+            val textPaint = android.graphics.Paint().apply {
+                isAntiAlias = true
+                textAlign = android.graphics.Paint.Align.CENTER
+                textSize = (barWidth * 0.34f).coerceIn(24f, 36f)
+                isFakeBoldText = true
+            }
+
+            items.forEachIndexed { idx, row ->
+                val pos = row.positiveIndex ?: 0.0
+                val neg = row.negativeIndex ?: 0.0
+                val posH = ((pos / maxTotal) * size.height).toFloat()
+                val negH = ((neg / maxTotal) * size.height).toFloat()
+                val x = idx * colWidth + barX0
+                val barCx = x + barWidth / 2f
+
+                if (row.positiveIndex == null && row.negativeIndex == null) {
+                    val placeholderH = size.height * 0.06f
+                    drawRect(Color(0xFFDDDDDD), Offset(x, size.height - placeholderH), Size(barWidth, placeholderH))
+                } else {
+                    if (pos > 0) {
+                        val top = size.height - posH - negH
+                        drawRect(Color(0xFF81C784), Offset(x, top), Size(barWidth, posH))
+                        if (posH > textPaint.textSize * 1.4f) {
+                            textPaint.color = android.graphics.Color.parseColor("#1B5E20")
+                            drawContext.canvas.nativeCanvas.drawText(
+                                pos.toInt().toString(), barCx, top + posH / 2f + textPaint.textSize / 3f, textPaint
+                            )
+                        }
+                    }
+                    if (neg > 0) {
+                        val top = size.height - negH
+                        drawRect(Color(0xFFE57373), Offset(x, top), Size(barWidth, negH))
+                        if (negH > textPaint.textSize * 1.4f) {
+                            textPaint.color = android.graphics.Color.parseColor("#B71C1C")
+                            drawContext.canvas.nativeCanvas.drawText(
+                                neg.toInt().toString(), barCx, top + negH / 2f + textPaint.textSize / 3f, textPaint
+                            )
+                        }
                     }
                 }
             }
         }
+
+        if (items.isNotEmpty()) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                items.forEach { row ->
+                    Text(
+                        text = formatDayLabel(row.date),
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun formatDayLabel(dateStr: String): String {
+    return try {
+        val date = LocalDate.parse(dateStr)
+        date.format(DateTimeFormatter.ofPattern("EE\nd.M", Locale("sk")))
+    } catch (e: Exception) {
+        dateStr
     }
 }
