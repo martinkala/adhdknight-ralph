@@ -1,0 +1,21 @@
+Ciel je navrhnut zakladnu gamifikaciu apky
+Zmyslom gamifikacie bude vytvorit system levelovania aplikovania entit do zivota postupne.
+Po dosiahnutia istej urovne v jednej entite, sa ponukne dalsia entita .
+
+Level 1: spanok a jedlo
+	- pravidelny spanok, kolko hodin
+	- jedlo proteiny, malo sacharidov
+	- vitaminy omega, zinok, horcik , zelezo
+	- minimum kavy 
+
+Level 2:
+	- fyzicke cvicenie
+	- pracovna metoda - pomodoro
+
+Level 3:
+	- mindfulnes 
+	- prokrastinacia
+
+level 4:
+	- sledovanie transmitoerov kortizol, adrenalin, noadreanlin
+	

@@ -1,0 +1,16 @@
+Hlavna straka - home
+	- chyba zobrazenie datumu za textom dnesny prehlad 
+	- vymen denny adhd index vypis zo sekcoi pozitivne (green) negativne(red) - positivne/negativne , pojde na miesto denneho adhd indexu a naopak, u deneeho adhd indexu zmensi fonet na urovne positivne, negativne, u positivne negativne zvacsi font na urovne denneho ahdh indexu
+	- pridaj tlacitko , upravu dennny zaznam napravo vedla positiv/negativ vypisu, tlacitko bude smetovat na stranku trackera, bude sa jednat o skratku, uzivatel nemusi klikat na tracker
+
+
+Stranka trend 
+	- pri grafe chyba v jednotlivych stplcoch informacia o aky den sa jedna
+	i konretny den bude klikatleny a po kliknuti na den sa zobrazi stranka s vektorom daneho dna
+
+Menu
+	- polozka vektor bude z menu odstranena. Stranka zostane, ale uzivatel sa na nu dostane po kliknuti na detial dna
+	
+Denny tracker 
+	- tlaciko uloz den bude presunute napravo od nadpisu denny tracker, tak aby ho uzivatel viddel hned ako sa nacita stranka
+
