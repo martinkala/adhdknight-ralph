@@ -1,6 +1,7 @@
 package com.example.madhdtracker.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -102,4 +103,31 @@ interface NotificationLogDao {
 interface AsrsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(checkin: AsrsCheckinEntity)
+
+    @Query("SELECT * FROM asrs_checkin ORDER BY date DESC LIMIT :limit")
+    suspend fun getRecent(limit: Int): List<AsrsCheckinEntity>
+}
+
+@Dao
+interface UserElementOverrideDao {
+    @Query("SELECT * FROM user_element_override")
+    suspend fun getAll(): List<UserElementOverrideEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(override: UserElementOverrideEntity)
+
+    @Query("DELETE FROM user_element_override WHERE elementKey = :key")
+    suspend fun delete(key: String)
+}
+
+@Dao
+interface UserElementDao {
+    @Query("SELECT * FROM user_element")
+    suspend fun getAll(): List<UserElementEntity>
+
+    @Insert
+    suspend fun insert(element: UserElementEntity): Long
+
+    @Delete
+    suspend fun delete(element: UserElementEntity)
 }

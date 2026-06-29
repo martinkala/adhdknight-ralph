@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan:
-`specs/006-visual-updates-1/plan.md`
+shell commands, and other important information, read the current plan
+at specs/007-comfigurable-entities/plan.md
 <!-- SPECKIT END -->

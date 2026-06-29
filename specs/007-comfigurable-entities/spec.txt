@@ -1,0 +1,101 @@
+ciekom je zmenit definiciu entit tak aby bola lepsie strukturovatelna , citatelna  a umoznovala dopisovat dalsie atributy
+
+Aktualny stav
+  "weights": {
+    "overall_feeling":   13.0,
+    "sleep":             15.0,
+    "physical_activity": 11.0,
+    "stress_work":       13.0,
+    "stress_personal":   13.0,
+    "nutrition_protein":  8.0,
+    "caffeine":           6.0,
+    "alcohol":           10.0,
+    "mindfulness":       11.0
+
+
+Navrhni mi 3 moznosti ako ukladat do suboru 
+Priklad noveho condigu by bol
+yaml
+ sleep:             
+    # original weight
+    - weight: 15.0
+    # pozitivne, alebo negativne
+    - impact: +1/-1
+    # multilevel structure
+    - parent: sleep
+    - description:
+
+ physical_activity:             
+    # original weight
+    - weight: 11.0
+    # pozitivne, alebo negativne
+    - impact: +1/-1
+    # multilevel structure
+    - parent: physical_activity
+    - description:
+    # on user level
+    - active: yes/no
+    # values to be displayed in bar
+    - scale: 1,2,3,4,5
+
+ pushups:             
+    # original weight
+    - weight: 5.0
+    # pozitivne, alebo negativne
+    - impact: +1
+    # multilevel structure
+    - parent: physical_activity
+    - description:
+
+ zavislosti:             
+    # original weight
+    - weight: 15.0
+    # pozitivne, alebo negativne
+    - impact: -1
+    # multilevel structure
+    - parent: lifestyle
+    - description:
+   # on user level
+    - active: yes/no
+    # values to be displayed in bar
+    - scale: 1,2,3,4,5
+
+
+ book_read:             
+    # original weight
+    - weight: 5.0
+    # pozitivne, alebo negativne
+    - impact: +1
+    # multilevel structure
+    - parent: head
+    - description:
+
+ learning:             
+    # original weight
+    - weight: 5.0
+    # pozitivne, alebo negativne
+    - impact: +1
+    # multilevel structure
+    - parent: head
+    - description:
+
+ sacharids:             
+    # original weight
+    - weight: 5.0
+    # pozitivne, alebo negativne
+    - impact: -1
+    # multilevel structure
+    - parent: food
+    - description:
+
+
+
+Otazka ako definovat top level kategorie ako, head, food, physical activity, sleep, lifestile.
+Niektore su klikatelne entity, niektore nie
+Zaroven ako zobrazovat podentity,ked parent entita je neaktivna.
+Ako upravit algoritmus aby vysledok nevplyvnili kategorie s viacerimi aktivnymi podkategoriami, je mozne robit nejaky vazeny priemer podkategorii.
+Ako maintainvat strom co najpoholdnejsie, file edit, databaza ? v prvom kole len files ked bude struktura vacia migracia do db.
+Casom bude mozne pridavat aj user defined entity do top level entit, 
+top level entity nebudu pridavatelne ani modifikovatelne uzovatelom.
+
+Rovnaky setup entit, bude pouzity v android apke aj v prepocitavacom serveri , ktory je v plane v blizkej buducnosti

@@ -1,0 +1,16 @@
+Ciel 1 : zmen radar graf na double bar graph 
+ na lavej strane budu cervene zaporne entity na lavej strane pozitivne entity
+kazda entita bude mat zobrazeneho parenta a nazov 
+Zmena bude ako na hlavnej stranke  a na detaile dna 
+
+Ciel 2: na stranke trend budu dni zobrazene od najnovsieho zaznamu po najstarsi , zaroven pridaj bledocerven, pripadne bledo zelene pozadie podla impactu
+
+Ciel 3 na stranke denny tracker pridaj nove hlacitko ulozit den aj dole na stranky aby uzivatel mohol ulozit data aj ked bude odskorolany na spodnom okraji, horne tlacitko zostne 
+
+Ciel 4 na stranke denny tracker daj bledo zelene, alebo bledocervene pod kazdu sekciu podla toho aky impakt je v konfigutacii 1 alebo -1  
+
+Ciel 5 na hlavnej stranke daj na rovnaku urovne "Denny ADHD index" a "spokojnost" a "Splenene". Zaroven Splneney premenuj na "Vyplenne" cielom je mat kompaktnejsi vypis na hlavnej stranke a usetrit 1 riadok 
+
+Ciel 6 odstran z hlavnej stanky tip dna 
+
+Ciel 7 detial dna premenuj z "Radar" $datum na "Denny detail" $datum

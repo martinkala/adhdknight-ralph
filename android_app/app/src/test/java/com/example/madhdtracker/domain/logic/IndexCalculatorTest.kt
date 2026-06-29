@@ -2,7 +2,9 @@ package com.example.madhdtracker.domain.logic
 
 import com.example.madhdtracker.data.EventValueEntity
 import com.example.madhdtracker.data.WeightEntity
+import com.example.madhdtracker.domain.model.AdaptationConfig
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 class IndexCalculatorTest {
@@ -65,6 +67,46 @@ class IndexCalculatorTest {
         val result = IndexCalculator.computeNegativeIndex(values, weights, setOf("stress_work"))
         // valueEffective = 1.0 → negativeIndex = 100.0 (maximum negatívneho správania)
         assertEquals(100.0, result ?: 0.0, 0.0001)
+    }
+
+    @Test
+    fun adaptWeights_usesAlphaFromAdaptationConfig() {
+        // sleep correlates positively, stress correlates negatively with overall_feeling.
+        // This creates net weight divergence that survives normalization.
+        val defaults = mapOf("sleep" to 15.0, "stress" to 13.0, "overall_feeling" to 13.0)
+        val current  = mapOf("sleep" to 15.0, "stress" to 13.0, "overall_feeling" to 13.0)
+        val history = (1..20).map { i ->
+            val v = if (i % 2 == 0) 1.0 else 0.0
+            mapOf("sleep" to v, "stress" to (1.0 - v), "overall_feeling" to v)
+        }
+
+        val configHighAlpha = AdaptationConfig(alpha = 0.5, clampMinFactor = 0.5, clampMaxFactor = 2.0,
+            correlationThreshold = 0.1, minHistoryDays = 15, minSeriesSize = 5)
+        val configLowAlpha = AdaptationConfig(alpha = 0.01, clampMinFactor = 0.5, clampMaxFactor = 2.0,
+            correlationThreshold = 0.1, minHistoryDays = 15, minSeriesSize = 5)
+
+        val resultHigh = IndexCalculator.adaptWeights(defaults, current, history, configHighAlpha)
+        val resultLow  = IndexCalculator.adaptWeights(defaults, current, history, configLowAlpha)
+
+        val rawSleep = 15.0
+        val deltaHigh = kotlin.math.abs((resultHigh["sleep"] ?: rawSleep) - rawSleep)
+        val deltaLow  = kotlin.math.abs((resultLow["sleep"]  ?: rawSleep) - rawSleep)
+        assert(deltaHigh > deltaLow) { "high alpha delta ($deltaHigh) should exceed low alpha delta ($deltaLow)" }
+        assert(deltaHigh > 0.0) { "high alpha should produce non-zero weight change, got $deltaHigh" }
+    }
+
+    @Test
+    fun adaptWeights_respectsMinHistoryDays() {
+        val defaults = mapOf("sleep" to 15.0, "overall_feeling" to 13.0)
+        val current  = mapOf("sleep" to 15.0, "overall_feeling" to 13.0)
+        val shortHistory = (1..5).map { mapOf("sleep" to 1.0, "overall_feeling" to 1.0) }
+
+        val config = AdaptationConfig(alpha = 0.2, clampMinFactor = 0.5, clampMaxFactor = 2.0,
+            correlationThreshold = 0.1, minHistoryDays = 10, minSeriesSize = 5)
+
+        val result = IndexCalculator.adaptWeights(defaults, current, shortHistory, config)
+        assertEquals("should return currentWeights unchanged when history < minHistoryDays",
+            current["sleep"]!!, result["sleep"]!!, 0.001)
     }
 
     @Test

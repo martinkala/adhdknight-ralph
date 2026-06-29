@@ -10,6 +10,7 @@ import com.example.madhdtracker.data.EventValueEntity
 import com.example.madhdtracker.data.SatisfactionEntity
 import com.example.madhdtracker.data.TrackerRepository
 import com.example.madhdtracker.domain.logic.IndexCalculator
+import com.example.madhdtracker.domain.model.ElementConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -18,20 +19,11 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 class TrackerViewModel(
-    private val repository: TrackerRepository
+    private val repository: TrackerRepository,
+    private val elementConfig: ElementConfig
 ) : ViewModel() {
 
-    val elements = listOf(
-        ElementUiState("overall_feeling", "Celkový pocit", true),
-        ElementUiState("sleep", "Spánok", false),
-        ElementUiState("physical_activity", "Fyzická aktivita", false),
-        ElementUiState("stress_work", "Stres v práci", false),
-        ElementUiState("stress_personal", "Stres v osobnom živote", false),
-        ElementUiState("nutrition_protein", "Strava proteíny", false),
-        ElementUiState("caffeine", "Čaj/káva", false),
-        ElementUiState("alcohol", "Alkohol", false),
-        ElementUiState("mindfulness", "Mindfulness/relax", false)
-    )
+    val elements: List<ElementUiState> = buildElementList(elementConfig)
 
     val selectedDate = mutableStateOf(LocalDate.now())
 
@@ -39,7 +31,7 @@ class TrackerViewModel(
         elements.forEach { element ->
             map[element.key] = ElementInputState(
                 binary = mutableStateOf(false),
-                detailEnabled = mutableStateOf(element.isSatisfaction),
+                detailEnabled = mutableStateOf(element.hasScale),
                 scale = mutableStateOf(3)
             )
         }
@@ -58,11 +50,11 @@ class TrackerViewModel(
                     val state = formStates[element.key] ?: return@forEach
                     if (entity != null) {
                         state.binary.value = entity.valueBinary == 1
-                        state.detailEnabled.value = entity.valueScale != null || element.isSatisfaction
+                        state.detailEnabled.value = entity.valueScale != null || element.hasScale
                         state.scale.value = entity.valueScale ?: 3
                     } else {
                         state.binary.value = false
-                        state.detailEnabled.value = element.isSatisfaction
+                        state.detailEnabled.value = element.hasScale
                         state.scale.value = 3
                     }
                 }
@@ -72,7 +64,7 @@ class TrackerViewModel(
 
     fun onDateSelected(date: LocalDate) {
         selectedDate.value = date
-        loadedDate = null  // force reload for new date
+        loadedDate = null
         loadForDate(date.format(DateTimeFormatter.ISO_LOCAL_DATE))
     }
 
@@ -105,12 +97,37 @@ class TrackerViewModel(
             repository.computeAndSaveWeeklyIndex()
         }
     }
+
+    companion object {
+        private fun buildElementList(elementConfig: ElementConfig): List<ElementUiState> {
+            val result = mutableListOf<ElementUiState>()
+            // overall_feeling first (root element)
+            elementConfig.elements["overall_feeling"]?.let { el ->
+                result.add(ElementUiState(el.key, el.description, el.scale != null))
+            }
+            // Remaining elements ordered by category
+            elementConfig.categories.keys.forEach { catKey ->
+                elementConfig.elements.values
+                    .filter { it.parent == catKey }
+                    .forEach { el ->
+                        result.add(ElementUiState(el.key, el.description, el.scale != null))
+                    }
+            }
+            // Any root elements other than overall_feeling
+            elementConfig.elements.values
+                .filter { it.parent == null && it.key != "overall_feeling" }
+                .forEach { el ->
+                    result.add(ElementUiState(el.key, el.description, el.scale != null))
+                }
+            return result.distinctBy { it.key }
+        }
+    }
 }
 
 data class ElementUiState(
     val key: String,
     val label: String,
-    val isSatisfaction: Boolean
+    val hasScale: Boolean
 )
 
 data class ElementInputState(
@@ -126,12 +143,13 @@ data class ElementValueInput(
 )
 
 class TrackerViewModelFactory(
-    private val repository: TrackerRepository
+    private val repository: TrackerRepository,
+    private val elementConfig: ElementConfig
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TrackerViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return TrackerViewModel(repository) as T
+            return TrackerViewModel(repository, elementConfig) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

@@ -25,6 +25,8 @@ import com.example.madhdtracker.data.TrackerRepository
 import com.example.madhdtracker.data.repository.PreferencesRepository
 import com.example.madhdtracker.notifications.NotificationRules
 import com.example.madhdtracker.notifications.NotificationScheduler
+import com.example.madhdtracker.ui.EntityManagementViewModel
+import com.example.madhdtracker.ui.EntityManagementViewModelFactory
 import com.example.madhdtracker.ui.HomeViewModel
 import com.example.madhdtracker.ui.HomeViewModelFactory
 import com.example.madhdtracker.ui.NotificationHelper
@@ -35,6 +37,8 @@ import com.example.madhdtracker.ui.TrendViewModelFactory
 import com.example.madhdtracker.ui.VectorViewModel
 import com.example.madhdtracker.ui.VectorViewModelFactory
 import com.example.madhdtracker.ui.PermissionHelper
+import com.example.madhdtracker.data.AppConfigLoader
+import com.example.madhdtracker.data.EntityConfigLoader
 import com.example.madhdtracker.ui.navigation.AppNavGraph
 import com.example.madhdtracker.ui.navigation.AppRoutes
 import com.example.madhdtracker.ui.theme.AppTheme
@@ -66,10 +70,12 @@ private fun AppRoot() {
         Room.databaseBuilder(context, AppDatabase::class.java, "adhd_tracker.db")
             .build()
     }
-    val repository = remember { TrackerRepository(db) }
+    val appConfig = remember { AppConfigLoader.load(context.assets) }
+    val elementConfig = remember { EntityConfigLoader.load(context.assets) }
+    val repository = remember { TrackerRepository(db, appConfig, elementConfig) }
     val navController = rememberNavController()
     val trackerViewModel: TrackerViewModel = viewModel(
-        factory = TrackerViewModelFactory(repository)
+        factory = TrackerViewModelFactory(repository, elementConfig)
     )
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModelFactory(repository)
@@ -80,12 +86,16 @@ private fun AppRoot() {
     val vectorViewModel: VectorViewModel = viewModel(
         factory = VectorViewModelFactory(repository)
     )
+    val entityManagementViewModel: EntityManagementViewModel = viewModel(
+        factory = EntityManagementViewModelFactory(repository)
+    )
 
     PermissionHelper.RequestPostNotificationsPermission()
 
     LaunchedEffect(Unit) {
         val prefs = PreferencesRepository(context)
-        if (prefs.areNotificationsEnabled() && !NotificationRules.isQuietWindow(LocalTime.now())) {
+        val notifRules = NotificationRules(appConfig.notification, elementConfig.elements.keys)
+        if (prefs.areNotificationsEnabled() && !notifRules.isQuietWindow(LocalTime.now())) {
             val decision = withContext(Dispatchers.IO) { repository.evaluateNotification() }
             if (decision != null) {
                 NotificationHelper.send(context, "mADHD Tracker", decision.message)
@@ -105,6 +115,7 @@ private fun AppRoot() {
                 homeViewModel = homeViewModel,
                 trendViewModel = trendViewModel,
                 vectorViewModel = vectorViewModel,
+                entityManagementViewModel = entityManagementViewModel,
                 repository = repository
             )
         }

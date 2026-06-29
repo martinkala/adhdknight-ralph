@@ -1,24 +1,30 @@
 package com.example.madhdtracker.data
 
+import com.example.madhdtracker.domain.logic.AsrsRecalibrator
 import com.example.madhdtracker.domain.logic.IndexCalculator
 import com.example.madhdtracker.domain.logic.WeeklySummaryCalculator
+import com.example.madhdtracker.domain.model.AppConfig
+import com.example.madhdtracker.domain.model.Element
+import com.example.madhdtracker.domain.model.ElementConfig
 import com.example.madhdtracker.notifications.NotificationRules
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.Locale
 
 class TrackerRepository(
-    private val db: AppDatabase
+    private val db: AppDatabase,
+    private val appConfig: AppConfig,
+    val elementConfig: ElementConfig
 ) {
     suspend fun seedDefaultWeightsIfEmpty() {
         val existing = db.weightsDao().getAll()
         if (existing.isNotEmpty()) return
 
         val now = OffsetDateTime.now().toString()
-        val weights = DefaultWeights.weights.map { (key, value) ->
+        val weights = elementConfig.elements.map { (key, element) ->
             WeightEntity(
                 elementKey = key,
-                weightDefault = value,
+                weightDefault = element.weight,
                 weightPersonal = null,
                 updatedAt = now
             )
@@ -53,16 +59,30 @@ class TrackerRepository(
         db.satisfactionDao().upsert(satisfaction)
     }
 
+    suspend fun getActiveElementKeys(): Set<String> {
+        val overrides = db.userElementOverrideDao().getAll()
+        val userElements = db.userElementDao().getAll().filter { it.isActive }
+        val userKeys = userElements.map { it.key }.toSet()
+        return computeActiveKeys(elementConfig, overrides) + userKeys
+    }
+
+    suspend fun setElementActive(key: String, active: Boolean) {
+        db.userElementOverrideDao().upsert(UserElementOverrideEntity(elementKey = key, isActive = active))
+    }
+
     suspend fun computeAndSaveDailyIndex(dayId: Long) {
         val values = db.eventValueDao().getByDay(dayId)
         val weights = db.weightsDao().getAll().associateBy { it.elementKey }
-        if (values.isEmpty() || weights.isEmpty()) return
+        if (values.isEmpty()) return
 
-        val indexValue = IndexCalculator.computeDailyIndex(values, weights, DefaultWeights.negativeKeys)
-            ?: return
-        val positiveKeys = DefaultWeights.weights.keys - DefaultWeights.negativeKeys
-        val positiveIndex = IndexCalculator.computePositiveIndex(values, weights, positiveKeys)
-        val negativeIndex = IndexCalculator.computeNegativeIndex(values, weights, DefaultWeights.negativeKeys)
+        val activeKeys = getActiveElementKeys()
+        val activeValues = values.filter { it.elementKey in activeKeys }
+        if (activeValues.isEmpty()) return
+
+        val effectiveConfig = getEffectiveElementConfig()
+        val indexValue = IndexCalculator.computeDailyIndexGrouped(activeValues, effectiveConfig, activeKeys) ?: return
+        val positiveIndex = IndexCalculator.computePositiveIndex(activeValues, weights, effectiveConfig.positiveKeys)
+        val negativeIndex = IndexCalculator.computeNegativeIndex(activeValues, weights, effectiveConfig.negativeKeys)
         db.indexDao().insertDaily(
             IndexDailyEntity(
                 eventDayId = dayId,
@@ -78,17 +98,12 @@ class TrackerRepository(
         return Pair(latest.positiveIndex, latest.negativeIndex)
     }
 
-    suspend fun getLatestDualIndexSeries(limit: Int): List<DailySubIndexRow> {
-        return db.indexDao().getLatestDualWithDate(limit)
-    }
+    suspend fun getLatestDualIndexSeries(limit: Int): List<DailySubIndexRow> =
+        db.indexDao().getLatestDualWithDate(limit)
 
-    suspend fun getLatestDailyIndex(): Double? {
-        return db.indexDao().getLatestDaily()?.indexValue
-    }
+    suspend fun getLatestDailyIndex(): Double? = db.indexDao().getLatestDaily()?.indexValue
 
-    suspend fun getLatestSatisfaction(): Int? {
-        return db.satisfactionDao().getLatest()?.valueScale
-    }
+    suspend fun getLatestSatisfaction(): Int? = db.satisfactionDao().getLatest()?.valueScale
 
     suspend fun getLatestCompletionCounts(): Pair<Int, Int>? {
         val day = db.eventDayDao().getLatest() ?: return null
@@ -99,9 +114,8 @@ class TrackerRepository(
         return completed to filtered.size
     }
 
-    suspend fun getLatestDailySeries(limit: Int): List<DailyIndexRow> {
-        return db.indexDao().getLatestDailyWithDate(limit)
-    }
+    suspend fun getLatestDailySeries(limit: Int): List<DailyIndexRow> =
+        db.indexDao().getLatestDailyWithDate(limit)
 
     suspend fun computeAndSaveWeeklyIndex() {
         val recent = db.indexDao().getLatestDailyWithDate(7)
@@ -110,6 +124,19 @@ class TrackerRepository(
         val weekStart = WeeklySummaryCalculator.weekStart(recent) ?: return
         val weekEnd = WeeklySummaryCalculator.weekEnd(recent) ?: return
         db.indexDao().insertWeekly(IndexWeeklyEntity(weekStart = weekStart, weekEnd = weekEnd, indexValue = avg))
+    }
+
+    suspend fun evaluateAsrsRecalibration(): Double {
+        val checkins = db.asrsDao().getRecent(appConfig.asrs.consecutiveMeasurements)
+        val recent14 = db.indexDao().getLatestDailyWithDate(14)
+        if (checkins.isEmpty() || recent14.isEmpty()) return appConfig.adaptation.alpha
+        val asrsScores = checkins.map { it.scoreNormalized.toInt() }
+        val indexAverages = recent14.map { it.indexValue }
+        return if (AsrsRecalibrator.shouldRecalibrate(asrsScores, indexAverages, appConfig.asrs)) {
+            AsrsRecalibrator.alphaForRecalibration(appConfig.asrs)
+        } else {
+            appConfig.adaptation.alpha
+        }
     }
 
     suspend fun getValuesForDate(date: String): Map<String, EventValueEntity> {
@@ -132,23 +159,19 @@ class TrackerRepository(
         val last = db.notificationLogDao().getLatest()
         if (last != null && last.sentAt.startsWith(today)) return null
 
-        val todayDay = db.eventDayDao().getByDate(today)
-        if (NotificationRules.dailyReminderNeeded(todayDay)) {
-            return NotificationRules.buildDailyDecision()
-        }
+        val rules = NotificationRules(appConfig.notification, elementConfig.elements.keys)
 
-        val days = db.eventDayDao().getLatestDays(3)
-        if (days.size < 3) return null
+        val todayDay = db.eventDayDao().getByDate(today)
+        if (rules.dailyReminderNeeded(todayDay)) return rules.buildDailyDecision()
+
+        val days = db.eventDayDao().getLatestDays(appConfig.notification.stressRecoveryDays)
+        if (days.size < appConfig.notification.stressRecoveryDays) return null
         val valuesByDay = days.associate { day -> day.id to db.eventValueDao().getByDay(day.id) }
 
-        if (NotificationRules.stressRecoveryNeeded(days, valuesByDay)) {
-            return NotificationRules.buildStressDecision()
-        }
+        if (rules.stressRecoveryNeeded(days, valuesByDay)) return rules.buildStressDecision()
 
-        val neglectedKey = NotificationRules.neglectedArea(days, valuesByDay)
-        if (neglectedKey != null) {
-            return NotificationRules.buildNeglectedDecision(neglectedKey)
-        }
+        val neglectedKey = rules.neglectedArea(days, valuesByDay)
+        if (neglectedKey != null) return rules.buildNeglectedDecision(neglectedKey)
 
         return null
     }
@@ -158,6 +181,39 @@ class TrackerRepository(
         db.notificationLogDao().insert(
             NotificationLogEntity(eventDayId = eventDayId, type = type, sentAt = now)
         )
+    }
+
+    suspend fun addUserElement(
+        key: String,
+        weight: Double,
+        impact: Int,
+        parentCategory: String,
+        description: String?,
+        scale: List<Int>?
+    ): Boolean {
+        if (elementConfig.elements.containsKey(key)) return false
+        val existing = db.userElementDao().getAll().any { it.key == key }
+        if (existing) return false
+        val scaleStr = scale?.joinToString(",")
+        db.userElementDao().insert(
+            UserElementEntity(
+                key = key,
+                weight = weight,
+                impact = impact,
+                parentCategory = parentCategory,
+                description = description,
+                scale = scaleStr,
+                isActive = true
+            )
+        )
+        return true
+    }
+
+    suspend fun getUserElements(): List<UserElementEntity> = db.userElementDao().getAll()
+
+    suspend fun removeUserElement(key: String) {
+        val elements = db.userElementDao().getAll().filter { it.key == key }
+        elements.forEach { db.userElementDao().delete(it) }
     }
 
     suspend fun exportAll(): String {
@@ -187,5 +243,39 @@ class TrackerRepository(
             """{"date":"${day.date}","values":[${valuesJson}]${satisfactionJson}}"""
         }
         return "[${items.joinToString(",")}]"
+    }
+
+    private suspend fun getEffectiveElementConfig(): ElementConfig {
+        val userElements = db.userElementDao().getAll().filter { it.isActive }
+        if (userElements.isEmpty()) return elementConfig
+        val extraElements = userElements.associate { entity ->
+            val scale = entity.scale?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.takeIf { it.size >= 2 }
+            entity.key to Element(
+                key = entity.key,
+                weight = entity.weight,
+                impact = entity.impact,
+                parent = entity.parentCategory,
+                description = entity.description ?: entity.key,
+                active = entity.isActive,
+                scale = scale
+            )
+        }
+        return ElementConfig(
+            categories = elementConfig.categories,
+            elements = elementConfig.elements + extraElements
+        )
+    }
+
+    companion object {
+        internal fun computeActiveKeys(
+            elementConfig: ElementConfig,
+            overrides: List<UserElementOverrideEntity>
+        ): Set<String> {
+            val overrideMap = overrides.associateBy { it.elementKey }
+            return elementConfig.elements.keys.filter { key ->
+                val override = overrideMap[key]
+                override?.isActive ?: (elementConfig.elements[key]?.active ?: true)
+            }.toSet()
+        }
     }
 }

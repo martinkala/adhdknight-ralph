@@ -1,0 +1,38 @@
+{
+  "weights": {
+    "overall_feeling":   13.0,
+    "sleep":             10.0,
+    "physical_activity": 11.0,
+    "stress_work":       13.0,
+    "stress_personal":   13.0,
+    "nutrition_protein":  8.0,
+    "caffeine":           6.0,
+    "alcohol":           10.0,
+    "mindfulness":       11.0
+  },
+  "element_classification": {
+    "negative_keys": ["stress_work", "stress_personal", "alcohol", "caffeine"]
+  },
+  "adaptation": {
+    "alpha":                 0.2,
+    "clamp_min_factor":      0.5,
+    "clamp_max_factor":      2.0,
+    "correlation_threshold": 0.1,
+    "min_history_days":      15,
+    "min_series_size":        5
+  },
+  "asrs": {
+    "delta_threshold":          10.0,
+    "consecutive_measurements":  2,
+    "recalibration_alpha":       0.3
+  },
+  "notification": {
+    "quiet_start_hour":    22,
+    "quiet_start_minute":   0,
+    "quiet_end_hour":       8,
+    "quiet_end_minute":     0,
+    "stress_threshold_scale": 4,
+    "neglected_area_days":  3,
+    "stress_recovery_days": 3
+  }
+}

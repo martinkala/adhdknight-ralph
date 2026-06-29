@@ -1,0 +1,122 @@
+categories:
+  sleep:
+    label: "Spánok"
+    clickable: true
+    weight: 15.0
+
+  physical_activity:
+    label: "Fyzická aktivita"
+    clickable: true
+    weight: 11.0
+
+  lifestyle:
+    label: "Životný štýl"
+    clickable: false
+    weight: 42.0
+
+  head:
+    label: "Mentálne aktivity"
+    clickable: false
+    weight: 11.0
+
+  food:
+    label: "Strava"
+    clickable: false
+    weight: 8.0
+
+  organisation:
+    label: "Organizasia uloh"
+    clickable: false
+    weight: 8.0
+
+elements:
+  overall_feeling:
+    weight: 13.0
+    impact: 1
+    parent: null
+    description: "Celkový pocit za deň"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  sleep:
+    weight: 15.0
+    impact: 1
+    parent: sleep
+    description: "Kvalitný spánok"
+    active: true
+
+  physical_activity:
+    weight: 11.0
+    impact: 1
+    parent: physical_activity
+    description: "Fyzická aktivita"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  stress_work:
+    weight: 13.0
+    impact: -1
+    parent: lifestyle
+    description: "Pracovný stres"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  stress_personal:
+    weight: 13.0
+    impact: -1
+    parent: lifestyle
+    description: "Osobný stres"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  caffeine:
+    weight: 6.0
+    impact: -1
+    parent: food
+    description: "Kofeín"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  alcohol:
+    weight: 10.0
+    impact: -1
+    parent: food
+    description: "Alkohol"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  nutrition_protein:
+    weight: 8.0
+    impact: 1
+    parent: food
+    description: "Príjem bielkovín"
+    active: true
+
+  vitamins:
+    weight: 4.0
+    impact: 1
+    parent: food
+    description: "Vitamins"
+    active: true
+
+  mindfulness:
+    weight: 11.0
+    impact: 1
+    parent: head
+    description: "Mindfulness / meditácia"
+    active: true
+
+  pomodoro:
+    weight: 11.0
+    impact: 1
+    parent: organisation
+    description: "Pomodoro"
+    active: true
+
+  Adiction:
+    weight: 15.0
+    impact: -1
+    parent: head
+    description: "Zavislosti"
+    active: true
+    scale: [1, 2, 3, 4, 5]

@@ -107,3 +107,21 @@ data class AsrsCheckinEntity(
     val scoreRaw: Int,
     val scoreNormalized: Double
 )
+
+@Entity(tableName = "user_element_override")
+data class UserElementOverrideEntity(
+    @PrimaryKey val elementKey: String,
+    val isActive: Boolean
+)
+
+@Entity(tableName = "user_element")
+data class UserElementEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val key: String,
+    val weight: Double,
+    val impact: Int,
+    val parentCategory: String,
+    val description: String?,
+    val scale: String?,
+    val isActive: Boolean
+)

@@ -28,7 +28,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     repository: TrackerRepository,
-    onOpenNotifications: () -> Unit = {}
+    onOpenNotifications: () -> Unit = {},
+    onOpenEntities: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val detailed = remember { mutableStateOf(true) }
@@ -44,6 +45,15 @@ fun SettingsScreen(
                 Text(text = "Nastav jemne pripomenutia a tiche okno.", style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 TextButton(onClick = onOpenNotifications) { Text("Otvorit nastavenia") }
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(text = "Entity", style = MaterialTheme.typography.titleMedium)
+                Text(text = "Spravuj aktívne entity a pridaj vlastné.", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(6.dp))
+                TextButton(onClick = onOpenEntities) { Text("Spravovať entity") }
             }
         }
 

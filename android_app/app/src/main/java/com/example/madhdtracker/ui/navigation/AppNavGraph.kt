@@ -6,11 +6,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.example.madhdtracker.ui.EntityManagementViewModel
 import com.example.madhdtracker.ui.HomeViewModel
 import com.example.madhdtracker.ui.TrackerViewModel
 import com.example.madhdtracker.ui.TrendViewModel
 import com.example.madhdtracker.ui.VectorViewModel
 import com.example.madhdtracker.ui.screens.ActivityDetailScreen
+import com.example.madhdtracker.ui.screens.EntityManagementScreen
 import com.example.madhdtracker.ui.screens.HomeScreen
 import com.example.madhdtracker.ui.screens.NotificationSettingsScreen
 import com.example.madhdtracker.ui.screens.SettingsScreen
@@ -28,6 +30,7 @@ object AppRoutes {
     const val SETTINGS = "settings"
     const val NOTIFICATIONS = "notifications"
     const val ACTIVITY_DETAIL = "activity/{key}"
+    const val ENTITIES = "entities"
 
     fun activityDetail(key: String): String = "activity/$key"
     fun vectorForDate(date: String): String = "vector/$date"
@@ -40,6 +43,7 @@ fun AppNavGraph(
     homeViewModel: HomeViewModel,
     trendViewModel: TrendViewModel,
     vectorViewModel: VectorViewModel,
+    entityManagementViewModel: EntityManagementViewModel,
     repository: TrackerRepository
 ) {
     val elementLabels = remember(trackerViewModel.elements) {
@@ -80,7 +84,12 @@ fun AppNavGraph(
         composable(AppRoutes.SETTINGS) {
             SettingsScreen(repository, onOpenNotifications = {
                 navController.navigate(AppRoutes.NOTIFICATIONS)
+            }, onOpenEntities = {
+                navController.navigate(AppRoutes.ENTITIES)
             })
+        }
+        composable(AppRoutes.ENTITIES) {
+            EntityManagementScreen(entityManagementViewModel)
         }
         composable(AppRoutes.NOTIFICATIONS) {
             NotificationSettingsScreen()

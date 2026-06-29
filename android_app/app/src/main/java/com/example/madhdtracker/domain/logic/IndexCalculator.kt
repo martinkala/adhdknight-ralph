@@ -2,6 +2,8 @@ package com.example.madhdtracker.domain.logic
 
 import com.example.madhdtracker.data.EventValueEntity
 import com.example.madhdtracker.data.WeightEntity
+import com.example.madhdtracker.domain.model.AdaptationConfig
+import com.example.madhdtracker.domain.model.ElementConfig
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -31,25 +33,74 @@ object IndexCalculator {
         return (weightedSum / weightSum) * 100.0
     }
 
+    fun computeDailyIndexGrouped(
+        values: List<EventValueEntity>,
+        elementConfig: ElementConfig,
+        activeKeys: Set<String>
+    ): Double? {
+        if (values.isEmpty()) return null
+
+        val activeValues = values.filter { it.elementKey in activeKeys }
+        if (activeValues.isEmpty()) return null
+
+        val valueMap = activeValues.associateBy { it.elementKey }
+        var totalContribution = 0.0
+        var totalWeight = 0.0
+
+        // Root elements (parent == null) contribute directly
+        elementConfig.elements.values
+            .filter { it.parent == null && it.key in activeKeys }
+            .forEach { element ->
+                val v = valueMap[element.key] ?: return@forEach
+                val effective = if (element.impact < 0) 1.0 - v.valueEffective else v.valueEffective
+                totalContribution += element.weight * effective
+                totalWeight += element.weight
+            }
+
+        // Category groups: group_avg × category.weight
+        val elementsByCategory = elementConfig.elements.values
+            .filter { it.parent != null && it.key in activeKeys }
+            .groupBy { it.parent!! }
+
+        elementsByCategory.forEach { (categoryKey, elements) ->
+            val category = elementConfig.categories[categoryKey] ?: return@forEach
+            var groupWeightedSum = 0.0
+            var groupWeightSum = 0.0
+            elements.forEach elementLoop@{ element ->
+                val v = valueMap[element.key] ?: return@elementLoop
+                val effective = if (element.impact < 0) 1.0 - v.valueEffective else v.valueEffective
+                groupWeightedSum += element.weight * effective
+                groupWeightSum += element.weight
+            }
+            if (groupWeightSum <= 0.0) return@forEach
+            val groupAvg = groupWeightedSum / groupWeightSum
+            totalContribution += groupAvg * category.weight
+            totalWeight += category.weight
+        }
+
+        if (totalWeight <= 0.0) return null
+        return (totalContribution / totalWeight) * 100.0
+    }
+
     fun adaptWeights(
         defaultWeights: Map<String, Double>,
         currentWeights: Map<String, Double>,
         history: List<Map<String, Double>>,
-        overallKey: String = "overall_feeling",
-        alpha: Double = 0.2
+        adaptation: AdaptationConfig,
+        overallKey: String = "overall_feeling"
     ): Map<String, Double> {
-        if (history.size < 15) return currentWeights
+        if (history.size < adaptation.minHistoryDays) return currentWeights
         val overallSeries = history.mapNotNull { it[overallKey] }
-        if (overallSeries.size < 5) return currentWeights
+        if (overallSeries.size < adaptation.minSeriesSize) return currentWeights
 
         val updated = currentWeights.mapValues { (key, current) ->
             val series = history.mapNotNull { it[key] }
-            if (series.size < 5 || series.size != overallSeries.size) return@mapValues current
+            if (series.size < adaptation.minSeriesSize || series.size != overallSeries.size) return@mapValues current
             val corr = pearson(series, overallSeries)
-            if (abs(corr) < 0.1) return@mapValues current
+            if (abs(corr) < adaptation.correlationThreshold) return@mapValues current
             val base = defaultWeights[key] ?: current
-            val next = current * (1 + alpha * corr)
-            clamp(next, 0.5 * base, 2.0 * base)
+            val next = current * (1 + adaptation.alpha * corr)
+            clamp(next, adaptation.clampMinFactor * base, adaptation.clampMaxFactor * base)
         }
 
         val defaultSum = defaultWeights.values.sum().takeIf { it > 0 } ?: return updated

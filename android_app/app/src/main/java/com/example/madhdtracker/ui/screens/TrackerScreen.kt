@@ -62,8 +62,8 @@ fun TrackerScreen(
                     val date = viewModel.selectedDate.value.format(formatter)
                     val inputs = viewModel.elements.map { element ->
                         val state = viewModel.formStates.getValue(element.key)
-                        val scale = if (element.isSatisfaction || state.detailEnabled.value) state.scale.value else null
-                        val binary = if (element.isSatisfaction) {
+                        val scale = if (element.hasScale || state.detailEnabled.value) state.scale.value else null
+                        val binary = if (element.hasScale) {
                             if (state.scale.value >= 3) 1 else 0
                         } else {
                             if (state.binary.value) 1 else 0
@@ -105,7 +105,7 @@ fun TrackerScreen(
                         modifier = Modifier.clickable { onActivityClick(element.key) }
                     )
 
-                    if (element.isSatisfaction) {
+                    if (element.hasScale) {
                         Text(text = "Povinné hodnotenie 1–5", style = MaterialTheme.typography.labelMedium)
                         Slider(
                             value = state.scale.value.toFloat(),
