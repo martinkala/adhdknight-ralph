@@ -28,9 +28,9 @@ class TrendViewModel(
             val avg = if (data.isNotEmpty()) data.map { it.indexValue }.average() else null
             val dual = repository.getLatestDualIndexSeries(7)
             withContext(Dispatchers.Main) {
-                series.value = data.reversed()
+                series.value = data
                 weeklyAverage.value = avg
-                dualSeries.value = dual.reversed()
+                dualSeries.value = dual
             }
         }
     }

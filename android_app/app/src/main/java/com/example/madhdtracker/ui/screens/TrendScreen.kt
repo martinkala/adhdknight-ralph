@@ -79,8 +79,19 @@ fun TrendScreen(viewModel: TrendViewModel, onDayClick: (String) -> Unit = {}) {
         }
 
         Spacer(modifier = Modifier.height(12.dp))
+        // US2: farebné pozadie riadkov podľa indexu (>=50 zelené, <50 červené)
         series.forEach { row ->
-            Text(text = "${row.date}: ${row.indexValue.roundToInt()}", style = MaterialTheme.typography.bodyMedium)
+            val rowColor = if (row.indexValue >= 50.0) Color(0x1A4CAF50) else Color(0x1AF44336)
+            Card(
+                colors = CardDefaults.cardColors(containerColor = rowColor),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+            ) {
+                Text(
+                    text = "${row.date}: ${row.indexValue.roundToInt()}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
         }
     }
 }

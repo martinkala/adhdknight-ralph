@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,6 +51,24 @@ fun TrackerScreen(
         viewModel.loadForDate(viewModel.selectedDate.value.format(formatter))
     }
 
+    // US3: extrahovaná save logika — zdieľaná medzi horným a dolným tlačidlom
+    val onSave: () -> Unit = {
+        val date = viewModel.selectedDate.value.format(formatter)
+        val inputs = viewModel.elements.map { element ->
+            val state = viewModel.formStates.getValue(element.key)
+            val scale = if (element.hasScale || state.detailEnabled.value) state.scale.value else null
+            val binary = if (element.hasScale) {
+                if (state.scale.value >= 3) 1 else 0
+            } else {
+                if (state.binary.value) 1 else 0
+            }
+            ElementValueInput(elementKey = element.key, valueBinary = binary, valueScale = scale)
+        }
+        val satisfactionScale = viewModel.formStates.getValue("overall_feeling").scale.value
+        viewModel.saveDay(date, inputs, satisfactionScale)
+        onSaved()
+    }
+
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -57,24 +76,7 @@ fun TrackerScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "Denný tracker", style = MaterialTheme.typography.titleLarge)
-            Button(
-                onClick = {
-                    val date = viewModel.selectedDate.value.format(formatter)
-                    val inputs = viewModel.elements.map { element ->
-                        val state = viewModel.formStates.getValue(element.key)
-                        val scale = if (element.hasScale || state.detailEnabled.value) state.scale.value else null
-                        val binary = if (element.hasScale) {
-                            if (state.scale.value >= 3) 1 else 0
-                        } else {
-                            if (state.binary.value) 1 else 0
-                        }
-                        ElementValueInput(elementKey = element.key, valueBinary = binary, valueScale = scale)
-                    }
-                    val satisfactionScale = viewModel.formStates.getValue("overall_feeling").scale.value
-                    viewModel.saveDay(date, inputs, satisfactionScale)
-                    onSaved()
-                }
-            ) {
+            Button(onClick = onSave) {
                 Text(text = "Uložiť deň")
             }
         }
@@ -94,8 +96,10 @@ fun TrackerScreen(
         viewModel.elements.forEach { element ->
             val state = viewModel.formStates.getValue(element.key)
 
+            // US4: pastelové pozadie podľa impact z EntityConfig
+            val sectionColor = if (element.impact == 1) Color(0x1A4CAF50) else Color(0x1AF44336)
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = CardDefaults.cardColors(containerColor = sectionColor),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -151,6 +155,15 @@ fun TrackerScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
+        // US3: druhé tlačidlo Uložiť deň dole pre používateľov odscrollovaných na spodok
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = onSave,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Uložiť deň")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
     if (showDatePicker.value) {

@@ -2,7 +2,6 @@ package com.example.madhdtracker.ui.screens
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,7 +22,8 @@ fun VectorScreen(viewModel: VectorViewModel, date: String? = null) {
     }
 
     val entities = viewModel.entities.value
-    val title = if (date != null) "Radar – $date" else "Radar – detail"
+    // US7: premenovanie titulku z "Radar" na "Denný detail"
+    val title = if (date != null) "Denný detail – $date" else "Denný detail – detail"
 
     Column(
         modifier = Modifier
@@ -33,10 +33,11 @@ fun VectorScreen(viewModel: VectorViewModel, date: String? = null) {
         Text(text = title, style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
 
-        RadarChart(
-            values = RADAR_AXES.map { (key, _) -> radarValue(entities[key]) },
-            labels = RADAR_AXES.map { it.second },
-            modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+        // US1: EntityDoubleBarChart namiesto RadarChart
+        EntityDoubleBarChart(
+            entities = entities,
+            elementConfig = viewModel.elementConfig,
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))

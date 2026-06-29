@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -73,17 +72,21 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
                     }
                 }
 
-                // ADHD index — sekundárny (titleMedium)
-                Text(text = "Denný ADHD index", style = MaterialTheme.typography.labelMedium)
-                Text(text = indexText, style = MaterialTheme.typography.titleMedium)
-
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Column {
+                // US5: kompaktné metriky — tri na jednej úrovni
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = "ADHD index", style = MaterialTheme.typography.labelMedium)
+                        Text(text = indexText, style = MaterialTheme.typography.titleMedium)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(text = "Spokojnosť", style = MaterialTheme.typography.labelMedium)
                         Text(text = satisfactionText, style = MaterialTheme.typography.titleMedium)
                     }
-                    Column {
-                        Text(text = "Splnené", style = MaterialTheme.typography.labelMedium)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = "Vyplnené", style = MaterialTheme.typography.labelMedium)
                         Text(text = completionText, style = MaterialTheme.typography.titleMedium)
                     }
                 }
@@ -100,24 +103,18 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
             }
         }
 
+        // US1: EntityDoubleBarChart namiesto RadarChart
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text(text = "Radar", style = MaterialTheme.typography.labelMedium)
+                Text(text = "Denný prehľad entít", style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
-                RadarChart(
-                    values = RADAR_AXES.map { (key, _) -> radarValue(entities[key]) },
-                    labels = RADAR_AXES.map { it.second },
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+                EntityDoubleBarChart(
+                    entities = entities,
+                    elementConfig = viewModel.elementConfig,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
-
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f))) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "Tip dňa", style = MaterialTheme.typography.labelMedium)
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(text = "Vyplnenie trackera trvá ~1–2 minúty.", style = MaterialTheme.typography.bodyMedium)
-            }
-        }
+        // US6: "Tip dňa" karta bola odstránená
     }
 }

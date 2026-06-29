@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.madhdtracker.data.EventValueEntity
 import com.example.madhdtracker.data.TrackerRepository
+import com.example.madhdtracker.domain.model.ElementConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -13,6 +14,8 @@ import kotlinx.coroutines.withContext
 class HomeViewModel(
     private val repository: TrackerRepository
 ) : ViewModel() {
+    val elementConfig: ElementConfig get() = repository.elementConfig
+
     val indexValue = mutableStateOf<Double?>(null)
     val satisfactionValue = mutableStateOf<Int?>(null)
     val completionText = mutableStateOf<String?>(null)

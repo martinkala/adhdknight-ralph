@@ -103,21 +103,21 @@ class TrackerViewModel(
             val result = mutableListOf<ElementUiState>()
             // overall_feeling first (root element)
             elementConfig.elements["overall_feeling"]?.let { el ->
-                result.add(ElementUiState(el.key, el.description, el.scale != null))
+                result.add(ElementUiState(el.key, el.description, el.scale != null, el.impact))
             }
             // Remaining elements ordered by category
             elementConfig.categories.keys.forEach { catKey ->
                 elementConfig.elements.values
                     .filter { it.parent == catKey }
                     .forEach { el ->
-                        result.add(ElementUiState(el.key, el.description, el.scale != null))
+                        result.add(ElementUiState(el.key, el.description, el.scale != null, el.impact))
                     }
             }
             // Any root elements other than overall_feeling
             elementConfig.elements.values
                 .filter { it.parent == null && it.key != "overall_feeling" }
                 .forEach { el ->
-                    result.add(ElementUiState(el.key, el.description, el.scale != null))
+                    result.add(ElementUiState(el.key, el.description, el.scale != null, el.impact))
                 }
             return result.distinctBy { it.key }
         }
@@ -127,7 +127,8 @@ class TrackerViewModel(
 data class ElementUiState(
     val key: String,
     val label: String,
-    val hasScale: Boolean
+    val hasScale: Boolean,
+    val impact: Int
 )
 
 data class ElementInputState(
