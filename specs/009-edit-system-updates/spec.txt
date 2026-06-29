@@ -1,0 +1,9 @@
+Cielom je upravit editaciu entit tak aby bola kozistentna.
+v grafe sa zobrazuju aj polozky, ktore nemaju switch on of, iba posuvny bar.
+u tych poloziek nieje mozne ich vypnut a zabrazia sa aj ked ich uzivatel nezvolil, toto je aktualny neziaduci stav.
+
+navrhni mi upravu , v ktorej bude zadavanie poloziek jednotne
+Idealne aby kazda polozka mam svoj on off swotch a potom sa zobrazi posubny bar.
+
+nalizyj dopad a navrhni mi pripadne dalsie 2 mozosut a ohodnt ich ratigom 1-3 z pohladu uzivateksjegi komfortu  
+

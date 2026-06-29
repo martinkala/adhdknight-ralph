@@ -31,7 +31,7 @@ class TrackerViewModel(
         elements.forEach { element ->
             map[element.key] = ElementInputState(
                 binary = mutableStateOf(false),
-                detailEnabled = mutableStateOf(element.hasScale),
+                detailEnabled = mutableStateOf(element.key == "overall_feeling"),
                 scale = mutableStateOf(3)
             )
         }
@@ -49,12 +49,12 @@ class TrackerViewModel(
                     val entity = entities[element.key]
                     val state = formStates[element.key] ?: return@forEach
                     if (entity != null) {
-                        state.binary.value = entity.valueBinary == 1
-                        state.detailEnabled.value = entity.valueScale != null || element.hasScale
+                        state.binary.value = entity.valueBinary == 1 || entity.valueScale != null
+                        state.detailEnabled.value = element.key == "overall_feeling"
                         state.scale.value = entity.valueScale ?: 3
                     } else {
                         state.binary.value = false
-                        state.detailEnabled.value = element.hasScale
+                        state.detailEnabled.value = element.key == "overall_feeling"
                         state.scale.value = 3
                     }
                 }

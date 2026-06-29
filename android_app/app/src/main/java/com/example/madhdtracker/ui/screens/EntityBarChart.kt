@@ -38,6 +38,10 @@ private fun buildBarEntries(
 ): List<BarEntry> {
     return elementConfig.elements
         .filter { (key, _) -> key != "overall_feeling" }
+        .filter { (key, _) ->
+            val entity = entities[key]
+            entity != null && (entity.valueBinary == 1 || entity.valueScale != null)
+        }
         .map { (key, el) ->
             val entity = entities[key]
             val value = radarValue(entity)
@@ -84,6 +88,14 @@ fun EntityDoubleBarChart(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
             )
+            if (negEntries.isEmpty()) {
+                Text(
+                    text = "–",
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                )
+            }
             negEntries.forEach { entry ->
                 val fraction = (entry.value / maxVal).toFloat().coerceIn(0.01f, 1f)
                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = rowPadding)) {
@@ -126,6 +138,14 @@ fun EntityDoubleBarChart(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
             )
+            if (posEntries.isEmpty()) {
+                Text(
+                    text = "–",
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                )
+            }
             posEntries.forEach { entry ->
                 val fraction = (entry.value / maxVal).toFloat().coerceIn(0.01f, 1f)
                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = rowPadding)) {
