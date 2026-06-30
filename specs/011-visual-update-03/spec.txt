@@ -1,0 +1,29 @@
+Ciel 1
+Na stranke denny detial zobraz kolacovy graf z vsetkymi vyplnenym aktivitami
+
+
+Ciel 2
+V dual bar grafe zobraz oproti sebe kategorie pokial existuje aj cerneny aj zeleny bar, pokial neje counterpart v danej kategorii, tak nechaj miesto biele azobaz bar len na jednej strane.
+Dovnutra dual baru do kazdeho baru daj presnu hodnotu vypocitanej vahy aby uzivatel vedel aku vahu man za dany den zaznacena entita, ciuz pozitivna, alebo negativna. Zaroven entity z rovnakej kategorie zobrazuj vedla seba, aby sa nestalo ze medzi strava->proteiny a strava->vitaminy bude este ina entita
+
+
+Ciel 3
+User defined entity sa nedaju pridavat v tracekrpovi a tym padom sa nezobrazia v prehlade. Je to buga, alebo zamer ?
+
+Ciel 4
+Po zakliknuti nejakej aktivity sa hodnota automaticky ulozi a tym padom "button uloz" den je obsolete, a mozme ho odstranit. Cielom je aby uzivatel nestracal data , ked preklikne z trackera na inu stranku . Aplikacia tym padom bude viac interaktivna
+
+Ciel 5
+Do menu pridaj novu polozku I - info kde budu informacie o vahach jednotlivych entit a ich description.
+
+Ciel 6
+Na hlavnej stranke sa zobrazia data z predchadzajuceho dna ked den este nieje vyplneny nadpis dnesny prehlad zobrzuje den 30.6.2026,
+ale data v grafe a nad grafom zobrazuju informacie z predchadajuceho dna. Malo by to fungovat tak, ze pokial niesu vyplnene date , tak sa graf nezobrazi. Vzdy pri zobrazeni hlavnej stranky zkontroluj aktualny datum a pokial jenovy den tak zobraz prazdny graf.
+Prazdnym grafom bude placeholder zo sed7m barmi na lavej aj pravej strane. Na kazdej strane budu 3 bary roznej velkosti bez popiskov, v svetlo sedej farbe. Svetlo seda farba evokuje u uzivatela nevyplnene data
+
+Ciel 7
+Rotovanie dat na hlavnej stranke , pri swipnuti dolava na hlavnje stranke sa zobrazi predchadzajuci den graf aj data, po swipnuti doprava den nasledujuci. Pokial nasledujuci den neexistuje tak sa swipe nevykona. To iste plati aj pre historiu ked predchadzajuci den neexistuje swipe sa nevykona. ked sa zobrauje historicky na hlavnej stranke datum tak miesto "Dnesny prehlad" sa zabrazi veta. Historicke data" + $datum
+
+
+Ciel 8
+v menu zobraz miesto H nad nadpisom home malu ikonku domu, ktora reprezentuje vsebecne chapany ekvivalent home.
