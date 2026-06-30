@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
@@ -31,7 +30,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.madhdtracker.ui.ElementValueInput
 import com.example.madhdtracker.ui.TrackerViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -45,40 +43,17 @@ fun TrackerScreen(
 ) {
     val formatter = remember { DateTimeFormatter.ISO_LOCAL_DATE }
     val showDatePicker = remember { mutableStateOf(false) }
+    val date = viewModel.selectedDate.value.format(formatter)
 
     LaunchedEffect(viewModel.selectedDate.value) {
-        viewModel.loadForDate(viewModel.selectedDate.value.format(formatter))
-    }
-
-    val onSave: () -> Unit = {
-        val date = viewModel.selectedDate.value.format(formatter)
-        val inputs = viewModel.elements.map { element ->
-            val state = viewModel.formStates.getValue(element.key)
-            val (binary, scale) = when (element.key) {
-                "overall_feeling" -> Pair(if (state.scale.value >= 3) 1 else 0, state.scale.value)
-                else -> if (state.binary.value) Pair(1, state.scale.value) else Pair(0, null)
-            }
-            ElementValueInput(elementKey = element.key, valueBinary = binary, valueScale = scale)
-        }
-        val satisfactionScale = viewModel.formStates.getValue("overall_feeling").scale.value
-        viewModel.saveDay(date, inputs, satisfactionScale)
-        onSaved()
+        viewModel.loadForDate(date)
     }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = "Denný tracker", style = MaterialTheme.typography.titleLarge)
-            Button(onClick = onSave) {
-                Text(text = "Uložiť deň")
-            }
-        }
+        Text(text = "Denný tracker", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(
-            value = viewModel.selectedDate.value.format(formatter),
+            value = date,
             onValueChange = { },
             readOnly = true,
             label = { Text("Dátum") },
@@ -115,6 +90,7 @@ fun TrackerScreen(
                         Slider(
                             value = state.scale.value.toFloat(),
                             onValueChange = { state.scale.value = it.toInt().coerceIn(1, 5) },
+                            onValueChangeFinished = { viewModel.saveCurrent(date) },
                             valueRange = 1f..5f,
                             steps = 3,
                             modifier = Modifier.fillMaxWidth()
@@ -122,18 +98,23 @@ fun TrackerScreen(
                     } else {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(text = "Vykonané", style = MaterialTheme.typography.labelMedium)
                             Switch(
                                 checked = state.binary.value,
-                                onCheckedChange = { state.binary.value = it }
+                                onCheckedChange = {
+                                    state.binary.value = it
+                                    viewModel.saveCurrent(date)
+                                }
                             )
                         }
                         if (state.binary.value) {
                             Slider(
                                 value = state.scale.value.toFloat(),
                                 onValueChange = { state.scale.value = it.toInt().coerceIn(1, 5) },
+                                onValueChangeFinished = { viewModel.saveCurrent(date) },
                                 valueRange = 1f..5f,
                                 steps = 3,
                                 modifier = Modifier.fillMaxWidth()
@@ -146,14 +127,6 @@ fun TrackerScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // US3: druhé tlačidlo Uložiť deň dole pre používateľov odscrollovaných na spodok
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(
-            onClick = onSave,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(text = "Uložiť deň")
-        }
         Spacer(modifier = Modifier.height(8.dp))
     }
 

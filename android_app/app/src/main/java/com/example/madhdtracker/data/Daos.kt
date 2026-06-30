@@ -21,6 +21,9 @@ interface EventDayDao {
 
     @Query("SELECT * FROM event_day ORDER BY date DESC LIMIT :limit")
     suspend fun getLatestDays(limit: Int): List<EventDayEntity>
+
+    @Query("SELECT date FROM event_day ORDER BY date DESC")
+    suspend fun getAllDates(): List<String>
 }
 
 @Dao
@@ -66,6 +69,12 @@ interface IndexDao {
 
     @Query("SELECT * FROM index_daily ORDER BY id DESC LIMIT 1")
     suspend fun getLatestDaily(): IndexDailyEntity?
+
+    @Query("SELECT * FROM index_daily WHERE eventDayId = :dayId LIMIT 1")
+    suspend fun getByDayId(dayId: Long): IndexDailyEntity?
+
+    @Query("DELETE FROM index_daily WHERE eventDayId = :dayId")
+    suspend fun deleteByDayId(dayId: Long)
 
     @Query(
         """

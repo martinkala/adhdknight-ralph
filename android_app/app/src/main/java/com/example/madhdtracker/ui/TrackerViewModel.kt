@@ -23,7 +23,8 @@ class TrackerViewModel(
     private val elementConfig: ElementConfig
 ) : ViewModel() {
 
-    val elements: List<ElementUiState> = buildElementList(elementConfig)
+    private val _elements = mutableListOf<ElementUiState>().also { it.addAll(buildElementList(elementConfig)) }
+    val elements: List<ElementUiState> get() = _elements
 
     val selectedDate = mutableStateOf(LocalDate.now())
 
@@ -38,6 +39,33 @@ class TrackerViewModel(
     }
 
     private var loadedDate: String? = null
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            val userEls = repository.getUserElements()
+            if (userEls.isNotEmpty()) {
+                val userStates = userEls.map { ue ->
+                    ElementUiState(
+                        key = ue.key,
+                        label = ue.description ?: ue.key,
+                        hasScale = ue.scale != null,
+                        impact = ue.impact
+                    )
+                }
+                val newStates = userStates.filter { us -> _elements.none { it.key == us.key } }
+                withContext(Dispatchers.Main) {
+                    _elements.addAll(newStates)
+                    newStates.forEach { us ->
+                        formStates[us.key] = ElementInputState(
+                            binary = mutableStateOf(false),
+                            detailEnabled = mutableStateOf(false),
+                            scale = mutableStateOf(3)
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     fun loadForDate(date: String) {
         if (date == loadedDate) return
@@ -66,6 +94,19 @@ class TrackerViewModel(
         selectedDate.value = date
         loadedDate = null
         loadForDate(date.format(DateTimeFormatter.ISO_LOCAL_DATE))
+    }
+
+    fun saveCurrent(date: String) {
+        val inputs = elements.map { element ->
+            val state = formStates[element.key] ?: return@map ElementValueInput(element.key, 0, null)
+            val (binary, scale) = when (element.key) {
+                "overall_feeling" -> Pair(if (state.scale.value >= 3) 1 else 0, state.scale.value)
+                else -> if (state.binary.value) Pair(1, state.scale.value) else Pair(0, null)
+            }
+            ElementValueInput(elementKey = element.key, valueBinary = binary, valueScale = scale)
+        }
+        val satisfactionScale = formStates["overall_feeling"]?.scale?.value ?: 3
+        saveDay(date, inputs, satisfactionScale)
     }
 
     fun saveDay(date: String, values: List<ElementValueInput>, satisfactionScale: Int) {

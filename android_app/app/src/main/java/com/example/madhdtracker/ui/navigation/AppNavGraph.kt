@@ -14,6 +14,7 @@ import com.example.madhdtracker.ui.VectorViewModel
 import com.example.madhdtracker.ui.screens.ActivityDetailScreen
 import com.example.madhdtracker.ui.screens.EntityManagementScreen
 import com.example.madhdtracker.ui.screens.HomeScreen
+import com.example.madhdtracker.ui.screens.InfoScreen
 import com.example.madhdtracker.ui.screens.NotificationSettingsScreen
 import com.example.madhdtracker.ui.screens.SettingsScreen
 import com.example.madhdtracker.ui.screens.TrackerScreen
@@ -31,6 +32,7 @@ object AppRoutes {
     const val NOTIFICATIONS = "notifications"
     const val ACTIVITY_DETAIL = "activity/{key}"
     const val ENTITIES = "entities"
+    const val INFO = "info"
 
     fun activityDetail(key: String): String = "activity/$key"
     fun vectorForDate(date: String): String = "vector/$date"
@@ -93,6 +95,9 @@ fun AppNavGraph(
         }
         composable(AppRoutes.NOTIFICATIONS) {
             NotificationSettingsScreen()
+        }
+        composable(AppRoutes.INFO) {
+            InfoScreen(repository)
         }
         composable(
             route = AppRoutes.ACTIVITY_DETAIL,

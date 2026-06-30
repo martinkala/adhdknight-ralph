@@ -33,7 +33,15 @@ fun VectorScreen(viewModel: VectorViewModel, date: String? = null) {
         Text(text = title, style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(16.dp))
 
-        // US1: EntityDoubleBarChart namiesto RadarChart
+        if (entities.isNotEmpty()) {
+            PieChart(
+                entities = entities,
+                elementConfig = viewModel.elementConfig,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         EntityDoubleBarChart(
             entities = entities,
             elementConfig = viewModel.elementConfig,

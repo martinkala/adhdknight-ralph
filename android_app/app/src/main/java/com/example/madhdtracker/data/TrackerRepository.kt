@@ -83,6 +83,7 @@ class TrackerRepository(
         val indexValue = IndexCalculator.computeDailyIndexGrouped(activeValues, effectiveConfig, activeKeys) ?: return
         val positiveIndex = IndexCalculator.computePositiveIndex(activeValues, weights, effectiveConfig.positiveKeys)
         val negativeIndex = IndexCalculator.computeNegativeIndex(activeValues, weights, effectiveConfig.negativeKeys)
+        db.indexDao().deleteByDayId(dayId)
         db.indexDao().insertDaily(
             IndexDailyEntity(
                 eventDayId = dayId,
@@ -210,6 +211,36 @@ class TrackerRepository(
     }
 
     suspend fun getUserElements(): List<UserElementEntity> = db.userElementDao().getAll()
+
+    suspend fun getIndexForDate(date: String): Double? {
+        val day = db.eventDayDao().getByDate(date) ?: return null
+        return db.indexDao().getByDayId(day.id)?.indexValue
+    }
+
+    suspend fun getSatisfactionForDate(date: String): Int? {
+        val day = db.eventDayDao().getByDate(date) ?: return null
+        return db.satisfactionDao().getByDay(day.id)?.valueScale
+    }
+
+    suspend fun getSubIndicesForDate(date: String): Pair<Double?, Double?> {
+        val day = db.eventDayDao().getByDate(date) ?: return Pair(null, null)
+        val index = db.indexDao().getByDayId(day.id) ?: return Pair(null, null)
+        return Pair(index.positiveIndex, index.negativeIndex)
+    }
+
+    suspend fun getCompletionCountsForDate(date: String): Pair<Int, Int>? {
+        val day = db.eventDayDao().getByDate(date) ?: return null
+        val values = db.eventValueDao().getByDay(day.id)
+        if (values.isEmpty()) return null
+        val filtered = values.filter { it.elementKey != "overall_feeling" }
+        val completed = filtered.count { it.valueEffective > 0.0 }
+        return completed to filtered.size
+    }
+
+    suspend fun getAllEventDates(): List<String> = db.eventDayDao().getAllDates()
+
+    suspend fun getAllWeights(): Map<String, Double> =
+        db.weightsDao().getAll().associate { it.elementKey to (it.weightPersonal ?: it.weightDefault) }
 
     suspend fun removeUserElement(key: String) {
         val elements = db.userElementDao().getAll().filter { it.key == key }

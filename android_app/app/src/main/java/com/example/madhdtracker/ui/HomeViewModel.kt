@@ -10,6 +10,7 @@ import com.example.madhdtracker.domain.model.ElementConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 class HomeViewModel(
     private val repository: TrackerRepository
@@ -22,27 +23,67 @@ class HomeViewModel(
     val vectorEntities = mutableStateOf<Map<String, EventValueEntity>>(emptyMap())
     val positiveIndex = mutableStateOf<Double?>(null)
     val negativeIndex = mutableStateOf<Double?>(null)
+    val hasTodayData = mutableStateOf(false)
+    val displayedDate = mutableStateOf(LocalDate.now())
+    val availableDates = mutableStateOf<List<LocalDate>>(emptyList())
 
     init {
-        refresh()
+        viewModelScope.launch(Dispatchers.IO) {
+            loadAvailableDates()
+            loadForDate(LocalDate.now())
+        }
     }
 
-    fun refresh() {
+    private suspend fun loadAvailableDates() {
+        val dates = repository.getAllEventDates()
+            .mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }
+        val today = LocalDate.now()
+        val withToday = if (today !in dates) dates + today else dates
+        withContext(Dispatchers.Main) {
+            availableDates.value = withToday.sortedDescending()
+        }
+    }
+
+    fun loadForDate(date: LocalDate = LocalDate.now()) {
         viewModelScope.launch(Dispatchers.IO) {
-            val index = repository.getLatestDailyIndex()
-            val satisfaction = repository.getLatestSatisfaction()
-            val completion = repository.getLatestCompletionCounts()
-            val entities = repository.getLatestVectorEntities()
-            val subIndices = repository.getLatestSubIndices()
+            val dateStr = date.toString()
+            val index = repository.getIndexForDate(dateStr)
+            val satisfaction = repository.getSatisfactionForDate(dateStr)
+            val completion = repository.getCompletionCountsForDate(dateStr)
+            val entities = repository.getValuesForDate(dateStr)
+            val subIndices = repository.getSubIndicesForDate(dateStr)
+            val today = LocalDate.now()
             withContext(Dispatchers.Main) {
+                displayedDate.value = date
                 indexValue.value = index
                 satisfactionValue.value = satisfaction
                 completionText.value = completion?.let { "${it.first} z ${it.second}" }
                 vectorEntities.value = entities
                 positiveIndex.value = subIndices.first
                 negativeIndex.value = subIndices.second
+                hasTodayData.value = date == today && index != null
             }
         }
+    }
+
+    fun loadPreviousDay() {
+        val dates = availableDates.value
+        val current = displayedDate.value
+        val idx = dates.indexOf(current)
+        val prev = if (idx >= 0 && idx < dates.size - 1) dates[idx + 1] else null
+        if (prev != null) loadForDate(prev)
+    }
+
+    fun loadNextDay() {
+        val dates = availableDates.value
+        val current = displayedDate.value
+        val idx = dates.indexOf(current)
+        val next = if (idx > 0) dates[idx - 1] else null
+        if (next != null) loadForDate(next)
+    }
+
+    fun refresh() {
+        loadForDate(displayedDate.value)
     }
 }
 

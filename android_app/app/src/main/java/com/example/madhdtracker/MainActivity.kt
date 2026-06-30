@@ -6,6 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Surface
@@ -60,7 +63,7 @@ class MainActivity : ComponentActivity() {
 }
 
 enum class Screen {
-    HOME, TRACKER, TREND, SETTINGS
+    HOME, TRACKER, TREND, SETTINGS, INFO
 }
 
 @Composable
@@ -130,12 +133,26 @@ private fun AppRoot() {
                     Screen.TRACKER -> AppRoutes.TRACKER
                     Screen.TREND -> AppRoutes.TREND
                     Screen.SETTINGS -> AppRoutes.SETTINGS
+                    Screen.INFO -> AppRoutes.INFO
+                }
+                val label = when (screen) {
+                    Screen.HOME -> "Home"
+                    Screen.TRACKER -> "Tracker"
+                    Screen.TREND -> "Trend"
+                    Screen.SETTINGS -> "Settings"
+                    Screen.INFO -> "Info"
                 }
                 NavigationBarItem(
                     selected = currentRoute == route,
                     onClick = { navController.navigate(route) },
-                    label = { Text(screen.name.lowercase().replaceFirstChar { it.uppercase() }) },
-                    icon = { Text(screen.name.first().toString()) }
+                    label = { Text(label) },
+                    icon = {
+                        if (screen == Screen.HOME) {
+                            Icon(Icons.Filled.Home, contentDescription = "Home")
+                        } else {
+                            Text(screen.name.first().toString())
+                        }
+                    }
                 )
             }
         }

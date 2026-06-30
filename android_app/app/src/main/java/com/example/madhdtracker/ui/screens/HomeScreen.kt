@@ -1,12 +1,19 @@
 package com.example.madhdtracker.ui.screens
 
+import androidx.compose.foundation.Canvas
+import android.util.Log
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -16,10 +23,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -27,31 +36,94 @@ import kotlin.math.roundToInt
 import com.example.madhdtracker.ui.HomeViewModel
 
 @Composable
+private fun PlaceholderBarChart(modifier: Modifier = Modifier) {
+    val grayColor = Color(0xFFD0D0D0)
+    val negFractions = listOf(0.30f, 0.60f, 0.45f)
+    val posFractions = listOf(0.50f, 0.35f, 0.65f)
+    val barHeight = 14.dp
+    val rowPadding = 4.dp
+
+    Row(modifier = modifier.height(IntrinsicSize.Min)) {
+        Column(modifier = Modifier.weight(1f)) {
+            negFractions.forEach { fraction ->
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(barHeight)
+                        .padding(bottom = rowPadding)
+                ) {
+                    val barW = size.width * fraction
+                    drawRect(grayColor, topLeft = Offset(size.width - barW, 0f), size = Size(barW, size.height))
+                }
+            }
+        }
+        Box(modifier = Modifier.width(2.dp).fillMaxHeight())
+        Column(modifier = Modifier.weight(1f)) {
+            posFractions.forEach { fraction ->
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(barHeight)
+                        .padding(bottom = rowPadding)
+                ) {
+                    val barW = size.width * fraction
+                    drawRect(grayColor, topLeft = Offset.Zero, size = Size(barW, size.height))
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
+    val formatter = DateTimeFormatter.ofPattern("d. M. yyyy")
+
     LaunchedEffect(Unit) {
-        viewModel.refresh()
+        viewModel.loadForDate()
     }
 
-    val today = remember { LocalDate.now().format(DateTimeFormatter.ofPattern("d. M. yyyy")) }
+    val displayedDate = viewModel.displayedDate.value
+    val today = LocalDate.now()
+    val isToday = displayedDate == today
+    val dateFormatted = displayedDate.format(formatter)
+    val titleText = if (isToday) "Dnešný prehľad – $dateFormatted" else "Historické dáta – $dateFormatted"
+
     val indexText = viewModel.indexValue.value?.let { it.roundToInt().toString() } ?: "—"
     val satisfactionText = viewModel.satisfactionValue.value?.toString() ?: "—"
     val completionText = viewModel.completionText.value ?: "—"
     val entities = viewModel.vectorEntities.value
-    val hasData = viewModel.indexValue.value != null
+    val hasTodayData = viewModel.hasTodayData.value
+    val hasDisplayedData = viewModel.indexValue.value != null
     val positiveText = viewModel.positiveIndex.value?.let { it.roundToInt().toString() } ?: "—"
     val negativeText = viewModel.negativeIndex.value?.let { it.roundToInt().toString() } ?: "—"
 
+    Box(
+        modifier = Modifier.pointerInput(Unit) {
+            var totalDrag = 0f
+            detectHorizontalDragGestures(
+                onDragStart = { totalDrag = 0f },
+                onDragEnd = {
+                    Log.d("HomeSwipe", "onDragEnd totalDrag=$totalDrag")
+                    if (totalDrag < -60f) viewModel.loadPreviousDay()
+                    else if (totalDrag > 60f) viewModel.loadNextDay()
+                    totalDrag = 0f
+                },
+                onDragCancel = { totalDrag = 0f }
+            ) { _, dragAmount ->
+                totalDrag += dragAmount
+            }
+        }
+    ) {
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(text = "Dnešný prehľad – $today", style = MaterialTheme.typography.titleLarge)
+        Text(text = titleText, style = MaterialTheme.typography.titleLarge)
 
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Positive/Negative section — prominentné (displaySmall) + skratkové tlačidlo
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -67,12 +139,13 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
                             Text(text = negativeText, style = MaterialTheme.typography.displaySmall, color = Color(0xFFE57373))
                         }
                     }
-                    Button(onClick = onEditClick) {
-                        Text(text = "Upraviť")
+                    if (isToday) {
+                        Button(onClick = onEditClick) {
+                            Text(text = "Upraviť")
+                        }
                     }
                 }
 
-                // US5: kompaktné metriky — tri na jednej úrovni
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -93,7 +166,7 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
             }
         }
 
-        if (!hasData) {
+        if (isToday && !hasTodayData) {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f))) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(text = "Zatiaľ bez dát", style = MaterialTheme.typography.titleMedium)
@@ -103,18 +176,21 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
             }
         }
 
-        // US1: EntityDoubleBarChart namiesto RadarChart
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(text = "Denný prehľad entít", style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(8.dp))
-                EntityDoubleBarChart(
-                    entities = entities,
-                    elementConfig = viewModel.elementConfig,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (hasDisplayedData) {
+                    EntityDoubleBarChart(
+                        entities = entities,
+                        elementConfig = viewModel.elementConfig,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    PlaceholderBarChart(modifier = Modifier.fillMaxWidth())
+                }
             }
         }
-        // US6: "Tip dňa" karta bola odstránená
+    }
     }
 }
