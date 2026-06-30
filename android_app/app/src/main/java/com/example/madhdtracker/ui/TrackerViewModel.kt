@@ -10,7 +10,7 @@ import com.example.madhdtracker.data.EventValueEntity
 import com.example.madhdtracker.data.SatisfactionEntity
 import com.example.madhdtracker.data.TrackerRepository
 import com.example.madhdtracker.domain.logic.IndexCalculator
-import com.example.madhdtracker.domain.model.ElementConfig
+import com.example.madhdtracker.domain.model.EntityConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter
 
 class TrackerViewModel(
     private val repository: TrackerRepository,
-    private val elementConfig: ElementConfig
+    private val elementConfig: EntityConfig
 ) : ViewModel() {
 
     private val _elements = mutableListOf<ElementUiState>().also { it.addAll(buildElementList(elementConfig)) }
@@ -32,7 +32,7 @@ class TrackerViewModel(
         elements.forEach { element ->
             map[element.key] = ElementInputState(
                 binary = mutableStateOf(false),
-                detailEnabled = mutableStateOf(element.key == "overall_feeling"),
+                detailEnabled = mutableStateOf(element.hasScale),
                 scale = mutableStateOf(3)
             )
         }
@@ -78,11 +78,11 @@ class TrackerViewModel(
                     val state = formStates[element.key] ?: return@forEach
                     if (entity != null) {
                         state.binary.value = entity.valueBinary == 1 || entity.valueScale != null
-                        state.detailEnabled.value = element.key == "overall_feeling"
+                        state.detailEnabled.value = element.hasScale
                         state.scale.value = entity.valueScale ?: 3
                     } else {
                         state.binary.value = false
-                        state.detailEnabled.value = element.key == "overall_feeling"
+                        state.detailEnabled.value = element.hasScale
                         state.scale.value = 3
                     }
                 }
@@ -99,9 +99,10 @@ class TrackerViewModel(
     fun saveCurrent(date: String) {
         val inputs = elements.map { element ->
             val state = formStates[element.key] ?: return@map ElementValueInput(element.key, 0, null)
-            val (binary, scale) = when (element.key) {
-                "overall_feeling" -> Pair(if (state.scale.value >= 3) 1 else 0, state.scale.value)
-                else -> if (state.binary.value) Pair(1, state.scale.value) else Pair(0, null)
+            val (binary, scale) = when {
+                !state.binary.value -> Pair(0, null)
+                element.hasScale -> Pair(if (state.scale.value >= 3) 1 else 0, state.scale.value)
+                else -> Pair(1, null)
             }
             ElementValueInput(elementKey = element.key, valueBinary = binary, valueScale = scale)
         }
@@ -140,26 +141,28 @@ class TrackerViewModel(
     }
 
     companion object {
-        private fun buildElementList(elementConfig: ElementConfig): List<ElementUiState> {
+        private fun buildElementList(entityConfig: EntityConfig): List<ElementUiState> {
             val result = mutableListOf<ElementUiState>()
-            // overall_feeling first (root element)
-            elementConfig.elements["overall_feeling"]?.let { el ->
-                result.add(ElementUiState(el.key, el.description, el.scale != null, el.impact))
-            }
-            // Remaining elements ordered by category
-            elementConfig.categories.keys.forEach { catKey ->
-                elementConfig.elements.values
+            // Root nodes with scale first (slider elements; overall_feeling leads by YAML order)
+            entityConfig.trackableNodes.values
+                .filter { it.parent == null && it.scale != null }
+                .forEach { el ->
+                    result.add(ElementUiState(el.key, el.label, true, el.impact ?: 1))
+                }
+            // Root nodes without scale
+            entityConfig.trackableNodes.values
+                .filter { it.parent == null && it.scale == null }
+                .forEach { el ->
+                    result.add(ElementUiState(el.key, el.label, false, el.impact ?: 1))
+                }
+            // Group children ordered by group node iteration
+            entityConfig.groupNodes.keys.forEach { catKey ->
+                entityConfig.trackableNodes.values
                     .filter { it.parent == catKey }
                     .forEach { el ->
-                        result.add(ElementUiState(el.key, el.description, el.scale != null, el.impact))
+                        result.add(ElementUiState(el.key, el.label, el.scale != null, el.impact ?: 1))
                     }
             }
-            // Any root elements other than overall_feeling
-            elementConfig.elements.values
-                .filter { it.parent == null && it.key != "overall_feeling" }
-                .forEach { el ->
-                    result.add(ElementUiState(el.key, el.description, el.scale != null, el.impact))
-                }
             return result.distinctBy { it.key }
         }
     }
@@ -186,7 +189,7 @@ data class ElementValueInput(
 
 class TrackerViewModelFactory(
     private val repository: TrackerRepository,
-    private val elementConfig: ElementConfig
+    private val elementConfig: EntityConfig
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TrackerViewModel::class.java)) {

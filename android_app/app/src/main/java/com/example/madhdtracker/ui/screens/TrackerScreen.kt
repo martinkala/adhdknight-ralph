@@ -67,7 +67,7 @@ fun TrackerScreen(
         viewModel.elements.forEach { element ->
             val state = viewModel.formStates.getValue(element.key)
 
-            val isActive = element.key == "overall_feeling" || state.binary.value
+            val isActive = state.binary.value
             val sectionColor = when {
                 element.impact == 1 && isActive -> Color(0x334CAF50)
                 element.impact == 1 -> Color(0x1A4CAF50)
@@ -84,9 +84,21 @@ fun TrackerScreen(
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.clickable { onActivityClick(element.key) }
                     )
-
-                    if (element.key == "overall_feeling") {
-                        Text(text = "Povinné hodnotenie 1–5", style = MaterialTheme.typography.labelMedium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "Vykonané", style = MaterialTheme.typography.labelMedium)
+                        Switch(
+                            checked = state.binary.value,
+                            onCheckedChange = {
+                                state.binary.value = it
+                                viewModel.saveCurrent(date)
+                            }
+                        )
+                    }
+                    if (state.binary.value && element.hasScale) {
                         Slider(
                             value = state.scale.value.toFloat(),
                             onValueChange = { state.scale.value = it.toInt().coerceIn(1, 5) },
@@ -95,31 +107,6 @@ fun TrackerScreen(
                             steps = 3,
                             modifier = Modifier.fillMaxWidth()
                         )
-                    } else {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "Vykonané", style = MaterialTheme.typography.labelMedium)
-                            Switch(
-                                checked = state.binary.value,
-                                onCheckedChange = {
-                                    state.binary.value = it
-                                    viewModel.saveCurrent(date)
-                                }
-                            )
-                        }
-                        if (state.binary.value) {
-                            Slider(
-                                value = state.scale.value.toFloat(),
-                                onValueChange = { state.scale.value = it.toInt().coerceIn(1, 5) },
-                                onValueChangeFinished = { viewModel.saveCurrent(date) },
-                                valueRange = 1f..5f,
-                                steps = 3,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
                     }
                 }
             }

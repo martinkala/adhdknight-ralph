@@ -1,0 +1,272 @@
+Goal is to change terminology and aupdate data model podla thoto v aplikacii.
+Ukazuje sa ze je mozne pouzivat entity ako strukturu kategorii a podkategorii v lubovolnej hlbke.
+Samozrejme z uzivatelskeho hladiska nema vyznam mat viac ako 3 urovne.
+
+Preto je mozne aktualny strom
+
+categories:
+  sleep:
+    label: "Spánok"
+    clickable: true
+    weight: 15.0
+
+  physical_activity:
+    label: "Fyzická aktivita"
+    clickable: true
+    weight: 11.0
+
+  lifestyle:
+    label: "Životný štýl"
+    clickable: false
+    weight: 42.0
+
+  head:
+    label: "Mentálne aktivity"
+    clickable: false
+    weight: 11.0
+
+  food:
+    label: "Strava"
+    clickable: false
+    weight: 8.0
+
+  organisation:
+    label: "Organizasia uloh"
+    clickable: false
+    weight: 8.0
+
+elements:
+  overall_feeling:
+    weight: 13.0
+    impact: 1
+    parent: null
+    description: "Celkový pocit za deň"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  sleep:
+    weight: 15.0
+    impact: 1
+    parent: sleep
+    description: "Kvalitný spánok"
+    active: true
+
+  physical_activity:
+    weight: 11.0
+    impact: 1
+    parent: physical_activity
+    description: "Fyzická aktivita"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  stress_work:
+    weight: 13.0
+    impact: -1
+    parent: lifestyle
+    description: "Pracovný stres"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  stress_personal:
+    weight: 13.0
+    impact: -1
+    parent: lifestyle
+    description: "Osobný stres"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  caffeine:
+    weight: 6.0
+    impact: -1
+    parent: food
+    description: "Kofeín"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  alcohol:
+    weight: 10.0
+    impact: -1
+    parent: food
+    description: "Alkohol"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  nutrition_protein:
+    weight: 8.0
+    impact: 1
+    parent: food
+    description: "Príjem bielkovín"
+    active: true
+
+  vitamins:
+    weight: 4.0
+    impact: 1
+    parent: food
+    description: "Vitamins"
+    active: true
+
+  mindfulness:
+    weight: 11.0
+    impact: 1
+    parent: head
+    description: "Mindfulness / meditácia"
+    active: true
+
+  pomodoro:
+    weight: 11.0
+    impact: 1
+    parent: organisation
+    description: "Pomodoro"
+    active: true
+
+  Adiction:
+    weight: 15.0
+    impact: -1
+    parent: head
+    description: "Zavislosti"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+
+zmenit tak ze vsetko budu kategorie a zavislosti sa budu urcovat len podla parentu.
+Zaroven pri prechod na databazu bude mozne kategorie handlovat v jednej tabulke.
+- prakticky dopad je ze bude mozne zvolit aj kategoriu na najvyssej urovni + jej podkategorei (bude nute prepocitat vazeny priemer)
+
+Uprava configuraciu projektu a aplikaciu aby reflektovali tuto zmenu.
+
+Zanalyzuj aj z pohladu user defined kategorii, ci budu handlovane v rovnakom priestore (tabulka) alebo v inom.
+Casom sa da predpokladat, ze user defined kategorii bude o niekoko radov viac ako kategorii preddefinovanych. Dolezite je aby user define kategorie nemali dopad na stabilitu a a performence aplikacie pri multiuser pristupe, planovane v blizskej buducnosti.
+
+Po novom teda
+
+categories:
+  sleep:
+    label: "Spánok"
+    clickable: true
+    weight: 15.0
+
+  physical_activity:
+    label: "Fyzická aktivita"
+    clickable: true
+    weight: 11.0
+
+  lifestyle:
+    label: "Životný štýl"
+    clickable: false
+    weight: 42.0
+
+  head:
+    label: "Mentálne aktivity"
+    clickable: false
+    weight: 11.0
+
+  food:
+    label: "Strava"
+    clickable: false
+    weight: 8.0
+
+  organisation:
+    label: "Organizasia uloh"
+    clickable: false
+    weight: 8.0
+
+  overall_feeling:
+    weight: 13.0
+    impact: 1
+    parent: null
+    description: "Celkový pocit za deň"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  sleep:
+    weight: 15.0
+    impact: 1
+    parent: sleep
+    description: "Kvalitný spánok"
+    active: true
+
+  physical_activity:
+    weight: 11.0
+    impact: 1
+    parent: physical_activity
+    description: "Fyzická aktivita"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  stress_work:
+    weight: 13.0
+    impact: -1
+    parent: lifestyle
+    description: "Pracovný stres"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  stress_personal:
+    weight: 13.0
+    impact: -1
+    parent: lifestyle
+    description: "Osobný stres"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  caffeine:
+    weight: 6.0
+    impact: -1
+    parent: food
+    description: "Kofeín"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  alcohol:
+    weight: 10.0
+    impact: -1
+    parent: food
+    description: "Alkohol"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+  nutrition_protein:
+    weight: 8.0
+    impact: 1
+    parent: food
+    description: "Príjem bielkovín"
+    active: true
+
+  vitamins:
+    weight: 4.0
+    impact: 1
+    parent: food
+    description: "Vitamins"
+    active: true
+
+  mindfulness:
+    weight: 11.0
+    impact: 1
+    parent: head
+    description: "Mindfulness / meditácia"
+    active: true
+
+  pomodoro:
+    weight: 11.0
+    impact: 1
+    parent: organisation
+    description: "Pomodoro"
+    active: true
+
+  Adiction:
+    weight: 15.0
+    impact: -1
+    parent: head
+    description: "Zavislosti"
+    active: true
+    scale: [1, 2, 3, 4, 5]
+
+A top level kategorii pridaj polozky z elementov
+    impact: -1
+    parent: head
+    description: "Zavislosti"
+    active: true
+
+Je otazne , ci tam davat aj scale, zatial by so ho nepridaval - urob mi na to analyzu
+
+Do kategorii pridaj aj celkovy pocit , aj z s dosledkami, ze nemusi byt za niektory den vyplneny

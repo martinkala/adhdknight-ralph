@@ -97,7 +97,7 @@ private fun AppRoot() {
 
     LaunchedEffect(Unit) {
         val prefs = PreferencesRepository(context)
-        val notifRules = NotificationRules(appConfig.notification, elementConfig.elements.keys)
+        val notifRules = NotificationRules(appConfig.notification, elementConfig.trackableKeys)
         if (prefs.areNotificationsEnabled() && !notifRules.isQuietWindow(LocalTime.now())) {
             val decision = withContext(Dispatchers.IO) { repository.evaluateNotification() }
             if (decision != null) {

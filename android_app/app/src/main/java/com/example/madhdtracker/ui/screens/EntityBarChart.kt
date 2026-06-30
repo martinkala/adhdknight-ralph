@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.madhdtracker.data.EventValueEntity
-import com.example.madhdtracker.domain.model.ElementConfig
+import com.example.madhdtracker.domain.model.EntityConfig
 
 data class BarEntry(
     val key: String,
@@ -46,9 +46,9 @@ data class BarRow(
 
 private fun buildBarEntries(
     entities: Map<String, EventValueEntity>,
-    elementConfig: ElementConfig
+    elementConfig: EntityConfig
 ): List<BarEntry> {
-    return elementConfig.elements
+    return elementConfig.trackableNodes
         .filter { (key, _) -> key != "overall_feeling" }
         .filter { (key, _) ->
             val entity = entities[key]
@@ -58,14 +58,14 @@ private fun buildBarEntries(
             val entity = entities[key]
             val value = radarValue(entity)
             val parentLabel = el.parent?.let { parentKey ->
-                elementConfig.categories[parentKey]?.label
+                elementConfig.nodes[parentKey]?.label
             }
-            val label = if (parentLabel != null) "$parentLabel / ${el.description}" else el.description
+            val label = if (parentLabel != null) "$parentLabel / ${el.label}" else el.label
             BarEntry(
                 key = key,
                 label = label,
                 value = value,
-                impact = el.impact,
+                impact = el.impact ?: 1,
                 categoryKey = el.parent,
                 weight = el.weight
             )
@@ -103,10 +103,10 @@ private fun buildBarRows(negEntries: List<BarEntry>, posEntries: List<BarEntry>)
 @Composable
 fun PieChart(
     entities: Map<String, EventValueEntity>,
-    elementConfig: ElementConfig,
+    elementConfig: EntityConfig,
     modifier: Modifier = Modifier
 ) {
-    val activeEntries = elementConfig.elements
+    val activeEntries = elementConfig.trackableNodes
         .filter { (key, _) -> key != "overall_feeling" }
         .mapNotNull { (key, el) ->
             val entity = entities[key] ?: return@mapNotNull null
@@ -149,7 +149,7 @@ fun PieChart(
 @Composable
 fun EntityDoubleBarChart(
     entities: Map<String, EventValueEntity>,
-    elementConfig: ElementConfig,
+    elementConfig: EntityConfig,
     modifier: Modifier = Modifier
 ) {
     val allEntries = buildBarEntries(entities, elementConfig)

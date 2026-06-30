@@ -123,5 +123,6 @@ data class UserElementEntity(
     val parentCategory: String,
     val description: String?,
     val scale: String?,
-    val isActive: Boolean
+    val isActive: Boolean,
+    val userId: String? = null
 )

@@ -3,7 +3,7 @@ package com.example.madhdtracker.domain.logic
 import com.example.madhdtracker.data.EventValueEntity
 import com.example.madhdtracker.data.WeightEntity
 import com.example.madhdtracker.domain.model.AdaptationConfig
-import com.example.madhdtracker.domain.model.ElementConfig
+import com.example.madhdtracker.domain.model.EntityConfig
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -35,7 +35,7 @@ object IndexCalculator {
 
     fun computeDailyIndexGrouped(
         values: List<EventValueEntity>,
-        elementConfig: ElementConfig,
+        entityConfig: EntityConfig,
         activeKeys: Set<String>
     ): Double? {
         if (values.isEmpty()) return null
@@ -47,35 +47,34 @@ object IndexCalculator {
         var totalContribution = 0.0
         var totalWeight = 0.0
 
-        // Root elements (parent == null) contribute directly
-        elementConfig.elements.values
-            .filter { it.parent == null && it.key in activeKeys }
-            .forEach { element ->
-                val v = valueMap[element.key] ?: return@forEach
-                val effective = if (element.impact < 0) 1.0 - v.valueEffective else v.valueEffective
-                totalContribution += element.weight * effective
-                totalWeight += element.weight
-            }
+        // Process each root node (parent == null), either group or trackable
+        val rootNodes = entityConfig.nodes.values.filter { it.parent == null }
+        rootNodes.forEach { rootNode ->
+            val activeChildren = entityConfig.trackableNodes.values
+                .filter { it.parent == rootNode.key && it.key in activeKeys }
 
-        // Category groups: group_avg × category.weight
-        val elementsByCategory = elementConfig.elements.values
-            .filter { it.parent != null && it.key in activeKeys }
-            .groupBy { it.parent!! }
-
-        elementsByCategory.forEach { (categoryKey, elements) ->
-            val category = elementConfig.categories[categoryKey] ?: return@forEach
-            var groupWeightedSum = 0.0
-            var groupWeightSum = 0.0
-            elements.forEach elementLoop@{ element ->
-                val v = valueMap[element.key] ?: return@elementLoop
-                val effective = if (element.impact < 0) 1.0 - v.valueEffective else v.valueEffective
-                groupWeightedSum += element.weight * effective
-                groupWeightSum += element.weight
+            if (activeChildren.isNotEmpty()) {
+                // Has active trackable children → group avg × root weight
+                var groupWeightedSum = 0.0
+                var groupWeightSum = 0.0
+                activeChildren.forEach childLoop@{ child ->
+                    val v = valueMap[child.key] ?: return@childLoop
+                    val effective = if ((child.impact ?: 1) < 0) 1.0 - v.valueEffective else v.valueEffective
+                    groupWeightedSum += child.weight * effective
+                    groupWeightSum += child.weight
+                }
+                if (groupWeightSum <= 0.0) return@forEach
+                val groupAvg = groupWeightedSum / groupWeightSum
+                totalContribution += groupAvg * rootNode.weight
+                totalWeight += rootNode.weight
+            } else if (rootNode.impact != null && rootNode.key in activeKeys) {
+                // Trackable root with no active children → direct contribution
+                val v = valueMap[rootNode.key] ?: return@forEach
+                val effective = if (rootNode.impact < 0) 1.0 - v.valueEffective else v.valueEffective
+                totalContribution += rootNode.weight * effective
+                totalWeight += rootNode.weight
             }
-            if (groupWeightSum <= 0.0) return@forEach
-            val groupAvg = groupWeightedSum / groupWeightSum
-            totalContribution += groupAvg * category.weight
-            totalWeight += category.weight
+            // Group node with no active children → skip
         }
 
         if (totalWeight <= 0.0) return null

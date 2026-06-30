@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.madhdtracker.data.TrackerRepository
 import com.example.madhdtracker.data.UserElementEntity
-import com.example.madhdtracker.domain.model.ElementConfig
+import com.example.madhdtracker.domain.model.EntityConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +21,7 @@ class EntityManagementViewModel(
     private val _userElements = MutableStateFlow<List<UserElementEntity>>(emptyList())
     val userElements: StateFlow<List<UserElementEntity>> = _userElements
 
-    val elementConfig: ElementConfig get() = repository.elementConfig
+    val elementConfig: EntityConfig get() = repository.elementConfig
 
     init {
         loadState()
@@ -30,7 +30,7 @@ class EntityManagementViewModel(
     private fun loadState() {
         viewModelScope.launch(Dispatchers.IO) {
             val activeKeys = repository.getActiveElementKeys()
-            val allSystemKeys = repository.elementConfig.elements.keys
+            val allSystemKeys = repository.elementConfig.trackableKeys
             val userElems = repository.getUserElements()
             val allUserKeys = userElems.map { it.key }.toSet()
             val allKeys = allSystemKeys + allUserKeys

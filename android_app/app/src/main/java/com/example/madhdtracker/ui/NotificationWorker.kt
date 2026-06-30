@@ -24,7 +24,7 @@ class NotificationWorker(
 
         val appConfig = AppConfigLoader.load(applicationContext.assets)
         val elementConfig = EntityConfigLoader.load(applicationContext.assets)
-        val notifRules = NotificationRules(appConfig.notification, elementConfig.elements.keys)
+        val notifRules = NotificationRules(appConfig.notification, elementConfig.trackableKeys)
         if (notifRules.isQuietWindow(LocalTime.now())) return Result.success()
 
         val db = Room.databaseBuilder(applicationContext, AppDatabase::class.java, "adhd_tracker.db")

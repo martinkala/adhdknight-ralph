@@ -4,8 +4,8 @@ import com.example.madhdtracker.domain.logic.AsrsRecalibrator
 import com.example.madhdtracker.domain.logic.IndexCalculator
 import com.example.madhdtracker.domain.logic.WeeklySummaryCalculator
 import com.example.madhdtracker.domain.model.AppConfig
-import com.example.madhdtracker.domain.model.Element
-import com.example.madhdtracker.domain.model.ElementConfig
+import com.example.madhdtracker.domain.model.EntityConfig
+import com.example.madhdtracker.domain.model.EntityNode
 import com.example.madhdtracker.notifications.NotificationRules
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -14,17 +14,17 @@ import java.util.Locale
 class TrackerRepository(
     private val db: AppDatabase,
     private val appConfig: AppConfig,
-    val elementConfig: ElementConfig
+    val elementConfig: EntityConfig
 ) {
     suspend fun seedDefaultWeightsIfEmpty() {
         val existing = db.weightsDao().getAll()
         if (existing.isNotEmpty()) return
 
         val now = OffsetDateTime.now().toString()
-        val weights = elementConfig.elements.map { (key, element) ->
+        val weights = elementConfig.trackableNodes.map { (key, node) ->
             WeightEntity(
                 elementKey = key,
-                weightDefault = element.weight,
+                weightDefault = node.weight,
                 weightPersonal = null,
                 updatedAt = now
             )
@@ -79,7 +79,7 @@ class TrackerRepository(
         val activeValues = values.filter { it.elementKey in activeKeys }
         if (activeValues.isEmpty()) return
 
-        val effectiveConfig = getEffectiveElementConfig()
+        val effectiveConfig = getEffectiveEntityConfig()
         val indexValue = IndexCalculator.computeDailyIndexGrouped(activeValues, effectiveConfig, activeKeys) ?: return
         val positiveIndex = IndexCalculator.computePositiveIndex(activeValues, weights, effectiveConfig.positiveKeys)
         val negativeIndex = IndexCalculator.computeNegativeIndex(activeValues, weights, effectiveConfig.negativeKeys)
@@ -160,7 +160,7 @@ class TrackerRepository(
         val last = db.notificationLogDao().getLatest()
         if (last != null && last.sentAt.startsWith(today)) return null
 
-        val rules = NotificationRules(appConfig.notification, elementConfig.elements.keys)
+        val rules = NotificationRules(appConfig.notification, elementConfig.trackableKeys)
 
         val todayDay = db.eventDayDao().getByDate(today)
         if (rules.dailyReminderNeeded(todayDay)) return rules.buildDailyDecision()
@@ -192,7 +192,7 @@ class TrackerRepository(
         description: String?,
         scale: List<Int>?
     ): Boolean {
-        if (elementConfig.elements.containsKey(key)) return false
+        if (elementConfig.nodes.containsKey(key)) return false
         val existing = db.userElementDao().getAll().any { it.key == key }
         if (existing) return false
         val scaleStr = scale?.joinToString(",")
@@ -276,36 +276,34 @@ class TrackerRepository(
         return "[${items.joinToString(",")}]"
     }
 
-    private suspend fun getEffectiveElementConfig(): ElementConfig {
+    private suspend fun getEffectiveEntityConfig(): EntityConfig {
         val userElements = db.userElementDao().getAll().filter { it.isActive }
         if (userElements.isEmpty()) return elementConfig
-        val extraElements = userElements.associate { entity ->
+        val extraNodes = userElements.associate { entity ->
             val scale = entity.scale?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.takeIf { it.size >= 2 }
-            entity.key to Element(
+            entity.key to EntityNode(
                 key = entity.key,
                 weight = entity.weight,
                 impact = entity.impact,
-                parent = entity.parentCategory,
-                description = entity.description ?: entity.key,
+                parent = entity.parentCategory.ifBlank { null },
+                label = entity.description ?: entity.key,
                 active = entity.isActive,
-                scale = scale
+                scale = scale,
+                clickable = false
             )
         }
-        return ElementConfig(
-            categories = elementConfig.categories,
-            elements = elementConfig.elements + extraElements
-        )
+        return EntityConfig(nodes = elementConfig.nodes + extraNodes)
     }
 
     companion object {
         internal fun computeActiveKeys(
-            elementConfig: ElementConfig,
+            entityConfig: EntityConfig,
             overrides: List<UserElementOverrideEntity>
         ): Set<String> {
             val overrideMap = overrides.associateBy { it.elementKey }
-            return elementConfig.elements.keys.filter { key ->
+            return entityConfig.trackableKeys.filter { key ->
                 val override = overrideMap[key]
-                override?.isActive ?: (elementConfig.elements[key]?.active ?: true)
+                override?.isActive ?: (entityConfig.nodes[key]?.active ?: true)
             }.toSet()
         }
     }

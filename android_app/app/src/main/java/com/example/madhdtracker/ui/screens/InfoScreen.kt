@@ -19,13 +19,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.madhdtracker.data.TrackerRepository
-import com.example.madhdtracker.domain.model.Element
+import com.example.madhdtracker.domain.model.EntityNode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
 fun InfoScreen(repository: TrackerRepository) {
-    val elementConfig = repository.elementConfig
+    val entityConfig = repository.elementConfig
     val weights = remember { mutableStateMapOf<String, Double>() }
     val loaded = remember { mutableStateOf(false) }
 
@@ -35,10 +35,10 @@ fun InfoScreen(repository: TrackerRepository) {
         loaded.value = true
     }
 
-    val categories = elementConfig.categories
-    val elements = elementConfig.elements
+    val groupNodes = entityConfig.groupNodes
+    val trackableNodes = entityConfig.trackableNodes
 
-    val grouped: Map<String?, List<Element>> = elements.values
+    val grouped: Map<String?, List<EntityNode>> = trackableNodes.values
         .filter { it.key != "overall_feeling" }
         .groupBy { it.parent }
 
@@ -48,10 +48,10 @@ fun InfoScreen(repository: TrackerRepository) {
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        val categoryOrder = categories.keys.toList() + listOf(null)
+        val categoryOrder = groupNodes.keys.toList() + listOf(null)
         categoryOrder.forEach { catKey ->
             val catElements = grouped[catKey] ?: return@forEach
-            val catLabel = catKey?.let { categories[it]?.label } ?: "Ostatné"
+            val catLabel = catKey?.let { groupNodes[it]?.label } ?: "Ostatné"
 
             item {
                 Text(
@@ -71,7 +71,7 @@ fun InfoScreen(repository: TrackerRepository) {
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
-                        Text(text = el.description, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = el.label, style = MaterialTheme.typography.bodyMedium)
                         Text(
                             text = "Váha: ${weight.toInt()} | Dopad: ${if (el.impact == 1) "pozitívny" else "negatívny"}",
                             style = MaterialTheme.typography.labelSmall,

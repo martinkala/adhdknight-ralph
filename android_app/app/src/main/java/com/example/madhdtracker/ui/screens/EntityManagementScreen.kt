@@ -41,7 +41,7 @@ import com.example.madhdtracker.ui.EntityManagementViewModel
 fun EntityManagementScreen(viewModel: EntityManagementViewModel) {
     val activeStates by viewModel.activeStates.collectAsState()
     val userElements by viewModel.userElements.collectAsState()
-    val elementConfig = viewModel.elementConfig
+    val entityConfig = viewModel.elementConfig
 
     var showAddDialog by remember { mutableStateOf(false) }
     var addError by remember { mutableStateOf<String?>(null) }
@@ -59,14 +59,14 @@ fun EntityManagementScreen(viewModel: EntityManagementViewModel) {
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            // System elements grouped by category
-            elementConfig.categories.entries.forEach { (catKey, category) ->
-                val categoryElements = elementConfig.elements.values.filter { it.parent == catKey }
+            // System elements grouped by group node (category)
+            entityConfig.groupNodes.entries.forEach { (catKey, groupNode) ->
+                val categoryElements = entityConfig.trackableNodes.values.filter { it.parent == catKey }
                 if (categoryElements.isEmpty()) return@forEach
 
                 item {
                     Text(
-                        text = category.label,
+                        text = groupNode.label,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
@@ -84,9 +84,9 @@ fun EntityManagementScreen(viewModel: EntityManagementViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(element.description, style = MaterialTheme.typography.bodyLarge)
+                            Text(element.label, style = MaterialTheme.typography.bodyLarge)
                             Text(
-                                "w=${element.weight} impact=${if (element.impact > 0) "+" else ""}${element.impact}",
+                                "w=${element.weight} impact=${if ((element.impact ?: 1) > 0) "+" else ""}${element.impact ?: 1}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -99,8 +99,8 @@ fun EntityManagementScreen(viewModel: EntityManagementViewModel) {
                 }
             }
 
-            // Root elements (parent == null)
-            val rootElements = elementConfig.elements.values.filter { it.parent == null }
+            // Root trackable elements (parent == null)
+            val rootElements = entityConfig.trackableNodes.values.filter { it.parent == null }
             if (rootElements.isNotEmpty()) {
                 item {
                     Text(
@@ -121,7 +121,7 @@ fun EntityManagementScreen(viewModel: EntityManagementViewModel) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(element.description, style = MaterialTheme.typography.bodyLarge)
+                            Text(element.label, style = MaterialTheme.typography.bodyLarge)
                         }
                         Switch(
                             checked = isActive,
@@ -176,7 +176,7 @@ fun EntityManagementScreen(viewModel: EntityManagementViewModel) {
 
     if (showAddDialog) {
         AddEntityDialog(
-            categories = elementConfig.categories.keys.toList(),
+            categories = entityConfig.groupNodes.keys.toList(),
             error = addError,
             onDismiss = { showAddDialog = false; addError = null },
             onConfirm = { key, weight, impact, category, description ->

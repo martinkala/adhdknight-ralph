@@ -1,29 +1,31 @@
 package com.example.madhdtracker.domain.model
 
-data class Category(
-    val key: String,
-    val label: String,
-    val clickable: Boolean,
-    val weight: Double
-)
-
-data class Element(
+data class EntityNode(
     val key: String,
     val weight: Double,
-    val impact: Int,
+    val impact: Int?,
     val parent: String?,
-    val description: String,
+    val label: String,
     val active: Boolean,
-    val scale: List<Int>?
+    val scale: List<Int>?,
+    val clickable: Boolean
 )
 
-data class ElementConfig(
-    val categories: Map<String, Category>,
-    val elements: Map<String, Element>
+data class EntityConfig(
+    val nodes: Map<String, EntityNode>
 ) {
     val negativeKeys: Set<String>
-        get() = elements.filter { it.value.impact == -1 }.keys.toSet()
+        get() = nodes.values.filter { it.impact == -1 && it.active }.map { it.key }.toSet()
 
     val positiveKeys: Set<String>
-        get() = elements.filter { it.value.impact == 1 }.keys.toSet()
+        get() = nodes.values.filter { it.impact == 1 && it.active }.map { it.key }.toSet()
+
+    val trackableNodes: Map<String, EntityNode>
+        get() = nodes.filter { it.value.impact != null && it.value.active }
+
+    val groupNodes: Map<String, EntityNode>
+        get() = nodes.filter { it.value.impact == null }
+
+    val trackableKeys: Set<String>
+        get() = trackableNodes.keys
 }
