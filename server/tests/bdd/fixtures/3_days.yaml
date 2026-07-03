@@ -1,0 +1,59 @@
+description: "3 days - first filled, second empty, third partial"
+
+entity_config:
+  sleep:
+    weight: 15.0
+    impact: 1
+    parent: null
+    scale: true
+  physical_activity:
+    weight: 11.0
+    impact: 1
+    parent: null
+    scale: false
+  stress_work:
+    weight: 13.0
+    impact: -1
+    parent: null
+    scale: false
+
+days:
+  - date: "2026-06-28"
+    values:
+      - element_key: sleep
+        value_binary: 1
+        value_scale: 4
+      - element_key: physical_activity
+        value_binary: 1
+        value_scale: null
+      - element_key: stress_work
+        value_binary: 0
+        value_scale: null
+    active_keys: [sleep, physical_activity, stress_work]
+
+  - date: "2026-06-29"
+    values: []
+    active_keys: [sleep, physical_activity, stress_work]
+
+  - date: "2026-06-30"
+    values:
+      - element_key: sleep
+        value_binary: 1
+        value_scale: 2
+    active_keys: [sleep, physical_activity, stress_work]
+
+expected:
+  # day1: sleep e=0.75 (w=15), act e=1.0 (w=11), stress e=1.0 inverted=1.0 (w=13) → idx=100*(11.25+11+13)/39=100*35.25/39=90.38
+  - date: "2026-06-28"
+    index_value: 90.38
+    tolerance: 0.02
+    status: computed
+  # day2: empty → no_data
+  - date: "2026-06-29"
+    index_value: null
+    status: no_data
+  # day3: sleep only (scale=2) e=(2-1)/4=0.25 → partial (< 3 elements)
+  - date: "2026-06-30"
+    index_value: 25.0
+    tolerance: 0.01
+    status: partial

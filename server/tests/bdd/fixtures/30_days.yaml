@@ -1,0 +1,66 @@
+description: "30 days - full month, includes boundary values (all 0, all max)"
+
+entity_config:
+  overall_feeling:
+    weight: 13.0
+    impact: 1
+    parent: null
+    scale: true
+  sleep:
+    weight: 15.0
+    impact: 1
+    parent: null
+    scale: true
+  physical_activity:
+    weight: 11.0
+    impact: 1
+    parent: null
+    scale: false
+  stress_work:
+    weight: 13.0
+    impact: -1
+    parent: null
+    scale: false
+  mindfulness:
+    weight: 11.0
+    impact: 1
+    parent: null
+    scale: false
+  alcohol:
+    weight: 10.0
+    impact: -1
+    parent: null
+    scale: false
+
+active_keys_default: [overall_feeling, sleep, physical_activity, stress_work, mindfulness, alcohol]
+
+# Boundary day 1: all zeros → index should be near 0
+boundary_all_zeros:
+  date: "2026-06-01"
+  values:
+    - {element_key: overall_feeling, value_binary: 1, value_scale: 1}
+    - {element_key: sleep, value_binary: 1, value_scale: 1}
+    - {element_key: physical_activity, value_binary: 0}
+    - {element_key: stress_work, value_binary: 1}
+    - {element_key: mindfulness, value_binary: 0}
+    - {element_key: alcohol, value_binary: 1}
+  expected_index: 0.0
+  tolerance: 0.01
+
+# Boundary day 2: all max → index should be 100
+boundary_all_max:
+  date: "2026-06-02"
+  values:
+    - {element_key: overall_feeling, value_binary: 1, value_scale: 5}
+    - {element_key: sleep, value_binary: 1, value_scale: 5}
+    - {element_key: physical_activity, value_binary: 1}
+    - {element_key: stress_work, value_binary: 0}
+    - {element_key: mindfulness, value_binary: 1}
+    - {element_key: alcohol, value_binary: 0}
+  expected_index: 100.0
+  tolerance: 0.01
+
+expected:
+  days_requested: 30
+  # Performance: batch sync of 30 days must complete in under 10 seconds
+  max_sync_seconds: 10

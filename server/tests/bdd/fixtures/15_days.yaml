@@ -1,0 +1,123 @@
+description: "15 days - minimum for weight adaptation; mix of filled and empty"
+
+entity_config:
+  overall_feeling:
+    weight: 13.0
+    impact: 1
+    parent: null
+    scale: true
+  sleep:
+    weight: 15.0
+    impact: 1
+    parent: null
+    scale: true
+  physical_activity:
+    weight: 11.0
+    impact: 1
+    parent: null
+    scale: false
+  stress_work:
+    weight: 13.0
+    impact: -1
+    parent: null
+    scale: false
+
+days:
+  - date: "2026-06-16"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 4}
+      - {element_key: sleep, value_binary: 1, value_scale: 4}
+      - {element_key: physical_activity, value_binary: 1}
+      - {element_key: stress_work, value_binary: 0}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-17"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 3}
+      - {element_key: sleep, value_binary: 1, value_scale: 3}
+      - {element_key: physical_activity, value_binary: 0}
+      - {element_key: stress_work, value_binary: 1}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-18"
+    values: []
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-19"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 5}
+      - {element_key: sleep, value_binary: 1, value_scale: 5}
+      - {element_key: physical_activity, value_binary: 1}
+      - {element_key: stress_work, value_binary: 0}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-20"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 2}
+      - {element_key: sleep, value_binary: 1, value_scale: 2}
+      - {element_key: physical_activity, value_binary: 0}
+      - {element_key: stress_work, value_binary: 1}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-21"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 4}
+      - {element_key: sleep, value_binary: 1, value_scale: 3}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-22"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 3}
+      - {element_key: sleep, value_binary: 1, value_scale: 4}
+      - {element_key: physical_activity, value_binary: 1}
+      - {element_key: stress_work, value_binary: 0}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-23"
+    values: []
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-24"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 4}
+      - {element_key: sleep, value_binary: 1, value_scale: 4}
+      - {element_key: physical_activity, value_binary: 1}
+      - {element_key: stress_work, value_binary: 0}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-25"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 5}
+      - {element_key: sleep, value_binary: 1, value_scale: 5}
+      - {element_key: physical_activity, value_binary: 1}
+      - {element_key: stress_work, value_binary: 0}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-26"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 3}
+      - {element_key: sleep, value_binary: 0}
+      - {element_key: physical_activity, value_binary: 0}
+      - {element_key: stress_work, value_binary: 1}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-27"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 4}
+      - {element_key: sleep, value_binary: 1, value_scale: 3}
+      - {element_key: physical_activity, value_binary: 1}
+      - {element_key: stress_work, value_binary: 0}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-28"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 5}
+      - {element_key: sleep, value_binary: 1, value_scale: 5}
+      - {element_key: physical_activity, value_binary: 1}
+      - {element_key: stress_work, value_binary: 0}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-29"
+    values: []
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+  - date: "2026-06-30"
+    values:
+      - {element_key: overall_feeling, value_binary: 1, value_scale: 4}
+      - {element_key: sleep, value_binary: 1, value_scale: 4}
+      - {element_key: physical_activity, value_binary: 1}
+      - {element_key: stress_work, value_binary: 0}
+    active_keys: [overall_feeling, sleep, physical_activity, stress_work]
+
+expected:
+  days_requested: 15
+  days_with_data: 12
+  days_no_data: 3
+  # weight adaptation threshold: 15 filled days (12 here — adaptation not triggered)
+  weight_adaptation_ready: false
