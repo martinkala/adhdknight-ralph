@@ -1,0 +1,97 @@
+description: "5 days - includes a day with subnode element (C1 algorithm verification)"
+
+entity_config:
+  # Root trackable nodes
+  overall_feeling:
+    weight: 13.0
+    impact: 1
+    parent: null
+    scale: true
+  # Group node with children
+  lifestyle:
+    weight: 20.0
+    impact: null
+    parent: null
+    scale: false
+  # Children of lifestyle
+  physical_activity:
+    weight: 10.0
+    impact: 1
+    parent: lifestyle
+    scale: false
+  mindfulness:
+    weight: 10.0
+    impact: 1
+    parent: lifestyle
+    scale: false
+
+days:
+  - date: "2026-06-26"
+    values:
+      - element_key: overall_feeling
+        value_binary: 1
+        value_scale: 3
+      - element_key: physical_activity
+        value_binary: 1
+      - element_key: mindfulness
+        value_binary: 1
+    active_keys: [overall_feeling, physical_activity, mindfulness]
+
+  - date: "2026-06-27"
+    values:
+      - element_key: overall_feeling
+        value_binary: 1
+        value_scale: 5
+      - element_key: physical_activity
+        value_binary: 0
+      - element_key: mindfulness
+        value_binary: 1
+    active_keys: [overall_feeling, physical_activity, mindfulness]
+
+  - date: "2026-06-28"
+    values:
+      - element_key: overall_feeling
+        value_binary: 1
+        value_scale: 2
+    active_keys: [overall_feeling]
+
+  - date: "2026-06-29"
+    values: []
+    active_keys: [overall_feeling, physical_activity, mindfulness]
+
+  - date: "2026-06-30"
+    values:
+      - element_key: overall_feeling
+        value_binary: 1
+        value_scale: 4
+      - element_key: physical_activity
+        value_binary: 1
+      - element_key: mindfulness
+        value_binary: 0
+    active_keys: [overall_feeling, physical_activity, mindfulness]
+
+expected:
+  # day1: overall e=0.5 (w=13), lifestyle group: act=1.0, mind=1.0 → avg=1.0 (w=20) → idx=100*(6.5+20)/33=80.30
+  - date: "2026-06-26"
+    index_value: 80.30
+    tolerance: 0.02
+    status: computed
+  # day2: overall e=1.0 (w=13), lifestyle: act=0.0, mind=1.0 → avg=0.5 (w=20) → idx=100*(13+10)/33=69.70
+  - date: "2026-06-27"
+    index_value: 69.70
+    tolerance: 0.02
+    status: computed
+  # day3: overall only e=(2-1)/4=0.25 → 100*(0.25*13/13)=25
+  - date: "2026-06-28"
+    index_value: 25.0
+    tolerance: 0.01
+    status: partial
+  # day4: empty
+  - date: "2026-06-29"
+    index_value: null
+    status: no_data
+  # day5: overall e=0.75 (w=13), lifestyle: act=1.0, mind=0.0 → avg=0.5 (w=20) → idx=100*(9.75+10)/33=59.85
+  - date: "2026-06-30"
+    index_value: 59.85
+    tolerance: 0.02
+    status: computed
