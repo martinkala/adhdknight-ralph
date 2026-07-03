@@ -1,12 +1,13 @@
 
-Cielom 2 je narvh servera na prepocitavania vektora  adhd V aktualnej verzii bude prepocecet
+Cielom 1 je narvh servera na prepocitavania vektora  adhd V aktualnej verzii bude prepocecet
 vah identicky s prepoctom v aplikacii.
 Hlavny ucel bude testovanie vah a output na backende ez toho aby sme museli pouzivat aplikaciu.
 Vhodne na automatozivane, regression testy prepocitavania vah.
 V buducnosti bude server pouzity ako hlavna autorita prepocitavania vah .
 
 Osobne by som na server preferoval python pre jeho citatlenost, ale necham si poradit od teba 3 moznosti
-ako by sme to v buducnosti mohli riesit. Zatial sa bude jednat len o navrh.
+ako by sme to v buducnosti mohli riesit. Zatial sa bude jednat len o navrh. 
+Jednouz poziadaviek je easy to start servera na akom kolvek linux based stroji, kludne aj lokahost
 
 Sucastou serveroveho riesiesenia bude bude navrh vstupu a vystupu pre server idealny pre api based komunikaciu.
 Zase moja preferencia je json , ale necham si poradit 3 moznosti, ktore su podla teba najlepsie
@@ -23,3 +24,22 @@ Cielom 3 navrhni testovacie scenare z seriou dat 1,3,5,15,30 dni kde input bude 
 sa dohodneme v kroku 2
 Zaroven by mal byt vstup do testov natolko prehladny , aby som ho vedel ako human editovat a navrhnut scenare.
 
+Ciel 4 navrhni testovaciu suitu pre server, zase preferujem python , popis scenarov o feature files
+
+Ciel 5 analyza moznych scenarov
+	- nova aplikacia - prazdne data 
+
+Ciel 6
+Navrhni api pre komunikaciu zo serverom
+	- posielanie vah
+	- prijem vypoctu
+		- navrhni vsetky miesta v aplikacii, kde bude prepocet a tym padom komunikacia zo serverom potrebna
+		- komunikacia len pri update, alebo pri zobrazeni (osobne preferujem len pri update, ale moze byt problem z rozsiritelnostou aplikacie , tu poprosim analyzu.
+
+Ciel 7 narvhni databazove riesenie a strukturu pre server, ja osobne preferujme posttres, ale necham si poradit analyzou.
+
+Ciel 8  navrhni migraciu uzivatelskych dat do server databazy pomocou api, 
+
+Ciel 9 navrhni synchronizacny mechanizmus, moze sa stat ze uzvatel bude offline viac dni a potom syncne viac dat naraz. V buducnosti moze byt k dispozicii aj web client, ktory bude upravovat uzivatlske data. Navrhni sync mechanizmus tak aby bolo mozne konflikty riesit automaticky.
+
+Ciel 10 komunikacia zo serverom bude zalozena na unikatnom uzivatelovi , navrhni zmenu do apky aby bol uzivatel povinny pred komunikaciou zo serverom na zaciatok bude stacit unikatny email uzivatela, heslo a dalsie zabezpecenie budeme riesit v dalsich featurach

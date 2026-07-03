@@ -1,0 +1,7 @@
+ciel 1 uprav ranges aby mohli byt aj zapornehodnoty
+- takze spanok moze mat -2,-1,-0,1,2, aj u ostatnych definicia moze yt zmena na na zaporne
+
+ciel2 pridaj moznost zmazat den v detaile dna
+
+ciel 3 den v buducnosti nebude mozne pridat , limit na strane calendar pickera, a aj aplikacia vylhasi chybu
+implementuj aj na strane servera, pridaj testy 
