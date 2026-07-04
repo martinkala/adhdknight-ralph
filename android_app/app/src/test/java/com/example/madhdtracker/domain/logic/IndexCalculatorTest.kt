@@ -136,6 +136,27 @@ class IndexCalculatorTest {
     }
 
     @Test
+    fun computeDailyIndexGrouped_mixedEntityConfig_staysIn0to100() {
+        val sleepEffective = IndexCalculator.valueEffective(0, -1, -2, 2)       // 0.25
+        val feelingEffective = IndexCalculator.valueEffective(0, 3, 1, 5)       // 0.5
+        val stressEffective = IndexCalculator.valueEffective(0, 4, 1, 5)        // 0.75
+
+        val values = listOf(
+            EventValueEntity(1, "sleep", 1, -1, sleepEffective),
+            EventValueEntity(1, "overall_feeling", 1, 3, feelingEffective),
+            EventValueEntity(1, "stress_work", 1, 4, stressEffective)
+        )
+        val weights = mapOf(
+            "sleep" to WeightEntity("sleep", 15.0, null, "now"),
+            "overall_feeling" to WeightEntity("overall_feeling", 13.0, null, "now"),
+            "stress_work" to WeightEntity("stress_work", 13.0, null, "now")
+        )
+        val index = IndexCalculator.computeDailyIndex(values, weights, setOf("stress_work"))
+        assertNotEquals(null, index)
+        assert(index!! in 0.0..100.0) { "index $index out of 0..100 range" }
+    }
+
+    @Test
     fun computeDailyIndex_averagesWeightedValues() {
         val values = listOf(
             EventValueEntity(eventDayId = 1, elementKey = "sleep", valueBinary = 1, valueScale = null, valueEffective = 1.0),

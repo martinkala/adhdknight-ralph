@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.madhdtracker.ui.ScaleColorMapper
 import com.example.madhdtracker.ui.TrackerViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -76,23 +76,36 @@ fun TrackerScreen(
         viewModel.elements.forEach { element ->
             val state = viewModel.formStates.getValue(element.key)
 
-            val isActive = state.binary.value
-            val sectionColor = when {
-                element.impact == 1 && isActive -> Color(0x334CAF50)
-                element.impact == 1 -> Color(0x1A4CAF50)
-                isActive -> Color(0x33F44336)
-                else -> Color(0x1AF44336)
-            }
+            val isActive = state.binary.value && element.hasScale
+            val sectionColor = ScaleColorMapper.scaleCardColor(
+                value = state.scale.value,
+                scaleMin = element.scaleMin,
+                scaleMax = element.scaleMax,
+                impact = element.impact,
+                isActive = isActive
+            )
             Card(
                 colors = CardDefaults.cardColors(containerColor = sectionColor),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = element.label,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.clickable { onActivityClick(element.key) }
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = element.label,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.clickable { onActivityClick(element.key) }
+                        )
+                        if (isActive) {
+                            Text(
+                                text = state.scale.value.toString(),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,

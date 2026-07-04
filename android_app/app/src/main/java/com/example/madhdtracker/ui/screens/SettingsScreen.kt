@@ -1,7 +1,9 @@
 package com.example.madhdtracker.ui.screens
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.core.content.FileProvider
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -82,7 +84,13 @@ fun SettingsScreen(
             onClick = {
                 CoroutineScope(Dispatchers.Main).launch {
                     val file = ExportHelper.exportCsv(context, repository)
-                    Toast.makeText(context, "Exportované: ${file.name}", Toast.LENGTH_SHORT).show()
+                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/csv"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Zdieľať CSV"))
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -95,7 +103,13 @@ fun SettingsScreen(
             onClick = {
                 CoroutineScope(Dispatchers.Main).launch {
                     val file = ExportHelper.exportJson(context, repository)
-                    Toast.makeText(context, "Exportované: ${file.name}", Toast.LENGTH_SHORT).show()
+                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/json"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Zdieľať JSON"))
                 }
             },
             modifier = Modifier.fillMaxWidth()
