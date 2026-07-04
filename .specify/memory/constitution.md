@@ -63,7 +63,7 @@ MUST byt kryta unit testami.
 Index_d = 100 x Sum(w_i x e_i) / Sum(w_i)
 ```
 - `e_i` = `value_effective` (0-1): ak `value_scale != null` ->
-  `(value_scale - 1) / 4`; inak -> `value_binary`
+  ``(value_scale - scale_min) / (scale_max  - scale_min); inak -> `value_binary`
 - `w_i` = aktualna vaha elementu (personalna ak existuje, inak default)
 - Vysledok sa uklada do `index_daily`
 
