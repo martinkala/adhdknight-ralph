@@ -1,7 +1,6 @@
 package com.example.madhdtracker.ui.screens
 
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.core.content.FileProvider
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +33,6 @@ fun SettingsScreen(
     onOpenEntities: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val detailed = remember { mutableStateOf(true) }
     val syncEnabled = remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.padding(16.dp)) {
@@ -56,16 +54,6 @@ fun SettingsScreen(
                 Text(text = "Spravuj aktívne entity a pridaj vlastné.", style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(6.dp))
                 TextButton(onClick = onOpenEntities) { Text("Spravovať entity") }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(text = "Detailný režim 1–5", style = MaterialTheme.typography.titleMedium)
-                Text(text = "Zapne detailné hodnotenie namiesto 0/1.", style = MaterialTheme.typography.bodyMedium)
-                Spacer(modifier = Modifier.height(6.dp))
-                Switch(checked = detailed.value, onCheckedChange = { detailed.value = it })
             }
         }
 
