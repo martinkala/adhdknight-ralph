@@ -1,5 +1,6 @@
+from datetime import date as dt
 from enum import Enum
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class MigrationStrategy(str, Enum):
@@ -23,6 +24,13 @@ class MigrationDayItem(BaseModel):
     date: str
     is_complete: bool = False
     values: list[MigrationElementValue] = []
+
+    @field_validator("date")
+    @classmethod
+    def date_not_in_future(cls, v: str) -> str:
+        if dt.fromisoformat(v) > dt.today():
+            raise ValueError("Date cannot be in the future")
+        return v
 
     model_config = ConfigDict(extra="ignore")
 

@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+from datetime import date as dt
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class EntityNodeInput(BaseModel):
@@ -24,6 +25,13 @@ class ComputeDailyRequest(BaseModel):
     entity_config: dict[str, EntityNodeInput]
     values: list[ElementValueInput]
     active_keys: list[str]
+
+    @field_validator("date")
+    @classmethod
+    def date_not_in_future(cls, v: str) -> str:
+        if dt.fromisoformat(v) > dt.today():
+            raise ValueError("Date cannot be in the future")
+        return v
 
     model_config = ConfigDict(
         extra="ignore",
@@ -66,6 +74,13 @@ class DayInput(BaseModel):
     date: str
     values: list[ElementValueInput] = []
     active_keys: list[str] = []
+
+    @field_validator("date")
+    @classmethod
+    def date_not_in_future(cls, v: str) -> str:
+        if dt.fromisoformat(v) > dt.today():
+            raise ValueError("Date cannot be in the future")
+        return v
 
     model_config = ConfigDict(extra="ignore")
 

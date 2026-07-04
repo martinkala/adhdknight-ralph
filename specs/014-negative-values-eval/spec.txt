@@ -1,0 +1,14 @@
+V predzajucich featurach som zaviedol moznost zadavat negativny range pre kategorie
+Cielom tejto feature je
+
+1. Doplnit visualizaciu do range entit, ked ich zadavam v tracker obrazovke, chcem vidiet cislo.
+   Zaroven ked su v range zaporne hodnoty tak podklad nebude zeleny, alebo cerveny by default, ale bude sa menit s tym 
+   aku hodnotu v range nastavim. Cize ked bude range 0 podlkad biely, ked -1 jemne cervena farba , ked -2 sytejsia cervena farba. Ked 1 jemne zelena farba , ked 2 sytejsia cervena farba , ale cislo chcme stale vidied v danej kategorii v tracker screene.
+
+2. podobne uprav range kde su len kladne hodnoty v zmysle, chcem tam viditelne cislo a sytost farby sa bude menit v rozsahu ako sa meni cislov danom range.
+
+3. Upravit testy aby pokryli vsetky moze usecases/testcases vyplyvajuce s negative range
+	- napriklad, co ked vsetky itemy budu len negative, ako sa to prejavi na kompatibilite s ASRS skóre
+	- opacny priklad, ked vsetky budu na max
+pre pripady kedy je ohrozena kompatibilita s ASRS tak ich zdokumentuj a navrhni riesenie
+

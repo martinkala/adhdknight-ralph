@@ -237,6 +237,10 @@ class TrackerRepository(
         return completed to filtered.size
     }
 
+    suspend fun getDayByDate(date: String): EventDayEntity? = db.eventDayDao().getByDate(date)
+
+    suspend fun deleteDay(dayId: Long) = db.eventDayDao().deleteById(dayId)
+
     suspend fun getAllEventDates(): List<String> = db.eventDayDao().getAllDates()
 
     suspend fun getAllWeights(): Map<String, Double> =

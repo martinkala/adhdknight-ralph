@@ -9,8 +9,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 object IndexCalculator {
-    fun valueEffective(valueBinary: Int, valueScale: Int?): Double {
-        return valueScale?.let { (it - 1) / 4.0 } ?: valueBinary.toDouble()
+    fun valueEffective(valueBinary: Int, valueScale: Int?, scaleMin: Int = 1, scaleMax: Int = 5): Double {
+        return valueScale?.let { (it - scaleMin) / (scaleMax - scaleMin).toDouble() } ?: valueBinary.toDouble()
     }
 
     fun computeDailyIndex(

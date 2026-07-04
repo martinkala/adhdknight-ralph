@@ -24,6 +24,9 @@ interface EventDayDao {
 
     @Query("SELECT date FROM event_day ORDER BY date DESC")
     suspend fun getAllDates(): List<String>
+
+    @Query("DELETE FROM event_day WHERE id = :dayId")
+    suspend fun deleteById(dayId: Long)
 }
 
 @Dao

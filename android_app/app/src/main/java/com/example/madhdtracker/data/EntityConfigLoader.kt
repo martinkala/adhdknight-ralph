@@ -61,6 +61,12 @@ object EntityConfigLoader {
             @Suppress("UNCHECKED_CAST")
             val scaleRaw = props["scale"] as? List<*>
             val scale = scaleRaw?.mapNotNull { (it as? Number)?.toInt() }?.takeIf { it.size >= 2 }
+            val scaleMin = (props["scale_min"] as? Number)?.toInt()
+                ?: scale?.minOrNull()
+                ?: 1
+            val scaleMax = (props["scale_max"] as? Number)?.toInt()
+                ?: scale?.maxOrNull()
+                ?: 5
             parsedNodes[key] = EntityNode(
                 key = key,
                 weight = weight,
@@ -69,7 +75,9 @@ object EntityConfigLoader {
                 label = label,
                 active = active,
                 scale = scale,
-                clickable = clickable
+                clickable = clickable,
+                scaleMin = scaleMin,
+                scaleMax = scaleMax
             )
         }
 
@@ -96,7 +104,7 @@ object EntityConfigLoader {
     internal fun buildFallback(): EntityConfig {
         val nodes = mapOf(
             "overall_feeling" to EntityNode("overall_feeling", 13.0, 1, null, "Celkový pocit za deň", true, listOf(1, 2, 3, 4, 5), false),
-            "sleep" to EntityNode("sleep", 15.0, 1, null, "Spánok", true, null, true),
+            "sleep" to EntityNode("sleep", 15.0, 1, null, "Spánok", true, listOf(-2, -1, 0, 1, 2), true, scaleMin = -2, scaleMax = 2),
             "physical_activity" to EntityNode("physical_activity", 11.0, 1, null, "Fyzická aktivita", true, listOf(1, 2, 3, 4, 5), true),
             "lifestyle" to EntityNode("lifestyle", 42.0, null, null, "Životný štýl", true, null, false),
             "stress_work" to EntityNode("stress_work", 13.0, -1, "lifestyle", "Pracovný stres", true, listOf(1, 2, 3, 4, 5), false),

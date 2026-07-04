@@ -4,7 +4,7 @@ nodes:
     weight: 13.0
     impact: 1
     active: true
-    scale: [1, 2, 3, 4, 5]
+    scale: [-2, -1, 0, 1, 2]
 
   sleep:
     label: "Spánok"
@@ -12,6 +12,9 @@ nodes:
     impact: 1
     active: true
     clickable: true
+    scale: [-2, -1, 0, 1, 2]
+    scale_min: -2
+    scale_max: 2
 
   physical_activity:
     label: "Fyzická aktivita"
@@ -51,6 +54,7 @@ nodes:
     impact: 1
     parent: head
     active: true
+    scale: [1, 2, 3, 4, 5]
 
   Adiction:
     label: "Závislosti"
@@ -66,7 +70,7 @@ nodes:
     impact: -1
     parent: head
     active: true
-    scale: [1, 2, 3, 4, 5]
+    scale: [-2, -1, 0]
 
   food:
     label: "Strava"
@@ -78,7 +82,7 @@ nodes:
     impact: -1
     parent: food
     active: true
-    scale: [1, 2, 3, 4, 5]
+    scale: [0, 1, 2]
 
   alcohol:
     label: "Alkohol"
@@ -86,7 +90,7 @@ nodes:
     impact: -1
     parent: food
     active: true
-    scale: [1, 2, 3, 4, 5]
+    scale: [0, 1, 2]
 
   nutrition_protein:
     label: "Príjem bielkovín"
@@ -94,6 +98,7 @@ nodes:
     impact: 1
     parent: food
     active: true
+    scale: [0, 1, 2]
 
   vitamins:
     label: "Vitamíny"
@@ -101,10 +106,12 @@ nodes:
     impact: 1
     parent: food
     active: true
+    scale: [0, 1, 2]
 
   organisation:
     label: "Organizácia úloh"
     weight: 8.0
+    scale: [-2, -1, 0, 1, 2]
 
   pomodoro:
     label: "Pomodoro"
@@ -112,3 +119,4 @@ nodes:
     impact: 1
     parent: organisation
     active: true
+    scale: [0, 1, 2]

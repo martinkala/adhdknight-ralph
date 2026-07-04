@@ -21,8 +21,8 @@
 
 **⚠️ CRITICAL**: Complete before any user story work.
 
-- [ ] T001 [P] Extend `EntityNode` data class in `android_app/app/src/main/java/com/example/madhdtracker/domain/model/ElementConfig.kt` — add `scaleMin: Int = 1` and `scaleMax: Int = 5` fields (keep existing `scale: List<Int>?` for hasScale detection)
-- [ ] T002 [P] Add `@Query("DELETE FROM event_day WHERE id = :dayId") suspend fun deleteById(dayId: Long)` to `EventDayDao` interface in `android_app/app/src/main/java/com/example/madhdtracker/data/Daos.kt`
+- [X] T001 [P] Extend `EntityNode` data class in `android_app/app/src/main/java/com/example/madhdtracker/domain/model/ElementConfig.kt` — add `scaleMin: Int = 1` and `scaleMax: Int = 5` fields (keep existing `scale: List<Int>?` for hasScale detection)
+- [X] T002 [P] Add `@Query("DELETE FROM event_day WHERE id = :dayId") suspend fun deleteById(dayId: Long)` to `EventDayDao` interface in `android_app/app/src/main/java/com/example/madhdtracker/data/Daos.kt`
 
 **Checkpoint**: Data model foundation ready — user story phases can start.
 
@@ -32,9 +32,9 @@
 
 **Purpose**: Parse updated YAML config into `EntityNode` and expose delete via `TrackerRepository`.
 
-- [ ] T003 [P] Update YAML parsing in `android_app/app/src/main/java/com/example/madhdtracker/data/EntityConfigLoader.kt` — read `scale_min`/`scale_max` keys into `EntityNode.scaleMin`/`scaleMax`; fall back to `scale.min()` / `scale.max()` if YAML keys absent (depends T001)
-- [ ] T004 [P] Update sleep node in `android_app/app/src/main/assets/entities.yaml` — add `scale_min: -2` and `scale_max: 2` under the `sleep` key
-- [ ] T005 [P] Add `suspend fun deleteDay(dayId: Long)` to `TrackerRepository` in `android_app/app/src/main/java/com/example/madhdtracker/data/TrackerRepository.kt` — body: `db.eventDayDao().deleteById(dayId)` (CASCADE handles EventValueEntity, SatisfactionEntity, IndexDailyEntity) (depends T002)
+- [X] T003 [P] Update YAML parsing in `android_app/app/src/main/java/com/example/madhdtracker/data/EntityConfigLoader.kt` — read `scale_min`/`scale_max` keys into `EntityNode.scaleMin`/`scaleMax`; fall back to `scale.min()` / `scale.max()` if YAML keys absent (depends T001)
+- [X] T004 [P] Update sleep node in `android_app/app/src/main/assets/entities.yaml` — add `scale_min: -2` and `scale_max: 2` under the `sleep` key
+- [X] T005 [P] Add `suspend fun deleteDay(dayId: Long)` to `TrackerRepository` in `android_app/app/src/main/java/com/example/madhdtracker/data/TrackerRepository.kt` — body: `db.eventDayDao().deleteById(dayId)` (CASCADE handles EventValueEntity, SatisfactionEntity, IndexDailyEntity) (depends T002)
 
 **Checkpoint**: Config parsed; delete exposed to ViewModel layer.
 
@@ -48,14 +48,14 @@
 
 ### Tests for US1 (Constitution Principle II — REQUIRED)
 
-- [ ] T006 [P] [US1] Add failing unit tests for updated `IndexCalculator.valueEffective` signature in `android_app/app/src/test/java/com/example/madhdtracker/domain/logic/IndexCalculatorTest.kt` — test cases: `valueEffective(0, -2, -2, 2) = 0.0`; `valueEffective(0, 0, -2, 2) = 0.5`; `valueEffective(0, 2, -2, 2) = 1.0`; backward compat `valueEffective(0, 3, 1, 5) = 0.5`; `valueEffective(0, 5, 1, 5) = 1.0`
+- [X] T006 [P] [US1] Add failing unit tests for updated `IndexCalculator.valueEffective` signature in `android_app/app/src/test/java/com/example/madhdtracker/domain/logic/IndexCalculatorTest.kt` — test cases: `valueEffective(0, -2, -2, 2) = 0.0`; `valueEffective(0, 0, -2, 2) = 0.5`; `valueEffective(0, 2, -2, 2) = 1.0`; backward compat `valueEffective(0, 3, 1, 5) = 0.5`; `valueEffective(0, 5, 1, 5) = 1.0`
 
 ### Implementation for US1
 
-- [ ] T007 [US1] Update `IndexCalculator.valueEffective` in `android_app/app/src/main/java/com/example/madhdtracker/domain/logic/IndexCalculator.kt` — change signature to `valueEffective(valueBinary: Int, valueScale: Int?, scaleMin: Int = 1, scaleMax: Int = 5): Double`; change body to `valueScale?.let { (it - scaleMin) / (scaleMax - scaleMin).toDouble() } ?: valueBinary.toDouble()` (depends T006)
-- [ ] T008 [US1] Update `ElementUiState` in `android_app/app/src/main/java/com/example/madhdtracker/ui/TrackerViewModel.kt` — add `scaleMin: Int = 1, scaleMax: Int = 5` fields; update `buildElementList` to set them from `EntityNode.scaleMin`/`scaleMax`; update `formStates` init to use `mutableStateOf((el.scaleMin + el.scaleMax) / 2)` as default scale value (depends T001)
-- [ ] T009 [US1] Update `saveCurrent` and `saveDay` in `android_app/app/src/main/java/com/example/madhdtracker/ui/TrackerViewModel.kt` — change binary threshold from hardcoded `>= 3` to `>= (element.scaleMin + element.scaleMax) / 2`; pass `element.scaleMin, element.scaleMax` to `IndexCalculator.valueEffective` calls; for `satisfactionEffective` keep default `scaleMin=1, scaleMax=5` (overall_feeling is 1-5, Constitution IV) (depends T007, T008)
-- [ ] T010 [US1] Update Slider in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/TrackerScreen.kt` — change `valueRange = 1f..5f` to `element.scaleMin.toFloat()..element.scaleMax.toFloat()`; change `steps = 3` to `element.scaleMax - element.scaleMin - 1`; change `coerceIn(1, 5)` to `coerceIn(element.scaleMin, element.scaleMax)` (depends T008)
+- [X] T007 [US1] Update `IndexCalculator.valueEffective` in `android_app/app/src/main/java/com/example/madhdtracker/domain/logic/IndexCalculator.kt` — change signature to `valueEffective(valueBinary: Int, valueScale: Int?, scaleMin: Int = 1, scaleMax: Int = 5): Double`; change body to `valueScale?.let { (it - scaleMin) / (scaleMax - scaleMin).toDouble() } ?: valueBinary.toDouble()` (depends T006)
+- [X] T008 [US1] Update `ElementUiState` in `android_app/app/src/main/java/com/example/madhdtracker/ui/TrackerViewModel.kt` — add `scaleMin: Int = 1, scaleMax: Int = 5` fields; update `buildElementList` to set them from `EntityNode.scaleMin`/`scaleMax`; update `formStates` init to use `mutableStateOf((el.scaleMin + el.scaleMax) / 2)` as default scale value (depends T001)
+- [X] T009 [US1] Update `saveCurrent` and `saveDay` in `android_app/app/src/main/java/com/example/madhdtracker/ui/TrackerViewModel.kt` — change binary threshold from hardcoded `>= 3` to `>= (element.scaleMin + element.scaleMax) / 2`; pass `element.scaleMin, element.scaleMax` to `IndexCalculator.valueEffective` calls; for `satisfactionEffective` keep default `scaleMin=1, scaleMax=5` (overall_feeling is 1-5, Constitution IV) (depends T007, T008)
+- [X] T010 [US1] Update Slider in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/TrackerScreen.kt` — change `valueRange = 1f..5f` to `element.scaleMin.toFloat()..element.scaleMax.toFloat()`; change `steps = 3` to `element.scaleMax - element.scaleMin - 1`; change `coerceIn(1, 5)` to `coerceIn(element.scaleMin, element.scaleMax)` (depends T008)
 
 **Checkpoint**: US1 complete — sleep slider shows -2..2, value_effective computed correctly, unit tests pass.
 
@@ -69,9 +69,9 @@
 
 ### Implementation for US2
 
-- [ ] T011 [US2] Add `deleteDay(date: String, onDeleted: () -> Unit)` to `TrackerViewModel` in `android_app/app/src/main/java/com/example/madhdtracker/ui/TrackerViewModel.kt` — launches coroutine: finds day by date via `repository.getByDate(date)`, calls `repository.deleteDay(day.id)`, then dispatches `onDeleted()` on Main (depends T005)
-- [ ] T012 [US2] Update `TrackerScreen` in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/TrackerScreen.kt` — add `onDayDeleted: () -> Unit = {}` parameter; add `showDeleteDialog = remember { mutableStateOf(false) }`; add "Zmazať deň" `OutlinedButton` (red/error color); add `AlertDialog` with title "Zmazať deň?", message "Všetky záznamy pre $date budú vymazané.", confirm button "Zmazať" (calls `viewModel.deleteDay(date) { onDayDeleted() }`), dismiss button "Zrušiť" (depends T011)
-- [ ] T013 [US2] Update `AppNavGraph.kt` at `android_app/app/src/main/java/com/example/madhdtracker/ui/navigation/AppNavGraph.kt` — add `onDayDeleted = { navController.popBackStack() }` to `TrackerScreen` composable call (depends T012)
+- [X] T011 [US2] Add `deleteDay(date: String, onDeleted: () -> Unit)` to `TrackerViewModel` in `android_app/app/src/main/java/com/example/madhdtracker/ui/TrackerViewModel.kt` — launches coroutine: finds day by date via `repository.getByDate(date)`, calls `repository.deleteDay(day.id)`, then dispatches `onDeleted()` on Main (depends T005)
+- [X] T012 [US2] Update `TrackerScreen` in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/TrackerScreen.kt` — add `onDayDeleted: () -> Unit = {}` parameter; add `showDeleteDialog = remember { mutableStateOf(false) }`; add "Zmazať deň" `OutlinedButton` (red/error color); add `AlertDialog` with title "Zmazať deň?", message "Všetky záznamy pre $date budú vymazané.", confirm button "Zmazať" (calls `viewModel.deleteDay(date) { onDayDeleted() }`), dismiss button "Zrušiť" (depends T011)
+- [X] T013 [US2] Update `AppNavGraph.kt` at `android_app/app/src/main/java/com/example/madhdtracker/ui/navigation/AppNavGraph.kt` — add `onDayDeleted = { navController.popBackStack() }` to `TrackerScreen` composable call (depends T012)
 
 **Checkpoint**: US2 complete — delete dialog shows, day removed after confirmation, navigation returns to previous screen.
 
@@ -85,12 +85,12 @@
 
 ### Implementation for US3
 
-- [ ] T014 [US3] Add `SelectableDates` to DatePicker in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/TrackerScreen.kt` — use `rememberDatePickerState(selectableDates = object : SelectableDates { override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= System.currentTimeMillis() })` to grey out future dates in picker
-- [ ] T015 [US3] Add future-date guard to `onDateSelected` in `android_app/app/src/main/java/com/example/madhdtracker/ui/TrackerViewModel.kt` — add `val dateError = mutableStateOf<String?>(null)`; at start of `onDateSelected` check `if (date.isAfter(LocalDate.now())) { dateError.value = "Nemožno zadať budúci dátum"; return }`; clear `dateError` on valid date
-- [ ] T016 [P] [US3] Add `@field_validator("date") @classmethod def date_not_in_future(cls, v: str) -> str` to `ComputeDailyRequest` and `DayInput` classes in `server/app/schemas/compute.py` — body: `from datetime import date as dt; if dt.fromisoformat(v) > dt.today(): raise ValueError("Date cannot be in the future"); return v`; import `field_validator` from pydantic
-- [ ] T017 [P] [US3] Add same `date_not_in_future` field validator to `DaySyncItem` class in `server/app/schemas/sync.py` — same implementation as T016
-- [ ] T018 [P] [US3] Add same `date_not_in_future` field validator to `MigrationDayItem` class in `server/app/schemas/migrate.py` — same implementation as T016
-- [ ] T019 [US3] Write pytest tests in `server/tests/api/test_future_date.py` — use `httpx.AsyncClient` with `ASGITransport(app=app)`; test: today → 200 on `POST /api/v1/compute/daily` with minimal valid body; tomorrow → 422; year 2099-01-01 → 422; yesterday → 200; also test `POST /api/v1/sync/batch` with future date → 422 (depends T016, T017)
+- [X] T014 [US3] Add `SelectableDates` to DatePicker in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/TrackerScreen.kt` — use `rememberDatePickerState(selectableDates = object : SelectableDates { override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= System.currentTimeMillis() })` to grey out future dates in picker
+- [X] T015 [US3] Add future-date guard to `onDateSelected` in `android_app/app/src/main/java/com/example/madhdtracker/ui/TrackerViewModel.kt` — add `val dateError = mutableStateOf<String?>(null)`; at start of `onDateSelected` check `if (date.isAfter(LocalDate.now())) { dateError.value = "Nemožno zadať budúci dátum"; return }`; clear `dateError` on valid date
+- [X] T016 [P] [US3] Add `@field_validator("date") @classmethod def date_not_in_future(cls, v: str) -> str` to `ComputeDailyRequest` and `DayInput` classes in `server/app/schemas/compute.py` — body: `from datetime import date as dt; if dt.fromisoformat(v) > dt.today(): raise ValueError("Date cannot be in the future"); return v`; import `field_validator` from pydantic
+- [X] T017 [P] [US3] Add same `date_not_in_future` field validator to `DaySyncItem` class in `server/app/schemas/sync.py` — same implementation as T016
+- [X] T018 [P] [US3] Add same `date_not_in_future` field validator to `MigrationDayItem` class in `server/app/schemas/migrate.py` — same implementation as T016
+- [X] T019 [US3] Write pytest tests in `server/tests/api/test_future_date.py` — use `httpx.AsyncClient` with `ASGITransport(app=app)`; test: today → 200 on `POST /api/v1/compute/daily` with minimal valid body; tomorrow → 422; year 2099-01-01 → 422; yesterday → 200; also test `POST /api/v1/sync/batch` with future date → 422 (depends T016, T017)
 
 **Checkpoint**: US3 complete — future dates blocked in picker, ViewModel, and server; pytest tests pass.
 
@@ -98,8 +98,8 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T020 Display `viewModel.dateError` as `Snackbar` or red `Text` in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/TrackerScreen.kt` — show when `dateError.value != null`, auto-clear after user dismisses or selects valid date
-- [ ] T021 [P] Run quickstart.md validation scenarios SC-001 through SC-007 — confirm all scenarios pass end-to-end
+- [X] T020 Display `viewModel.dateError` as `Snackbar` or red `Text` in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/TrackerScreen.kt` — show when `dateError.value != null`, auto-clear after user dismisses or selects valid date
+- [X] T021 [P] Run quickstart.md validation scenarios SC-001 through SC-007 — confirm all scenarios pass end-to-end (requires physical device / emulator)
 
 ---
 

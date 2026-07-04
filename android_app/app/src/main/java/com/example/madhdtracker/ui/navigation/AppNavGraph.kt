@@ -68,6 +68,8 @@ fun AppNavGraph(
                 }
             }, onActivityClick = { key ->
                 navController.navigate(AppRoutes.activityDetail(key))
+            }, onDayDeleted = {
+                navController.popBackStack()
             })
         }
         composable(AppRoutes.TREND) {

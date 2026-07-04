@@ -27,13 +27,14 @@ class TrackerViewModel(
     val elements: List<ElementUiState> get() = _elements
 
     val selectedDate = mutableStateOf(LocalDate.now())
+    val dateError = mutableStateOf<String?>(null)
 
     val formStates = mutableStateMapOf<String, ElementInputState>().also { map ->
-        elements.forEach { element ->
-            map[element.key] = ElementInputState(
+        elements.forEach { el ->
+            map[el.key] = ElementInputState(
                 binary = mutableStateOf(false),
-                detailEnabled = mutableStateOf(element.hasScale),
-                scale = mutableStateOf(3)
+                detailEnabled = mutableStateOf(el.hasScale),
+                scale = mutableStateOf((el.scaleMin + el.scaleMax) / 2)
             )
         }
     }
@@ -76,14 +77,15 @@ class TrackerViewModel(
                 elements.forEach { element ->
                     val entity = entities[element.key]
                     val state = formStates[element.key] ?: return@forEach
+                    val midpoint = (element.scaleMin + element.scaleMax) / 2
                     if (entity != null) {
                         state.binary.value = entity.valueBinary == 1 || entity.valueScale != null
                         state.detailEnabled.value = element.hasScale
-                        state.scale.value = entity.valueScale ?: 3
+                        state.scale.value = entity.valueScale ?: midpoint
                     } else {
                         state.binary.value = false
                         state.detailEnabled.value = element.hasScale
-                        state.scale.value = 3
+                        state.scale.value = midpoint
                     }
                 }
             }
@@ -91,20 +93,34 @@ class TrackerViewModel(
     }
 
     fun onDateSelected(date: LocalDate) {
+        if (date.isAfter(LocalDate.now())) {
+            dateError.value = "Nemožno zadať budúci dátum"
+            return
+        }
+        dateError.value = null
         selectedDate.value = date
         loadedDate = null
         loadForDate(date.format(DateTimeFormatter.ISO_LOCAL_DATE))
     }
 
+    fun deleteDay(date: String, onDeleted: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val day = repository.getDayByDate(date) ?: return@launch
+            repository.deleteDay(day.id)
+            withContext(Dispatchers.Main) { onDeleted() }
+        }
+    }
+
     fun saveCurrent(date: String) {
         val inputs = elements.map { element ->
-            val state = formStates[element.key] ?: return@map ElementValueInput(element.key, 0, null)
+            val state = formStates[element.key] ?: return@map ElementValueInput(element.key, 0, null, element.scaleMin, element.scaleMax)
+            val midpoint = (element.scaleMin + element.scaleMax) / 2
             val (binary, scale) = when {
                 !state.binary.value -> Pair(0, null)
-                element.hasScale -> Pair(if (state.scale.value >= 3) 1 else 0, state.scale.value)
+                element.hasScale -> Pair(if (state.scale.value >= midpoint) 1 else 0, state.scale.value)
                 else -> Pair(1, null)
             }
-            ElementValueInput(elementKey = element.key, valueBinary = binary, valueScale = scale)
+            ElementValueInput(elementKey = element.key, valueBinary = binary, valueScale = scale, scaleMin = element.scaleMin, scaleMax = element.scaleMax)
         }
         val satisfactionScale = formStates["overall_feeling"]?.scale?.value ?: 3
         saveDay(date, inputs, satisfactionScale)
@@ -117,7 +133,7 @@ class TrackerViewModel(
 
             val now = OffsetDateTime.now().toString()
             val eventValues = values.map { input ->
-                val effective = IndexCalculator.valueEffective(input.valueBinary, input.valueScale)
+                val effective = IndexCalculator.valueEffective(input.valueBinary, input.valueScale, input.scaleMin, input.scaleMax)
                 EventValueEntity(
                     eventDayId = day.id,
                     elementKey = input.elementKey,
@@ -127,7 +143,8 @@ class TrackerViewModel(
                 )
             }
 
-            val satisfactionEffective = IndexCalculator.valueEffective(0, satisfactionScale)
+            // overall_feeling always uses 1-5 scale (Constitution IV)
+            val satisfactionEffective = IndexCalculator.valueEffective(0, satisfactionScale, scaleMin = 1, scaleMax = 5)
             val satisfaction = SatisfactionEntity(
                 eventDayId = day.id,
                 valueScale = satisfactionScale,
@@ -147,20 +164,20 @@ class TrackerViewModel(
             entityConfig.trackableNodes.values
                 .filter { it.parent == null && it.scale != null }
                 .forEach { el ->
-                    result.add(ElementUiState(el.key, el.label, true, el.impact ?: 1))
+                    result.add(ElementUiState(el.key, el.label, true, el.impact ?: 1, el.scaleMin, el.scaleMax))
                 }
             // Root nodes without scale
             entityConfig.trackableNodes.values
                 .filter { it.parent == null && it.scale == null }
                 .forEach { el ->
-                    result.add(ElementUiState(el.key, el.label, false, el.impact ?: 1))
+                    result.add(ElementUiState(el.key, el.label, false, el.impact ?: 1, el.scaleMin, el.scaleMax))
                 }
             // Group children ordered by group node iteration
             entityConfig.groupNodes.keys.forEach { catKey ->
                 entityConfig.trackableNodes.values
                     .filter { it.parent == catKey }
                     .forEach { el ->
-                        result.add(ElementUiState(el.key, el.label, el.scale != null, el.impact ?: 1))
+                        result.add(ElementUiState(el.key, el.label, el.scale != null, el.impact ?: 1, el.scaleMin, el.scaleMax))
                     }
             }
             return result.distinctBy { it.key }
@@ -172,7 +189,9 @@ data class ElementUiState(
     val key: String,
     val label: String,
     val hasScale: Boolean,
-    val impact: Int
+    val impact: Int,
+    val scaleMin: Int = 1,
+    val scaleMax: Int = 5
 )
 
 data class ElementInputState(
@@ -184,7 +203,9 @@ data class ElementInputState(
 data class ElementValueInput(
     val elementKey: String,
     val valueBinary: Int,
-    val valueScale: Int?
+    val valueScale: Int?,
+    val scaleMin: Int = 1,
+    val scaleMax: Int = 5
 )
 
 class TrackerViewModelFactory(

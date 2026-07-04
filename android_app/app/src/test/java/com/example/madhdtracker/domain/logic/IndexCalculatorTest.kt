@@ -14,6 +14,32 @@ class IndexCalculatorTest {
         assertEquals(1.0, effective, 0.0001)
     }
 
+    // T006 — failing tests for new scaleMin/scaleMax signature
+    @Test
+    fun valueEffective_negativeScaleMin_returnsZeroAtMin() {
+        assertEquals(0.0, IndexCalculator.valueEffective(0, -2, -2, 2), 0.0001)
+    }
+
+    @Test
+    fun valueEffective_negativeScaleMin_returnsMidpointAtZero() {
+        assertEquals(0.5, IndexCalculator.valueEffective(0, 0, -2, 2), 0.0001)
+    }
+
+    @Test
+    fun valueEffective_negativeScaleMin_returnsOneAtMax() {
+        assertEquals(1.0, IndexCalculator.valueEffective(0, 2, -2, 2), 0.0001)
+    }
+
+    @Test
+    fun valueEffective_backwardCompat_scaleOneToFiveMidpoint() {
+        assertEquals(0.5, IndexCalculator.valueEffective(0, 3, 1, 5), 0.0001)
+    }
+
+    @Test
+    fun valueEffective_backwardCompat_scaleOneToFiveMax() {
+        assertEquals(1.0, IndexCalculator.valueEffective(0, 5, 1, 5), 0.0001)
+    }
+
     @Test
     fun computePositiveIndex_onlyPositiveKeysContribute() {
         val values = listOf(

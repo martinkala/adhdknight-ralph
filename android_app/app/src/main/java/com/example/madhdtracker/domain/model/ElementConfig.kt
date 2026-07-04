@@ -8,7 +8,9 @@ data class EntityNode(
     val label: String,
     val active: Boolean,
     val scale: List<Int>?,
-    val clickable: Boolean
+    val clickable: Boolean,
+    val scaleMin: Int = 1,
+    val scaleMax: Int = 5
 )
 
 data class EntityConfig(
