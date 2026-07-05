@@ -18,7 +18,8 @@ install: venv
 dev: install
 	@if [ ! -f .env ]; then cp .env.example .env && echo "Created .env from .env.example"; fi
 	$(MAKE) migrate
-	$(UVICORN) app.main:app --reload --host 0.0.0.0 --port 8000
+	#$(UVICORN) app.main:app --reload --host 0.0.0.0 --port 8095
+	$(UVICORN) app.main:app --reload --host 192.168.77.24 --port 8095
 
 migrate: venv
 	$(ALEMBIC) upgrade head

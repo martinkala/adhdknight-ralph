@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.routers import health, compute, auth, sync, migrate
+from app.routers import health, compute, auth, sync, migrate, user
 from app.middleware.logging import RequestLoggingMiddleware
 from app.db.database import engine, Base
 
@@ -29,6 +29,7 @@ app = FastAPI(
         {"name": "auth", "description": "Email + password authentication, JWT tokens"},
         {"name": "sync", "description": "Offline batch sync with LWW conflict resolution"},
         {"name": "migrate", "description": "Import historical Android data to server database"},
+        {"name": "user", "description": "User profile and history for web client"},
     ],
     lifespan=lifespan,
 )
@@ -53,3 +54,4 @@ app.include_router(compute.router)
 app.include_router(auth.router)
 app.include_router(sync.router)
 app.include_router(migrate.router)
+app.include_router(user.router)
