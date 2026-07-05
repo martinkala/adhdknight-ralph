@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ADHD Tracker{% endblock %}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #333; }
+        nav { background: #1976D2; color: white; padding: 0 1.5rem; display: flex; align-items: center; height: 56px; }
+        nav a { color: white; text-decoration: none; margin-right: 1.5rem; font-size: 0.95rem; }
+        nav a:hover { opacity: 0.8; }
+        nav .brand { font-weight: 700; font-size: 1.1rem; margin-right: 2rem; }
+        nav .spacer { flex: 1; }
+        .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1rem; }
+        .btn { display: inline-block; padding: 0.5rem 1.25rem; border-radius: 4px; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
+        .btn-primary { background: #1976D2; color: white; }
+        .btn-primary:hover { background: #1565C0; }
+        .btn-secondary { background: #eee; color: #333; }
+        .btn-secondary:hover { background: #ddd; }
+        .alert { padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1rem; }
+        .alert-error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.875rem; margin-bottom: 0.35rem; color: #555; }
+        .form-group input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
+        .form-group input:focus { outline: none; border-color: #1976D2; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+{% if request.session.user_email %}
+<nav>
+    <span class="brand">ADHD Tracker</span>
+    <a href="{% url 'dashboard' %}">Dashboard</a>
+    <a href="{% url 'trend' %}">Trend</a>
+    <a href="{% url 'account' %}">Účet</a>
+    <a href="{% url 'info' %}">Info</a>
+    <span class="spacer"></span>
+    <a href="{% url 'logout' %}">Odhlásiť</a>
+</nav>
+{% endif %}
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+</body>
+</html>

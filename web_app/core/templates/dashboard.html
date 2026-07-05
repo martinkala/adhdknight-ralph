@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – ADHD Tracker{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    .chart-wrap { position: relative; height: 360px; }
+    .server-error { color: #c62828; font-style: italic; }
+</style>
+{% endblock %}
+{% block content %}
+<h2 style="margin-bottom:1rem;">Dashboard</h2>
+{% if history.error %}
+    <div class="alert alert-error">{{ history.error }}</div>
+{% else %}
+    <div class="card">
+        <h3 style="margin-bottom:1rem;font-size:1rem;color:#555;">Posledných 30 dní — denný index</h3>
+        <div class="chart-wrap">
+            <canvas id="barChart"></canvas>
+        </div>
+    </div>
+    <script>
+    (function() {
+        const days = {{ history.days|default:"[]"|safe }};
+        const labels = days.map(d => d.date).reverse();
+        const values = days.map(d => d.index_value != null ? d.index_value : 0).reverse();
+        const colors = values.map(v => v >= 50 ? 'rgba(76,175,80,0.7)' : 'rgba(244,67,54,0.7)');
+        const borderColors = values.map(v => v >= 50 ? '#388E3C' : '#C62828');
+
+        new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Index',
+                    data: values.map(v => v - 50),
+                    backgroundColor: colors,
+                    borderColor: borderColors,
+                    borderWidth: 1,
+                    borderRadius: 3,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `Index: ${(ctx.raw + 50).toFixed(1)}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        min: -50, max: 50,
+                        ticks: {
+                            callback: v => v + 50
+                        },
+                        grid: { color: ctx => ctx.tick.value === 0 ? '#1976D2' : '#eee', lineWidth: ctx => ctx.tick.value === 0 ? 2 : 1 }
+                    },
+                    x: { ticks: { maxRotation: 45 } }
+                }
+            }
+        });
+    })();
+    </script>
+{% endif %}
+{% endblock %}

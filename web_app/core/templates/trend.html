@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Trend – ADHD Tracker{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    .chart-wrap { position: relative; height: 320px; }
+</style>
+{% endblock %}
+{% block content %}
+<h2 style="margin-bottom:1rem;">Denný trend</h2>
+{% if history.error %}
+    <div class="alert alert-error">{{ history.error }}</div>
+{% else %}
+    <div class="card">
+        <h3 style="margin-bottom:1rem;font-size:1rem;color:#555;">Posledných 60 dní — pohyblivý priemer</h3>
+        <div class="chart-wrap">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+    <script>
+    (function() {
+        const days = {{ history.days|default:"[]"|safe }};
+        const sorted = [...days].reverse();
+        const labels = sorted.map(d => d.date);
+        const values = sorted.map(d => d.index_value != null ? d.index_value : null);
+
+        function movingAvg(arr, window) {
+            return arr.map((_, i) => {
+                const slice = arr.slice(Math.max(0, i - window + 1), i + 1).filter(v => v != null);
+                return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null;
+            });
+        }
+        const avg7 = movingAvg(values, 7);
+
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Denný index',
+                        data: values,
+                        borderColor: 'rgba(25,118,210,0.4)',
+                        backgroundColor: 'transparent',
+                        pointRadius: 3,
+                        tension: 0.2,
+                    },
+                    {
+                        label: '7-dňový priemer',
+                        data: avg7,
+                        borderColor: '#1976D2',
+                        backgroundColor: 'transparent',
+                        pointRadius: 0,
+                        borderWidth: 2.5,
+                        tension: 0.3,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    y: { min: 0, max: 100 },
+                    x: { ticks: { maxRotation: 45 } }
+                }
+            }
+        });
+    })();
+    </script>
+{% endif %}
+{% endblock %}

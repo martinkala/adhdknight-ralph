@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Info – ADHD Tracker{% endblock %}
+{% block content %}
+<h2 style="margin-bottom:1rem;">O aplikácii</h2>
+<div class="card" style="max-width:640px;">
+    <h3 style="margin-bottom:0.75rem;font-size:1rem;">ADHD Tracker – Web</h3>
+    <p style="line-height:1.7;color:#444;margin-bottom:1rem;">
+        Webová verzia aplikácie ADHD Tracker zobrazuje dáta synchronizované z mobilnej aplikácie.
+        Slúži na vizualizáciu denného indexu a analýzu trendov na existujúcich dátach.
+    </p>
+    <h4 style="margin-bottom:0.5rem;font-size:0.9rem;color:#555;">Čo webová aplikácia umožňuje</h4>
+    <ul style="padding-left:1.25rem;line-height:1.9;color:#444;">
+        <li>Zobrazenie dvojstranného bar chartu posledných 30 dní</li>
+        <li>Analýza denného trendu s kĺzavým priemerom</li>
+        <li>Prehľad informácií o účte</li>
+    </ul>
+    <p style="margin-top:1rem;font-size:0.875rem;color:#888;">
+        Záznamy sa pridávajú cez mobilnú aplikáciu. Webová verzia je read-only.
+    </p>
+</div>
+{% endblock %}

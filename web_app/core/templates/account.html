@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Účet – ADHD Tracker{% endblock %}
+{% block content %}
+<h2 style="margin-bottom:1rem;">Môj účet</h2>
+{% if me.error %}
+    <div class="alert alert-error">{{ me.error }}</div>
+{% else %}
+    <div class="card" style="max-width:480px;">
+        <table style="width:100%;border-collapse:collapse;">
+            <tr>
+                <td style="padding:0.6rem 0;color:#555;width:40%;">E-mail</td>
+                <td style="padding:0.6rem 0;font-weight:500;">{{ me.email }}</td>
+            </tr>
+            <tr style="border-top:1px solid #eee;">
+                <td style="padding:0.6rem 0;color:#555;">Registrovaný</td>
+                <td style="padding:0.6rem 0;">{{ me.created_at|slice:":10" }}</td>
+            </tr>
+            <tr style="border-top:1px solid #eee;">
+                <td style="padding:0.6rem 0;color:#555;">Sledovaných dní</td>
+                <td style="padding:0.6rem 0;">{{ me.total_days }}</td>
+            </tr>
+        </table>
+        <div style="margin-top:1.5rem;">
+            <a href="{% url 'logout' %}" class="btn btn-secondary">Odhlásiť sa</a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

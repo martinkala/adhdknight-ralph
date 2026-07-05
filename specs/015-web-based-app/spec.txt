@@ -1,0 +1,26 @@
+Cielom je specifikaciu pre web aplikaciu ktora bude zobrazovat data nahrane na serveri rovnako ako mobilna aplikacia.
+
+Do aplikacie sa bude prihlasovat emailom a heslom.
+
+Aplikacia v prvej verzii len zobrazi double sided graf z dat na serveri 
+
+V tejto verzii zatial nebude mozne pridavat cez web aplikaciu zaznamy.
+
+Bude sa mozne 
+	- registrovat
+	- prihlasit
+	- zobrazit hlavnu stranku bez moznosti aktualizacie
+	- tracker nebude dostupny
+	- zobrazit denny trend
+	- zobrazit info
+	- nova polozka user acount - info o uzivatelovi.
+
+
+Webova aplikacia bude sluzit ako test alfa verzii algoritmov, novych grafov a prehladov na uz existujucich datach
+Nove graficke vyjatrenia dat budem testovat hlavne na web apke,
+rovnako ako vacsie datove sady a tety budu spustane na webapke a underlying serveri.
+
+Zatial default server bude aplikacia kontaktovat na adrese 127.0.0.1:8095
+
+Navrhni mi technicke riesenia ako aplikaciu postavit na akom technologickom stacku. Preferujem kobinaciu html javascript a na serveri python. Ja mam skusenosti s djangom.
+

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Registrácia – ADHD Tracker{% endblock %}
+{% block content %}
+<div style="max-width:380px;margin:4rem auto;">
+    <div class="card">
+        <h2 style="margin-bottom:1.5rem;font-size:1.25rem;">Registrácia</h2>
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        {% if success %}
+        <div class="alert alert-success">{{ success }} <a href="{% url 'login' %}">Prihlásiť sa</a></div>
+        {% else %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" name="email" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Heslo</label>
+                <input type="password" id="password" name="password" required minlength="6">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">Vytvoriť účet</button>
+        </form>
+        <p style="margin-top:1rem;font-size:0.875rem;text-align:center;">
+            Máte účet? <a href="{% url 'login' %}">Prihláste sa</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
