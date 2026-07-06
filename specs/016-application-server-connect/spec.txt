@@ -1,0 +1,14 @@
+Cielom je zostavit 
+- plan prepojenia mobilnej aplikacie a servera 
+- plan migracie dat z existujuce app do databazoveo servera
+	- zatial mame len 1 uzivatela , takze pokial bude migracia cez siet moc komplikovana, je mozne importovat existujuci csv subor inou utilitou a cez aplikaciu sa len pripojit 
+- plan upravy aplikacie aby sa v setingoch dala nastavit url/ipadresa servera
+- navrh bezpecnej komunikacie cez https api
+- navrh bezpecnej end to end komunikacie - ako na to ? certifikaty ?
+- plan migracia servera na postgres db
+- plan ako uprava aplikacie - volitelny login cez account obrazovku
+- plan ako pridat account obrazovku do menu
+- otazka - bude prihlasenie cez webaolikaciu a mobilnu aplikaciu rovnake z pohladu https ceritifikatu, a end to end sifrovania ?
+- ako komplikovane na manintennace je e2e sifrovanie, moze to v buducnosti viest k nefunkcnosti aplickacie , pri zmene certifikatov, ako sa budu aktualizovat certifikaty v aplikacii casom
+
+V tomto kroku sa bude jednat len o analyzu, ktora sa moze rozpadnut do viacerych featur, dolezite bude navrnut postup implementovania featur (predpokladany pocet je 1-4) aby bol postup bezproblemovy a testovanelny na oboch endpointoch mobil app, web app
