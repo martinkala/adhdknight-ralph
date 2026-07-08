@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,7 +41,7 @@ INSTALLED_APPS = [
     'core',
 ]
 
-SERVER_URL = 'http://127.0.0.1:8095'
+SERVER_URL = os.environ.get('FASTAPI_URL', 'http://192.168.77.24:8095')
 SESSION_COOKIE_AGE = 86400
 
 MIDDLEWARE = [

@@ -17,8 +17,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -105,8 +109,29 @@ fun TrackerScreen(
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier
                                 .weight(1f)
-                                .clickable { onActivityClick(element.key) }
+                                .clickable {
+                                    state.binary.value = !state.binary.value
+                                    viewModel.saveCurrent(date)
+                                }
                         )
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                                    shape = CircleShape
+                                )
+                                .clickable { onActivityClick(element.key) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "i",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                         if (isActive) {
                             Box(
                                 modifier = Modifier
@@ -134,15 +159,53 @@ fun TrackerScreen(
                             }
                         )
                     }
-                    if (state.binary.value && element.hasScale) {
-                        Slider(
-                            value = state.scale.value.toFloat(),
-                            onValueChange = { state.scale.value = it.toInt().coerceIn(element.scaleMin, element.scaleMax) },
-                            onValueChangeFinished = { viewModel.saveCurrent(date) },
-                            valueRange = element.scaleMin.toFloat()..element.scaleMax.toFloat(),
-                            steps = element.scaleMax - element.scaleMin - 1,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                    if (state.binary.value) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (element.hasScale) {
+                                Slider(
+                                    value = state.scale.value.toFloat(),
+                                    onValueChange = { state.scale.value = it.toInt().coerceIn(element.scaleMin, element.scaleMax) },
+                                    onValueChangeFinished = { viewModel.saveCurrent(date) },
+                                    valueRange = element.scaleMin.toFloat()..element.scaleMax.toFloat(),
+                                    steps = element.scaleMax - element.scaleMin - 1,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                            IconButton(
+                                onClick = { state.showNote.value = !state.showNote.value },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = "Poznámka",
+                                    tint = if (state.note.value.isNotBlank())
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                        if (state.showNote.value) {
+                            OutlinedTextField(
+                                value = state.note.value,
+                                onValueChange = { v ->
+                                    if (v.length <= 250) {
+                                        state.note.value = v
+                                        viewModel.saveNote(date, element.key, v)
+                                    }
+                                },
+                                label = { Text("Poznámka") },
+                                placeholder = { Text("Max 250 znakov") },
+                                maxLines = 4,
+                                modifier = Modifier.fillMaxWidth(),
+                                supportingText = { Text("${state.note.value.length}/250") }
+                            )
+                        }
                     }
                 }
             }

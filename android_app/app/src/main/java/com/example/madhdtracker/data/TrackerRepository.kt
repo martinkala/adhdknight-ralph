@@ -59,6 +59,11 @@ class TrackerRepository(
         db.satisfactionDao().upsert(satisfaction)
     }
 
+    suspend fun updateNote(date: String, elementKey: String, note: String?) {
+        val day = db.eventDayDao().getByDate(date) ?: return
+        db.eventValueDao().updateNote(day.id, elementKey, note)
+    }
+
     suspend fun getActiveElementKeys(): Set<String> {
         val overrides = db.userElementOverrideDao().getAll()
         val userElements = db.userElementDao().getAll().filter { it.isActive }

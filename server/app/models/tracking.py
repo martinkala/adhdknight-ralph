@@ -32,6 +32,7 @@ class ElementValue(Base):
     value_binary: Mapped[int] = mapped_column(Integer, default=0)
     value_scale: Mapped[int | None] = mapped_column(Integer, nullable=True)
     value_effective: Mapped[float] = mapped_column(Float, default=0.0)
+    note: Mapped[str | None] = mapped_column(String(250), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     day: Mapped["TrackingDay"] = relationship(back_populates="values")

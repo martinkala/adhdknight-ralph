@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass, field
-from datetime import timezone
+from datetime import date as dt, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.tracking import TrackingDay, ElementValue
@@ -28,6 +28,11 @@ async def process_batch_sync(
     result.records_sent = sum(len(d.values) for d in days)
 
     for day_item in days:
+        if dt.fromisoformat(day_item.date) > dt.today():
+            result.records_rejected += len(day_item.values)
+            result.conflicts.append(ConflictRecord(date=day_item.date, resolution="rejected_future_date"))
+            continue
+
         # Get or create TrackingDay
         stmt = select(TrackingDay).where(
             TrackingDay.user_id == user_id,
@@ -64,6 +69,7 @@ async def process_batch_sync(
                     element_key=ev_item.element_key,
                     value_binary=ev_item.value_binary,
                     value_scale=ev_item.value_scale,
+                    note=ev_item.note,
                     updated_at=ev_item.updated_at,
                 )
                 db.add(new_ev)
@@ -81,6 +87,7 @@ async def process_batch_sync(
                     # LWW: incoming is newer → accept
                     existing.value_binary = ev_item.value_binary
                     existing.value_scale = ev_item.value_scale
+                    existing.note = ev_item.note
                     existing.updated_at = ev_item.updated_at
                     result.records_accepted += 1
                 else:

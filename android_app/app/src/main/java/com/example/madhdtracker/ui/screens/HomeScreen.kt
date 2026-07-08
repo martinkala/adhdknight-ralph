@@ -25,9 +25,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
@@ -71,6 +74,66 @@ private fun PlaceholderBarChart(modifier: Modifier = Modifier) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AdhdBattery(chargePercent: Int, modifier: Modifier = Modifier) {
+    val filled = (chargePercent / 5).coerceIn(0, 20)
+    val segmentColor = when {
+        chargePercent >= 60 -> Color(0xFF4CAF50)
+        chargePercent >= 30 -> Color(0xFFFFC107)
+        else -> Color(0xFFF44336)
+    }
+    val outlineColor = Color(0xFF9E9E9E)
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
+        Canvas(modifier = Modifier.width(52.dp).height(180.dp)) {
+            val stroke = 2.dp.toPx()
+            val nubW = size.width * 0.38f
+            val nubH = 7.dp.toPx()
+            val bodyTop = nubH
+            val bodyH = size.height - nubH
+            val innerPad = stroke + 2.dp.toPx()
+            val innerW = size.width - innerPad * 2
+            val innerH = bodyH - innerPad * 2
+            val segGap = 1.5.dp.toPx()
+            val segH = (innerH - segGap * 19) / 20
+            val segLeft = innerPad
+            val cornerR = 2.dp.toPx()
+
+            // terminal nub
+            drawRoundRect(
+                color = outlineColor,
+                topLeft = Offset((size.width - nubW) / 2, 0f),
+                size = Size(nubW, nubH),
+                cornerRadius = CornerRadius(2.dp.toPx())
+            )
+            // body outline
+            drawRoundRect(
+                color = outlineColor,
+                topLeft = Offset(0f, bodyTop),
+                size = Size(size.width, bodyH),
+                cornerRadius = CornerRadius(cornerR),
+                style = Stroke(width = stroke)
+            )
+            // segments bottom→top
+            for (i in 0 until filled) {
+                val top = bodyTop + innerPad + innerH - (i + 1) * segH - i * segGap
+                drawRoundRect(
+                    color = segmentColor,
+                    topLeft = Offset(segLeft, top),
+                    size = Size(innerW, segH),
+                    cornerRadius = CornerRadius(1.dp.toPx())
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = "$chargePercent%",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -173,6 +236,18 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(text = "Vyplň dnešný tracker a zobrazí sa index.", style = MaterialTheme.typography.bodyMedium)
                 }
+            }
+        }
+
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+            Column(
+                modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "Stav tvojej batérie", style = MaterialTheme.typography.labelMedium)
+                Spacer(modifier = Modifier.height(12.dp))
+                val chargePercent = viewModel.indexValue.value?.toInt()?.coerceIn(0, 100) ?: 0
+                AdhdBattery(chargePercent = chargePercent)
             }
         }
 

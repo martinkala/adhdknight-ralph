@@ -11,6 +11,7 @@ import com.example.madhdtracker.ui.HomeViewModel
 import com.example.madhdtracker.ui.TrackerViewModel
 import com.example.madhdtracker.ui.TrendViewModel
 import com.example.madhdtracker.ui.VectorViewModel
+import com.example.madhdtracker.ui.screens.AccountScreen
 import com.example.madhdtracker.ui.screens.ActivityDetailScreen
 import com.example.madhdtracker.ui.screens.EntityManagementScreen
 import com.example.madhdtracker.ui.screens.HomeScreen
@@ -21,6 +22,7 @@ import com.example.madhdtracker.ui.screens.TrackerScreen
 import com.example.madhdtracker.ui.screens.TrendScreen
 import com.example.madhdtracker.ui.screens.VectorScreen
 import com.example.madhdtracker.data.TrackerRepository
+import com.example.madhdtracker.ui.AccountViewModel
 
 object AppRoutes {
     const val HOME = "home"
@@ -33,6 +35,7 @@ object AppRoutes {
     const val ACTIVITY_DETAIL = "activity/{key}"
     const val ENTITIES = "entities"
     const val INFO = "info"
+    const val ACCOUNT = "account"
 
     fun activityDetail(key: String): String = "activity/$key"
     fun vectorForDate(date: String): String = "vector/$date"
@@ -46,6 +49,7 @@ fun AppNavGraph(
     trendViewModel: TrendViewModel,
     vectorViewModel: VectorViewModel,
     entityManagementViewModel: EntityManagementViewModel,
+    accountViewModel: AccountViewModel,
     repository: TrackerRepository
 ) {
     val elementLabels = remember(trackerViewModel.elements) {
@@ -100,6 +104,9 @@ fun AppNavGraph(
         }
         composable(AppRoutes.INFO) {
             InfoScreen(repository)
+        }
+        composable(AppRoutes.ACCOUNT) {
+            AccountScreen(accountViewModel)
         }
         composable(
             route = AppRoutes.ACTIVITY_DETAIL,

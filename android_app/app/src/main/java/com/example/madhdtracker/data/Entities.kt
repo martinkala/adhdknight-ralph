@@ -1,5 +1,6 @@
 package com.example.madhdtracker.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -34,7 +35,8 @@ data class EventValueEntity(
     val elementKey: String,
     val valueBinary: Int,
     val valueScale: Int?,
-    val valueEffective: Double
+    val valueEffective: Double,
+    @ColumnInfo(defaultValue = "NULL") val note: String? = null
 )
 
 @Entity(

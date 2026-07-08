@@ -82,10 +82,13 @@ class TrackerViewModel(
                         state.binary.value = entity.valueBinary == 1 || entity.valueScale != null
                         state.detailEnabled.value = element.hasScale
                         state.scale.value = entity.valueScale ?: midpoint
+                        state.note.value = entity.note ?: ""
                     } else {
                         state.binary.value = false
                         state.detailEnabled.value = element.hasScale
                         state.scale.value = midpoint
+                        state.note.value = ""
+                        state.showNote.value = false
                     }
                 }
             }
@@ -101,6 +104,12 @@ class TrackerViewModel(
         selectedDate.value = date
         loadedDate = null
         loadForDate(date.format(DateTimeFormatter.ISO_LOCAL_DATE))
+    }
+
+    fun saveNote(date: String, elementKey: String, note: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.updateNote(date, elementKey, note.ifBlank { null })
+        }
     }
 
     fun deleteDay(date: String, onDeleted: () -> Unit) {
@@ -132,6 +141,7 @@ class TrackerViewModel(
             val day = repository.getOrCreateDay(date)
 
             val now = OffsetDateTime.now().toString()
+            val noteMap = elements.associate { el -> el.key to (formStates[el.key]?.note?.value?.ifBlank { null }) }
             val eventValues = values.map { input ->
                 val effective = IndexCalculator.valueEffective(input.valueBinary, input.valueScale, input.scaleMin, input.scaleMax)
                 EventValueEntity(
@@ -139,7 +149,8 @@ class TrackerViewModel(
                     elementKey = input.elementKey,
                     valueBinary = input.valueBinary,
                     valueScale = input.valueScale,
-                    valueEffective = effective
+                    valueEffective = effective,
+                    note = noteMap[input.elementKey]
                 )
             }
 
@@ -197,7 +208,9 @@ data class ElementUiState(
 data class ElementInputState(
     val binary: MutableState<Boolean>,
     val detailEnabled: MutableState<Boolean>,
-    val scale: MutableState<Int>
+    val scale: MutableState<Int>,
+    val note: MutableState<String> = mutableStateOf(""),
+    val showNote: MutableState<Boolean> = mutableStateOf(false)
 )
 
 data class ElementValueInput(

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -37,6 +38,7 @@ import com.example.madhdtracker.ui.TrackerViewModel
 import com.example.madhdtracker.ui.TrackerViewModelFactory
 import com.example.madhdtracker.ui.TrendViewModel
 import com.example.madhdtracker.ui.TrendViewModelFactory
+import com.example.madhdtracker.ui.AccountViewModel
 import com.example.madhdtracker.ui.VectorViewModel
 import com.example.madhdtracker.ui.VectorViewModelFactory
 import com.example.madhdtracker.ui.PermissionHelper
@@ -63,7 +65,7 @@ class MainActivity : ComponentActivity() {
 }
 
 enum class Screen {
-    HOME, TRACKER, TREND, SETTINGS, INFO
+    HOME, TRACKER, TREND, SETTINGS, INFO, ACCOUNT
 }
 
 @Composable
@@ -92,6 +94,7 @@ private fun AppRoot() {
     val entityManagementViewModel: EntityManagementViewModel = viewModel(
         factory = EntityManagementViewModelFactory(repository)
     )
+    val accountViewModel: AccountViewModel = viewModel()
 
     PermissionHelper.RequestPostNotificationsPermission()
 
@@ -119,6 +122,7 @@ private fun AppRoot() {
                 trendViewModel = trendViewModel,
                 vectorViewModel = vectorViewModel,
                 entityManagementViewModel = entityManagementViewModel,
+                accountViewModel = accountViewModel,
                 repository = repository
             )
         }
@@ -134,6 +138,7 @@ private fun AppRoot() {
                     Screen.TREND -> AppRoutes.TREND
                     Screen.SETTINGS -> AppRoutes.SETTINGS
                     Screen.INFO -> AppRoutes.INFO
+                    Screen.ACCOUNT -> AppRoutes.ACCOUNT
                 }
                 val label = when (screen) {
                     Screen.HOME -> "Home"
@@ -141,16 +146,17 @@ private fun AppRoot() {
                     Screen.TREND -> "Trend"
                     Screen.SETTINGS -> "Settings"
                     Screen.INFO -> "Info"
+                    Screen.ACCOUNT -> "Účet"
                 }
                 NavigationBarItem(
                     selected = currentRoute == route,
                     onClick = { navController.navigate(route) },
                     label = { Text(label) },
                     icon = {
-                        if (screen == Screen.HOME) {
-                            Icon(Icons.Filled.Home, contentDescription = "Home")
-                        } else {
-                            Text(screen.name.first().toString())
+                        when (screen) {
+                            Screen.HOME -> Icon(Icons.Filled.Home, contentDescription = "Home")
+                            Screen.ACCOUNT -> Icon(Icons.Filled.AccountCircle, contentDescription = "Účet")
+                            else -> Text(screen.name.first().toString())
                         }
                     }
                 )
