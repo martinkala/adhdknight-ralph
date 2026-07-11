@@ -31,6 +31,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
@@ -240,14 +241,66 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
         }
 
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-            Column(
-                modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
                 Text(text = "Stav tvojej batérie", style = MaterialTheme.typography.labelMedium)
                 Spacer(modifier = Modifier.height(12.dp))
                 val chargePercent = viewModel.indexValue.value?.toInt()?.coerceIn(0, 100) ?: 0
-                AdhdBattery(chargePercent = chargePercent)
+
+                val contribItems: List<Pair<String, Double>> = run {
+                    val nodes = viewModel.elementConfig.trackableNodes
+                    val active = entities.filter { (key, value) -> nodes.containsKey(key) && value.valueBinary > 0 }
+                    val totalWeight = active.keys.sumOf { nodes[it]?.weight ?: 0.0 }
+                    if (totalWeight <= 0.0) emptyList()
+                    else active.mapNotNull { (key, value) ->
+                        val node = nodes[key] ?: return@mapNotNull null
+                        val effective = if (node.impact == -1) 1.0 - value.valueEffective else value.valueEffective
+                        Pair(node.label, (node.weight / totalWeight) * effective * 100.0 / 5.0)
+                    }.sortedByDescending { it.second }.filter { it.second > 0.0 }
+                }
+
+                Row(verticalAlignment = Alignment.Top) {
+                    AdhdBattery(chargePercent = chargePercent)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        if (contribItems.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Kategória", style = MaterialTheme.typography.labelSmall, color = Color(0xFF9E9E9E))
+                                Text("Palíčky", style = MaterialTheme.typography.labelSmall, color = Color(0xFF9E9E9E))
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            contribItems.forEach { (label, segments) ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.weight(1f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = String.format("%.1f", segments),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = "Dnes bez dát",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF9E9E9E)
+                            )
+                        }
+                    }
+                }
             }
         }
 
