@@ -47,6 +47,7 @@ class HomeViewModel(
     fun loadForDate(date: LocalDate = LocalDate.now()) {
         viewModelScope.launch(Dispatchers.IO) {
             val dateStr = date.toString()
+            repository.recomputeIndexForDate(dateStr)
             val index = repository.getIndexForDate(dateStr)
             val satisfaction = repository.getSatisfactionForDate(dateStr)
             val completion = repository.getCompletionCountsForDate(dateStr)

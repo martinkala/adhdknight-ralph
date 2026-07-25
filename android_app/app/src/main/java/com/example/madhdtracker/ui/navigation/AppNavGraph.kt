@@ -61,7 +61,8 @@ fun AppNavGraph(
         startDestination = AppRoutes.HOME
     ) {
         composable(AppRoutes.HOME) {
-            HomeScreen(homeViewModel, onEditClick = {
+            HomeScreen(homeViewModel, onEditClick = { date ->
+                trackerViewModel.onDateSelected(date)
                 navController.navigate(AppRoutes.TRACKER)
             })
         }

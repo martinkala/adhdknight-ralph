@@ -77,7 +77,6 @@ class TrackerRepository(
 
     suspend fun computeAndSaveDailyIndex(dayId: Long) {
         val values = db.eventValueDao().getByDay(dayId)
-        val weights = db.weightsDao().getAll().associateBy { it.elementKey }
         if (values.isEmpty()) return
 
         val activeKeys = getActiveElementKeys()
@@ -85,6 +84,18 @@ class TrackerRepository(
         if (activeValues.isEmpty()) return
 
         val effectiveConfig = getEffectiveEntityConfig()
+        // Weight snapshots in `weights` table can go stale/incomplete after entities.yaml
+        // edits (new keys, changed values), so weightDefault always comes from the live
+        // config; only a personalized override (weightPersonal, if ever set) is read from DB.
+        val personalWeights = db.weightsDao().getAll().associateBy { it.elementKey }
+        val weights = effectiveConfig.trackableNodes.mapValues { (key, node) ->
+            WeightEntity(
+                elementKey = key,
+                weightDefault = node.weight,
+                weightPersonal = personalWeights[key]?.weightPersonal,
+                updatedAt = personalWeights[key]?.updatedAt ?: ""
+            )
+        }
         val indexValue = IndexCalculator.computeDailyIndexGrouped(activeValues, effectiveConfig, activeKeys) ?: return
         val positiveIndex = IndexCalculator.computePositiveIndex(activeValues, weights, effectiveConfig.positiveKeys)
         val negativeIndex = IndexCalculator.computeNegativeIndex(activeValues, weights, effectiveConfig.negativeKeys)
@@ -97,6 +108,20 @@ class TrackerRepository(
                 negativeIndex = negativeIndex
             )
         )
+    }
+
+    suspend fun recomputeIndexForDate(date: String) {
+        val day = db.eventDayDao().getByDate(date) ?: return
+        computeAndSaveDailyIndex(day.id)
+    }
+
+    suspend fun recomputeLatestDay() {
+        val day = db.eventDayDao().getLatest() ?: return
+        computeAndSaveDailyIndex(day.id)
+    }
+
+    suspend fun recomputeRecentDays(limit: Int) {
+        db.eventDayDao().getLatestDays(limit).forEach { day -> computeAndSaveDailyIndex(day.id) }
     }
 
     suspend fun getLatestSubIndices(): Pair<Double?, Double?> {

@@ -2,7 +2,9 @@ package com.example.madhdtracker.ui.screens
 
 import androidx.compose.foundation.Canvas
 import android.util.Log
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,7 +35,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -139,7 +145,7 @@ private fun AdhdBattery(chargePercent: Int, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
+fun HomeScreen(viewModel: HomeViewModel, onEditClick: (LocalDate) -> Unit = {}) {
     val formatter = DateTimeFormatter.ofPattern("d. M. yyyy")
 
     LaunchedEffect(Unit) {
@@ -163,18 +169,30 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
 
     Box(
         modifier = Modifier.pointerInput(Unit) {
-            var totalDrag = 0f
-            detectHorizontalDragGestures(
-                onDragStart = { totalDrag = 0f },
-                onDragEnd = {
-                    Log.d("HomeSwipe", "onDragEnd totalDrag=$totalDrag")
-                    if (totalDrag < -60f) viewModel.loadPreviousDay()
-                    else if (totalDrag > 60f) viewModel.loadNextDay()
-                    totalDrag = 0f
-                },
-                onDragCancel = { totalDrag = 0f }
-            ) { _, dragAmount ->
-                totalDrag += dragAmount
+            // Runs on PointerEventPass.Initial (parent-before-child) so this swipe
+            // detector gets first look at the gesture. Descendants like the battery's
+            // clickable or the column's verticalScroll otherwise consume the touch
+            // on the default Main pass (child-before-parent) before we see it, which
+            // silently swallows the day-swipe when it starts on top of them.
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                var totalDrag = 0f
+                var committed = false
+                while (true) {
+                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                    if (change.changedToUpIgnoreConsumed()) break
+                    totalDrag += change.positionChange().x
+                    if (!committed && kotlin.math.abs(totalDrag) > 60f) {
+                        committed = true
+                    }
+                    if (committed) {
+                        change.consume()
+                    }
+                }
+                Log.d("HomeSwipe", "gesture end totalDrag=$totalDrag")
+                if (totalDrag < -60f) viewModel.loadPreviousDay()
+                else if (totalDrag > 60f) viewModel.loadNextDay()
             }
         }
     ) {
@@ -203,10 +221,8 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
                             Text(text = negativeText, style = MaterialTheme.typography.displaySmall, color = Color(0xFFE57373))
                         }
                     }
-                    if (isToday) {
-                        Button(onClick = onEditClick) {
-                            Text(text = "Upraviť")
-                        }
+                    Button(onClick = { onEditClick(displayedDate) }) {
+                        Text(text = "Upraviť")
                     }
                 }
 
@@ -248,18 +264,26 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
 
                 val contribItems: List<Pair<String, Double>> = run {
                     val nodes = viewModel.elementConfig.trackableNodes
-                    val active = entities.filter { (key, value) -> nodes.containsKey(key) && value.valueBinary > 0 }
-                    val totalWeight = active.keys.sumOf { nodes[it]?.weight ?: 0.0 }
+                    val active = entities.filter { (key, value) ->
+                        val node = nodes[key] ?: return@filter false
+                        if (node.scale != null) value.valueScale != null else value.valueBinary > 0
+                    }
+                    val totalWeight = nodes.values.sumOf { it.weight }
                     if (totalWeight <= 0.0) emptyList()
                     else active.mapNotNull { (key, value) ->
                         val node = nodes[key] ?: return@mapNotNull null
-                        val effective = if (node.impact == -1) 1.0 - value.valueEffective else value.valueEffective
-                        Pair(node.label, (node.weight / totalWeight) * effective * 100.0 / 5.0)
-                    }.sortedByDescending { it.second }.filter { it.second > 0.0 }
+                        val segments = (node.weight / totalWeight) * value.valueEffective * 100.0 / 5.0
+                        Pair(node.label, if (node.impact == -1) -segments else segments)
+                    }
                 }
+                val positiveContribItems = contribItems.filter { it.second >= 0.0 }.sortedByDescending { it.second }
+                val negativeContribItems = contribItems.filter { it.second < 0.0 }.sortedBy { it.second }
 
                 Row(verticalAlignment = Alignment.Top) {
-                    AdhdBattery(chargePercent = chargePercent)
+                    AdhdBattery(
+                        chargePercent = chargePercent,
+                        modifier = Modifier.clickable { onEditClick(displayedDate) }
+                    )
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         if (contribItems.isNotEmpty()) {
@@ -271,7 +295,7 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
                                 Text("Palíčky", style = MaterialTheme.typography.labelSmall, color = Color(0xFF9E9E9E))
                             }
                             Spacer(modifier = Modifier.height(6.dp))
-                            contribItems.forEach { (label, segments) ->
+                            positiveContribItems.forEach { (label, segments) ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -290,6 +314,34 @@ fun HomeScreen(viewModel: HomeViewModel, onEditClick: () -> Unit = {}) {
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Bold
                                     )
+                                }
+                            }
+                            if (negativeContribItems.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                HorizontalDivider(color = Color(0xFF9E9E9E).copy(alpha = 0.4f))
+                                Spacer(modifier = Modifier.height(6.dp))
+                                negativeContribItems.forEach { (label, segments) ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            modifier = Modifier.weight(1f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            color = Color(0xFFC62828)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = String.format("%.1f", segments),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFC62828)
+                                        )
+                                    }
                                 }
                             }
                         } else {

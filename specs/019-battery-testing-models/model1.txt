@@ -1,0 +1,33 @@
+-----------------
+Case 1
+Baterka 41%
+`
+Spanok 1,
+Fyzicka aktivita 2
+kofein 2
+Vitminy 1
+Book read 2
+Socializacia 2
+
+
+-----------------
+Case 2
+Baterka 57%
+
+Spanok -1
+Fyzicka aktivita 2
+Kofein -1
+Prijem bielkovin 1
+Vitaminy 1
+Mindfulness 1
+
+
+-----------------
+Case 3
+Baterka 63%
+Celkovy pocit 1
+Spanok -1
+Fyzicka aktivita 1
+Prijem bielkovin 1
+Osobny stres 1
+

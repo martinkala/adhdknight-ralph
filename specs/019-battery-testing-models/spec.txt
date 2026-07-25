@@ -1,0 +1,34 @@
+Cielom je pripravit testovacie modely na zobrazenie baterie.
+Modelmy rozumiem testovacie scenare a data.
+Malo by sa jednat o zakladny sposob ako bude pouzivana plnena baterka .
+
+Vstupom bude jedna specificka konfigucia app_config.json.
+A data uzivatela dni.
+KOmbicnacia app_config_json a data budu tvorit 1 testcase/usecase
+Vysledkom bude naplnenie baterky a dopad pozitivny, negativny na ASRS
+
+tvorba scenarov bude zodpovedat dolezitosti jednotlivych bodo
+1. spanok
+2. fyzicka aktivita
+3. Vyziva a mozok
+	- protein na ranajky
+	- omega3 masten kyseliny, horcik, zinok
+	- ziadny kofein
+	
+4. struktura a rutina
+	- pracovne techniky
+		- time blocking
+		- len 2 minuty
+		- body doubling
+		- externaliacia
+		- viditelne pripomienky
+		- pevna denna rutina
+		
+5. techniky prace zo sustredenim
+	- pomodoro
+	- vyuzitie hyperfocusu
+	- noise management
+
+6. mindfulness a meditacia
+
+7 kognitivno behavioralna terapia

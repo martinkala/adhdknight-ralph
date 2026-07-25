@@ -21,6 +21,7 @@ class VectorViewModel(
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
+            repository.recomputeLatestDay()
             val map = repository.getLatestVectorEntities()
             withContext(Dispatchers.Main) {
                 entities.value = map
@@ -31,6 +32,7 @@ class VectorViewModel(
 
     fun loadForDate(date: String) {
         viewModelScope.launch(Dispatchers.IO) {
+            repository.recomputeIndexForDate(date)
             val map = repository.getValuesForDate(date)
             withContext(Dispatchers.Main) {
                 entities.value = map

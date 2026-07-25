@@ -175,20 +175,21 @@ class TrackerViewModel(
             entityConfig.trackableNodes.values
                 .filter { it.parent == null && it.scale != null }
                 .forEach { el ->
-                    result.add(ElementUiState(el.key, el.label, true, el.impact ?: 1, el.scaleMin, el.scaleMax))
+                    result.add(ElementUiState(el.key, el.label, true, el.impact ?: 1, el.scaleMin, el.scaleMax, category = null))
                 }
             // Root nodes without scale
             entityConfig.trackableNodes.values
                 .filter { it.parent == null && it.scale == null }
                 .forEach { el ->
-                    result.add(ElementUiState(el.key, el.label, false, el.impact ?: 1, el.scaleMin, el.scaleMax))
+                    result.add(ElementUiState(el.key, el.label, false, el.impact ?: 1, el.scaleMin, el.scaleMax, category = null))
                 }
             // Group children ordered by group node iteration
             entityConfig.groupNodes.keys.forEach { catKey ->
+                val categoryLabel = entityConfig.groupNodes[catKey]?.label ?: catKey
                 entityConfig.trackableNodes.values
                     .filter { it.parent == catKey }
                     .forEach { el ->
-                        result.add(ElementUiState(el.key, el.label, el.scale != null, el.impact ?: 1, el.scaleMin, el.scaleMax))
+                        result.add(ElementUiState(el.key, el.label, el.scale != null, el.impact ?: 1, el.scaleMin, el.scaleMax, category = categoryLabel))
                     }
             }
             return result.distinctBy { it.key }
@@ -202,7 +203,8 @@ data class ElementUiState(
     val hasScale: Boolean,
     val impact: Int,
     val scaleMin: Int = 1,
-    val scaleMax: Int = 5
+    val scaleMax: Int = 5,
+    val category: String? = null
 )
 
 data class ElementInputState(

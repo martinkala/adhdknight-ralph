@@ -24,6 +24,7 @@ class TrendViewModel(
 
     fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
+            repository.recomputeRecentDays(7)
             val data = repository.getLatestDailySeries(7)
             val avg = if (data.isNotEmpty()) data.map { it.indexValue }.average() else null
             val dual = repository.getLatestDualIndexSeries(7)

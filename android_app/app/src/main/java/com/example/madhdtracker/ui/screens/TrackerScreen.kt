@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -37,11 +39,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.madhdtracker.ui.ElementUiState
 import com.example.madhdtracker.ui.ScaleColorMapper
 import com.example.madhdtracker.ui.TrackerViewModel
 import java.time.ZoneId
@@ -83,134 +87,46 @@ fun TrackerScreen(
         }
         Spacer(modifier = Modifier.height(12.dp))
 
-        viewModel.elements.forEach { element ->
-            val state = viewModel.formStates.getValue(element.key)
+        val grouped = remember(viewModel.elements) {
+            val map = linkedMapOf<String?, MutableList<ElementUiState>>()
+            viewModel.elements.forEach { el -> map.getOrPut(el.category) { mutableListOf() }.add(el) }
+            map
+        }
+        val expandedCategories = remember { mutableStateMapOf<String, Boolean>() }
 
-            val isActive = state.binary.value && element.hasScale
-            val sectionColor = ScaleColorMapper.scaleCardColor(
-                value = state.scale.value,
-                scaleMin = element.scaleMin,
-                scaleMax = element.scaleMax,
-                impact = element.impact,
-                isActive = isActive
-            )
-            Card(
-                colors = CardDefaults.cardColors(containerColor = sectionColor),
-                modifier = Modifier.fillMaxWidth()
+        grouped[null]?.forEach { element ->
+            TrackerElementCard(element, viewModel, date, onActivityClick)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        grouped.forEach { (category, categoryElements) ->
+            if (category == null) return@forEach
+            val expanded = expandedCategories[category] ?: true
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expandedCategories[category] = !expanded }
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = element.label,
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable {
-                                    state.binary.value = !state.binary.value
-                                    viewModel.saveCurrent(date)
-                                }
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                                    shape = CircleShape
-                                )
-                                .clickable { onActivityClick(element.key) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "i",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        if (isActive) {
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = state.scale.value.toString(),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Switch(
-                            checked = state.binary.value,
-                            onCheckedChange = {
-                                state.binary.value = it
-                                viewModel.saveCurrent(date)
-                            }
-                        )
-                    }
-                    if (state.binary.value) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (element.hasScale) {
-                                Slider(
-                                    value = state.scale.value.toFloat(),
-                                    onValueChange = { state.scale.value = it.toInt().coerceIn(element.scaleMin, element.scaleMax) },
-                                    onValueChangeFinished = { viewModel.saveCurrent(date) },
-                                    valueRange = element.scaleMin.toFloat()..element.scaleMax.toFloat(),
-                                    steps = element.scaleMax - element.scaleMin - 1,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            } else {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                            IconButton(
-                                onClick = { state.showNote.value = !state.showNote.value },
-                                modifier = Modifier.size(40.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Edit,
-                                    contentDescription = "Poznámka",
-                                    tint = if (state.note.value.isNotBlank())
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.outline
-                                )
-                            }
-                        }
-                        if (state.showNote.value) {
-                            OutlinedTextField(
-                                value = state.note.value,
-                                onValueChange = { v ->
-                                    if (v.length <= 250) {
-                                        state.note.value = v
-                                        viewModel.saveNote(date, element.key, v)
-                                    }
-                                },
-                                label = { Text("Poznámka") },
-                                placeholder = { Text("Max 250 znakov") },
-                                maxLines = 4,
-                                modifier = Modifier.fillMaxWidth(),
-                                supportingText = { Text("${state.note.value.length}/250") }
-                            )
-                        }
-                    }
+                Text(
+                    text = "$category (${categoryElements.size})",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = if (expanded) "Zbaliť kategóriu" else "Rozbaliť kategóriu"
+                )
+            }
+            if (expanded) {
+                categoryElements.forEach { element ->
+                    TrackerElementCard(element, viewModel, date, onActivityClick)
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -271,6 +187,140 @@ fun TrackerScreen(
             }
         ) {
             DatePicker(state = pickerState)
+        }
+    }
+}
+
+@Composable
+private fun TrackerElementCard(
+    element: ElementUiState,
+    viewModel: TrackerViewModel,
+    date: String,
+    onActivityClick: (String) -> Unit
+) {
+    val state = viewModel.formStates.getValue(element.key)
+
+    val isActive = state.binary.value && element.hasScale
+    val sectionColor = ScaleColorMapper.scaleCardColor(
+        value = state.scale.value,
+        scaleMin = element.scaleMin,
+        scaleMax = element.scaleMax,
+        impact = element.impact,
+        isActive = isActive
+    )
+    Card(
+        colors = CardDefaults.cardColors(containerColor = sectionColor),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = element.label,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable {
+                            state.binary.value = !state.binary.value
+                            viewModel.saveCurrent(date)
+                        }
+                )
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                            shape = CircleShape
+                        )
+                        .clickable { onActivityClick(element.key) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "i",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                if (isActive) {
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = state.scale.value.toString(),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Switch(
+                    checked = state.binary.value,
+                    onCheckedChange = {
+                        state.binary.value = it
+                        viewModel.saveCurrent(date)
+                    }
+                )
+            }
+            if (state.binary.value) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (element.hasScale) {
+                        Slider(
+                            value = state.scale.value.toFloat(),
+                            onValueChange = { state.scale.value = it.toInt().coerceIn(element.scaleMin, element.scaleMax) },
+                            onValueChangeFinished = { viewModel.saveCurrent(date) },
+                            valueRange = element.scaleMin.toFloat()..element.scaleMax.toFloat(),
+                            steps = element.scaleMax - element.scaleMin - 1,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                    IconButton(
+                        onClick = { state.showNote.value = !state.showNote.value },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = "Poznámka",
+                            tint = if (state.note.value.isNotBlank())
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+                if (state.showNote.value) {
+                    OutlinedTextField(
+                        value = state.note.value,
+                        onValueChange = { v ->
+                            if (v.length <= 250) {
+                                state.note.value = v
+                                viewModel.saveNote(date, element.key, v)
+                            }
+                        },
+                        label = { Text("Poznámka") },
+                        placeholder = { Text("Max 250 znakov") },
+                        maxLines = 4,
+                        modifier = Modifier.fillMaxWidth(),
+                        supportingText = { Text("${state.note.value.length}/250") }
+                    )
+                }
+            }
         }
     }
 }

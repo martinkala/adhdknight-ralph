@@ -3,7 +3,20 @@
     "allow": [
       "WebFetch(domain:github.com)",
       "Bash(bash .specify/scripts/bash/setup-plan.sh --json 2>&1)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(.specify/scripts/bash/setup-plan.sh --json)",
+      "Bash(.specify/extensions/agent-context/scripts/bash/update-agent-context.sh *)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh *)",
+      "Bash(git -C /home/martin/projects/adhdmad status --short)",
+      "Bash(git -C /home/martin/projects/adhdmad log --oneline -3)",
+      "Bash(git -C /home/martin/projects/adhdmad add specs/016-application-server-connect/ .specify/feature.json AGENTS.md)",
+      "Bash(./gradlew :app:compileDebugKotlin -q)",
+      "Bash(unzip -l /home/martin/.gradle/caches/modules-2/files-2.1/androidx.compose.material/material-icons-core-android/1.6.8/e518df0d8a19c3833f72a24ff667853015e340fd/material-icons-core-android-1.6.8-sources.jar)",
+      "Bash(dpkg -l)",
+      "Bash(apt list *)",
+      "Bash(find / -maxdepth 6 -iname \"javac\" -type f)",
+      "Bash(find / -maxdepth 6 -ipath \"*android-studio*jbr*\" -o -ipath \"*android-studio*jdk*\")",
+      "Bash(git stash *)"
     ]
   },
   "skillOverrides": {
