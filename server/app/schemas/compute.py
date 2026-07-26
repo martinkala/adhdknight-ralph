@@ -7,6 +7,11 @@ class EntityNodeInput(BaseModel):
     impact: int | None = None
     parent: str | None = None
     scale: bool = False
+    # Per-element scale bounds (e.g. sleep is -2..2, physical_activity is 1..3 in the
+    # Android entities.yaml) — optional so existing callers that only send `scale: true`
+    # keep the legacy fixed 1..5 normalization in index_calculator._value_effective.
+    scale_min: int | None = None
+    scale_max: int | None = None
 
     model_config = ConfigDict(extra="ignore")
 

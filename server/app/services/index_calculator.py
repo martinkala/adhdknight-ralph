@@ -24,8 +24,17 @@ class ComputeResult:
     skipped_keys: list[str]
 
 
-def _value_effective(value_binary: int, value_scale: int | None) -> float:
+def _value_effective(
+    value_binary: int,
+    value_scale: int | None,
+    scale_min: int | None = None,
+    scale_max: int | None = None,
+) -> float:
     if value_scale is not None:
+        if scale_min is not None and scale_max is not None and scale_max != scale_min:
+            return (value_scale - scale_min) / (scale_max - scale_min)
+        # Fallback: fixed 1..5 scale assumption (legacy behavior for callers that don't
+        # provide per-element bounds).
         return (value_scale - 1) / 4.0
     return float(value_binary)
 
@@ -51,7 +60,13 @@ def compute_daily(
     value_map: dict[str, float] = {}
     for v in values:
         key = v["element_key"]
-        eff = _value_effective(v.get("value_binary", 0), v.get("value_scale"))
+        node = entity_config.get(key, {})
+        eff = _value_effective(
+            v.get("value_binary", 0),
+            v.get("value_scale"),
+            node.get("scale_min"),
+            node.get("scale_max"),
+        )
         value_map[key] = eff
 
     if not value_map:

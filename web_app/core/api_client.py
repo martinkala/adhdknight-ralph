@@ -44,6 +44,22 @@ def get_history(token: str, days: int = 30) -> dict:
         return {"error": "server_unavailable"}
 
 
+def get_debug(token: str, days: int = 60) -> dict:
+    try:
+        r = httpx.get(
+            _url(f"/api/v1/user/debug?days={days}"),
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=_TIMEOUT,
+        )
+        if r.status_code == 200:
+            return r.json()
+        if r.status_code == 401:
+            return {"error": "unauthorized"}
+        return {"error": "server_error"}
+    except httpx.ConnectError:
+        return {"error": "server_unavailable"}
+
+
 def get_me(token: str) -> dict:
     try:
         r = httpx.get(

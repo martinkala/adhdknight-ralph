@@ -1,18 +1,48 @@
 -----------------
-Case 1
-Baterka 41%
-`
+Case 1 -  Zakladne kategorie - values 1 - no childs
+Celkovy pocit za den 1
 Spanok 1,
-Fyzicka aktivita 2
-kofein 2
-Vitminy 1
-Book read 2
-Socializacia 2
+Fyzicka aktivita 1
+Strava 1
+Structure 1
+Pracovne techniky 1
+Lifestyle:1
+Head: 1
+Midnfulness: 1
+Baterka ??%
+
+Case 2 -  Zakladne kategorie - values max- 
+Celkovy pocit za den 2
+Spanok 2
+Fyzicka aktivita 3
+Strava 2  
+Structure 2
+Pracovne techniky 1
+Lifestyle: 2
+Head: 2
+Midnfulness: 2
+Baterka ??%
+
+
+Case 3 -  Zakladne kategorie - ziadny zaznam
+Baterka 0%
+
+
+Case 10 -  Zakladne kategorie + all positive  childs , no negative childs
+Celkovy pocit za den 1 +i all childs na 1
+Spanok 1,i +i all childs na 1
+Fyzicka aktivita 1 + all childs na 1
+Strava 1 + all childs na 1
+Structure 1 + all childs na 1
+Pracovne techniky 1 + all childs na 1
+Lifestyle:1 + all childs na 1
+Head: 1 + all childs na 1
+Midnfulness: 1 + all childs na 1
+Baterka ??%
 
 
 -----------------
-Case 2
-Baterka 57%
+Case 100 - zarad negativne values 
 
 Spanok -1
 Fyzicka aktivita 2
@@ -23,8 +53,7 @@ Mindfulness 1
 
 
 -----------------
-Case 3
-Baterka 63%
+Case 101
 Celkovy pocit 1
 Spanok -1
 Fyzicka aktivita 1

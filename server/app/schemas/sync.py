@@ -1,5 +1,6 @@
 from datetime import date as dt, datetime
 from pydantic import BaseModel, ConfigDict, field_validator
+from app.schemas.compute import EntityNodeInput
 
 
 class ElementValueSyncItem(BaseModel):
@@ -23,7 +24,13 @@ class DaySyncItem(BaseModel):
 
 class BatchSyncRequest(BaseModel):
     schema_version: str = "1.0"
+    app_id: str = "adhd_tracker"
     device_id: str | None = None
+    # Optional: the client's current (active-only) entity tree — {key: {weight, impact,
+    # parent, scale, scale_min, scale_max}}. When provided, the server recomputes and
+    # persists a DailyIndex per synced day (see sync_service.process_batch_sync); when
+    # omitted, sync behaves exactly as before (no index computed/stored).
+    entity_config: dict[str, EntityNodeInput] | None = None
     days: list[DaySyncItem]
 
     model_config = ConfigDict(extra="ignore")

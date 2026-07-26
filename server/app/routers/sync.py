@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.db.database import get_db
@@ -22,6 +22,8 @@ async def batch_sync(
         days=body.days,
         device_id=body.device_id,
         db=db,
+        app_id=body.app_id,
+        entity_config=body.entity_config,
     )
     return BatchSyncResponse(
         sync_id=result.sync_id,
@@ -39,10 +41,14 @@ async def batch_sync(
 
 @router.get("/status")
 async def sync_status(
+    app_id: str = Query(default="adhd_tracker"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    stmt = select(TrackingDay).where(TrackingDay.user_id == current_user.id)
+    stmt = select(TrackingDay).where(
+        TrackingDay.user_id == current_user.id,
+        TrackingDay.app_id == app_id,
+    )
     result = await db.execute(stmt)
     days = result.scalars().all()
-    return {"user_id": current_user.id, "total_days_synced": len(days)}
+    return {"user_id": current_user.id, "app_id": app_id, "total_days_synced": len(days)}

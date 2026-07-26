@@ -24,12 +24,14 @@ async def process_migration(
     weight_config: list[MigrationWeightItem],
     strategy: MigrationStrategy,
     db: AsyncSession,
+    app_id: str = "adhd_tracker",
 ) -> MigrationResult:
     result = MigrationResult()
 
     for day_item in days:
         stmt = select(TrackingDay).where(
             TrackingDay.user_id == user_id,
+            TrackingDay.app_id == app_id,
             TrackingDay.date == day_item.date,
         )
         td_result = await db.execute(stmt)
@@ -44,6 +46,7 @@ async def process_migration(
             tracking_day = TrackingDay(
                 id=str(uuid.uuid4()),
                 user_id=user_id,
+                app_id=app_id,
                 date=day_item.date,
                 is_complete=day_item.is_complete,
             )
@@ -74,6 +77,7 @@ async def process_migration(
     for wc_item in weight_config:
         stmt = select(WeightConfig).where(
             WeightConfig.user_id == user_id,
+            WeightConfig.app_id == app_id,
             WeightConfig.element_key == wc_item.element_key,
         )
         wc_result = await db.execute(stmt)
@@ -82,6 +86,7 @@ async def process_migration(
             wc = WeightConfig(
                 id=str(uuid.uuid4()),
                 user_id=user_id,
+                app_id=app_id,
                 element_key=wc_item.element_key,
                 weight_default=wc_item.weight_default,
                 weight_personal=wc_item.weight_personal,

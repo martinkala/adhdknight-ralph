@@ -38,6 +38,7 @@ class MigrationDayItem(BaseModel):
 class MigrateRequest(BaseModel):
     schema_version: str = "1.0"
     source: str = "android"
+    app_id: str = "adhd_tracker"
     migration_strategy: MigrationStrategy
     days: list[MigrationDayItem]
     weight_config: list[MigrationWeightItem] = []

@@ -21,6 +21,7 @@ async def migrate(
         weight_config=body.weight_config,
         strategy=body.migration_strategy,
         db=db,
+        app_id=body.app_id,
     )
     return MigrateResponse(
         migration_id=result.migration_id,

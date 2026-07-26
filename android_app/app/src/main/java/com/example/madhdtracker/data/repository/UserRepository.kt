@@ -3,9 +3,12 @@ package com.example.madhdtracker.data.repository
 import android.content.Context
 import androidx.room.Room
 import com.example.madhdtracker.data.AppDatabase
+import com.example.madhdtracker.data.EntityConfigLoader
+import com.example.madhdtracker.data.TrackerRepository
 import com.example.madhdtracker.data.remote.ApiClient
 import com.example.madhdtracker.data.remote.ApiException
 import com.example.madhdtracker.data.remote.BatchSyncRequest
+import com.example.madhdtracker.data.remote.EntityNodeSyncItem
 import com.example.madhdtracker.data.remote.SyncDayItem
 import com.example.madhdtracker.data.remote.SyncValueItem
 
@@ -146,7 +149,8 @@ class UserRepository(private val context: Context) {
                 )
             }
 
-            val request = BatchSyncRequest(days = syncDays)
+            val entityConfigPayload = buildEntityConfigPayload(db)
+            val request = BatchSyncRequest(days = syncDays, entity_config = entityConfigPayload)
             var result = apiClient.batchSync(url, token, request)
 
             // On 401 try refresh once and retry
@@ -180,6 +184,39 @@ class UserRepository(private val context: Context) {
         } finally {
             db.close()
         }
+    }
+
+    // Builds the active-only entity tree (each active leaf plus its ancestor chain, so the
+    // server can still aggregate group weights) for the server to recompute+persist a
+    // DailyIndex during sync. Mirrors TrackerRepository.getActiveElementKeys()/
+    // getEffectiveEntityConfig() so the set of "active" elements matches what the local
+    // index computation already uses.
+    private suspend fun buildEntityConfigPayload(db: AppDatabase): Map<String, EntityNodeSyncItem> {
+        val baseConfig = EntityConfigLoader.load(context)
+        val overrides = db.userElementOverrideDao().getAll()
+        val userElements = db.userElementDao().getAll().filter { it.isActive }
+        val effectiveConfig = TrackerRepository.buildEffectiveEntityConfig(baseConfig, userElements)
+        val activeKeys = TrackerRepository.computeActiveKeys(effectiveConfig, overrides)
+
+        val included = mutableSetOf<String>()
+        activeKeys.forEach { key ->
+            var current: String? = key
+            while (current != null && included.add(current)) {
+                current = effectiveConfig.nodes[current]?.parent
+            }
+        }
+
+        return included.mapNotNull { key ->
+            val node = effectiveConfig.nodes[key] ?: return@mapNotNull null
+            key to EntityNodeSyncItem(
+                weight = node.weight,
+                impact = node.impact,
+                parent = node.parent,
+                scale = node.scale != null,
+                scale_min = if (node.scale != null) node.scaleMin else null,
+                scale_max = if (node.scale != null) node.scaleMax else null,
+            )
+        }.toMap()
     }
 
     private fun isConnectionError(ex: Throwable): Boolean {
