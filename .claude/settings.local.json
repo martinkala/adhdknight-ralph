@@ -16,7 +16,19 @@
       "Bash(apt list *)",
       "Bash(find / -maxdepth 6 -iname \"javac\" -type f)",
       "Bash(find / -maxdepth 6 -ipath \"*android-studio*jbr*\" -o -ipath \"*android-studio*jdk*\")",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(./gradlew :app:testDebugUnitTest --tests \"com.example.madhdtracker.config.EntityConfigLoaderTest\" -q)",
+      "Bash(cp dev.db /tmp/dev.db.bak)",
+      "Bash(sqlite3 dev.db \"select count\\(*\\) from users; select count\\(*\\) from tracking_days;\")",
+      "Bash(.venv/bin/python -m alembic current)",
+      "Bash(.venv/bin/python -m alembic upgrade head)",
+      "Bash(.venv/bin/python -c ' *)",
+      "Bash(.venv/bin/python -m alembic downgrade -1)",
+      "Bash(.venv/bin/python -m pytest tests/api/ -q)",
+      "Bash(.venv/bin/python -m pytest tests/api/test_multi_app.py -q)",
+      "Bash(.venv/bin/python -m pytest -q)",
+      "Bash(.venv/bin/python -m pytest tests/api/test_config_entities.py -q)",
+      "Bash(.venv/bin/python *)"
     ]
   },
   "skillOverrides": {
