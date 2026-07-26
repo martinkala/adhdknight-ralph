@@ -312,21 +312,7 @@ class TrackerRepository(
 
     private suspend fun getEffectiveEntityConfig(): EntityConfig {
         val userElements = db.userElementDao().getAll().filter { it.isActive }
-        if (userElements.isEmpty()) return elementConfig
-        val extraNodes = userElements.associate { entity ->
-            val scale = entity.scale?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.takeIf { it.size >= 2 }
-            entity.key to EntityNode(
-                key = entity.key,
-                weight = entity.weight,
-                impact = entity.impact,
-                parent = entity.parentCategory.ifBlank { null },
-                label = entity.description ?: entity.key,
-                active = entity.isActive,
-                scale = scale,
-                clickable = false
-            )
-        }
-        return EntityConfig(nodes = elementConfig.nodes + extraNodes)
+        return buildEffectiveEntityConfig(elementConfig, userElements)
     }
 
     companion object {
@@ -339,6 +325,27 @@ class TrackerRepository(
                 val override = overrideMap[key]
                 override?.isActive ?: (entityConfig.nodes[key]?.active ?: true)
             }.toSet()
+        }
+
+        internal fun buildEffectiveEntityConfig(
+            elementConfig: EntityConfig,
+            activeUserElements: List<UserElementEntity>
+        ): EntityConfig {
+            if (activeUserElements.isEmpty()) return elementConfig
+            val extraNodes = activeUserElements.associate { entity ->
+                val scale = entity.scale?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.takeIf { it.size >= 2 }
+                entity.key to EntityNode(
+                    key = entity.key,
+                    weight = entity.weight,
+                    impact = entity.impact,
+                    parent = entity.parentCategory.ifBlank { null },
+                    label = entity.description ?: entity.key,
+                    active = entity.isActive,
+                    scale = scale,
+                    clickable = false
+                )
+            }
+            return EntityConfig(nodes = elementConfig.nodes + extraNodes)
         }
     }
 }

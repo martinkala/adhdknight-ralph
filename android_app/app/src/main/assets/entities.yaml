@@ -1,3 +1,5 @@
+metadata:
+  version: "1.0"
 nodes:
   overall_feeling:
     label: "Celkový pocit za deň"
@@ -21,223 +23,210 @@ nodes:
     weight: 13.0
     impact: 1
     active: true
-    scale: [1, 2, 3, 4, 5]
+    scale: [1, 2, 3]
     clickable: true
 
   # 3 food ---------------------------------------------------------
   food:
     label: "Strava"
     weight: 11.0
-    parent: head
     active: true
-    scale: [-1,-2 ,0, 1, 2]
+    scale: [-1, -2, 0, 1, 2]
+    clickable: true
 
-  caffeine:
-    label: "Kofeín"
-    weight: 1.0
-    impact: -1
-    parent: food
-    active: true
-    scale: [1, 2, 3]
+    children:
+      caffeine:
+        label: "Kofeín"
+        weight: 1.0
+        impact: -1
+        active: true
+        scale: [1, 2, 3]
 
-  alcohol:
-    label: "Alkohol"
-    weight: 2.0
-    impact: -1
-    parent: food
-    active: true
-    scale: [1, 2, 3]
+      alcohol:
+        label: "Alkohol"
+        weight: 2.0
+        impact: -1
+        active: true
+        scale: [1, 2, 3]
 
-  nutrition_protein:
-    label: "Príjem bielkovín"
-    weight: 1.0
-    impact: 1
-    parent: food
-    active: true
-    scale: [0, 1, 2]
+      nutrition_protein:
+        label: "Príjem bielkovín"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [0, 1, 2]
 
-  vitamins:
-    label: "Vitamíny"
-    weight: 4.0
-    impact: 1
-    parent: food
-    active: true
-    scale: [1, 2, 3]
-
+      vitamins:
+        label: "Vitamíny"
+        weight: 4.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
   # 4 Structure ---------------------------------------------------------
   structure:
     label: "structure"
     weight: 9.0
     scale: [1, 2, 3]
+    clickable: true
+    children:
+      externalisation:
+        label: "exeternalizacia"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
 
-  externalisation:
-    label: "exeternalizacia"
-    weight: 1.0
-    impact: 1
-    parent: structure
-    active: true
-    scale: [1, 2, 3]
+      time_blocking:
+        label: "Time blocking"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
 
-  time_blocking:
-    label: "Time blocking"
-    weight: 1.0
-    parent: structure
-    active: true
-    scale: [1, 2, 3]
+      body_doubling:
+        label: "Body doubling"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
 
-  body_doubling:
-    label: "Body doubling"
-    weight: 1.0
-    parent: structure
-    active: true
-    scale: [1, 2, 3]
+      routine:
+        label: "Rutina"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
 
-  routine:
-    label: "Rutina"
-    weight: 1.0
-    parent: structure
-    active: true
-    scale: [1, 2, 3]
+      physical_notes:
+        label: "Physical notes"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
 
-  physical_notes:
-    label: "Physical notes"
-    weight: 1.0
-    parent: structure
-    active: true
-    scale: [ 1, 2, 3]
+      Procrastination:
+        label: "Prokrastinácia"
+        weight: 1.0
+        impact: -1
+        active: true
+        scale: [ 1, 2, 3 ]
+
 
   # 5 working_techniques --------------------------------------------------
   working_techniques:
     label: "Pracovne techniky"
     weight: 7.0
-    scale: [ 1, 2, 3 ]
-
-  pomodoro:
-    label: "Pomodoro"
-    weight: 1.0
-    impact: 1
-    parent: working_techniques
-    active: true
     scale: [1, 2, 3]
+    clickable: true
+    children:
+      pomodoro:
+        label: "Pomodoro"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
 
-  just2minutes:
-    label: "Just 2 minutes"
-    weight: 1.0
-    impact: 1
-    parent: working_techniques
-    active: true
-    scale: [1, 2, 3]
+      just2minutes:
+        label: "Just 2 minutes"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
 
-  eatthefrog:
-    label: "Eat the frog"
-    weight: 1.0
-    impact: 1
-    parent: working_techniques
-    active: true
-    scale: [1, 2, 3]
+      eatthefrog:
+        label: "Eat the frog"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
 
-  timeboxing:
-    label: "Timeboxing"
-    weight: 1.0
-    impact: 1
-    parent: working_techniques
-    active: true
-    scale: [1, 2, 3]
+      timeboxing:
+        label: "Timeboxing"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
 
-  dedicated_place:
-    label: "dedicated_place"
-    weight: 1.0
-    impact: 1
-    parent: working_techniques
-    active: true
-    scale: [1, 2, 3]
-    note: "Struktura prostredia"
+      dedicated_place:
+        label: "dedicated_place"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
+        note: "Struktura prostredia"
 
-  nodisruption:
-    label: "minimum rozptylovacov"
-    weight: 1.0
-    impact: 1
-    parent: working_techniques
-    active: true
-    scale: [1, 2, 3]
-    note: "Struktura prostredia"
+      nodisruption:
+        label: "minimum rozptylovacov"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [1, 2, 3]
+        note: "Struktura prostredia"
 
-  Procrastination:
-    label: "Prokrastinácia"
-    weight: 1.0
-    impact: -1
-    parent: head
+  # 8 lifestyle ---------------------------------------------------------
+  lifestyle:
+    label: "Životný štýl"
+    weight: 7.0
     active: true
-    scale: [ 1, 2, 3 ]
+    clickable: true
+    children:
+      stress_work:
+        label: "Pracovný stres"
+        weight: 1.0
+        impact: -1
+        active: true
+        scale: [1, 2, 3]
+
+      stress_personal:
+        label: "Osobný stres"
+        weight: 1.0
+        impact: -1
+        active: true
+        scale: [1, 2, 3]
+
+  # 9 mental activities ------------------------------------------------------
+  head:
+    label: "Mentálne aktivity"
+    weight: 7.0
+    active: true
+    clickable: true
+    children:
+      book:
+        label: "book read"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [ 1, 2, 3 ]
+
+      learn:
+        label: "Learning"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [ 1, 2, 3 ]
+
+      socialisation:
+        label: "Socializacia"
+        weight: 1.0
+        impact: 1
+        active: true
+        scale: [ 1, 2, 3 ]
+
+      Adiction:
+        label: "Závislosti"
+        weight: 15.0
+        impact: -1
+        active: true
+        scale: [ 1, 2, 3 ]
+
 
   # 6 mindfullness ----------------------------------------------------------
   mindfulness:
     label: "Mindfulness / meditácia"
     weight: 7.0
     impact: 1
-    parent: head
     active: true
-    scale: [ 1, 2, 3 ]
-
-
-  # 8 lifestyle ---------------------------------------------------------
-  lifestyle:
-    label: "Životný štýl"
-    weight: 7.0
-
-  stress_work:
-    label: "Pracovný stres"
-    weight: 1.0
-    impact: -1
-    parent: lifestyle
-    active: true
-    scale: [1, 2, 3]
-
-  stress_personal:
-    label: "Osobný stres"
-    weight: 1.0
-    impact: -1
-    parent: lifestyle
-    active: true
-    scale: [1, 2, 3]
-
-
-  # 9 mental activities ------------------------------------------------------
-  head:
-    label: "Mentálne aktivity"
-    weight: 7.0
-
-  book:
-    label: "book read"
-    weight: 1.0
-    impact: 1
-    parent: head
-    active: true
-    scale: [1, 2, 3]
-
-  learn:
-    label: "Learning"
-    weight: 1.0
-    impact: 1
-    parent: head
-    active: true
-    scale: [1, 2, 3]
-
-  socialisation:
-    label: "Socializacia"
-    weight: 1.0
-    impact: 1
-    parent: head
-    active: true
-    scale: [1, 2, 3]
-
-
-  Adiction:
-    label: "Závislosti"
-    weight: 15.0
-    impact: -1
-    parent: head
-    active: true
+    clickable: true
     scale: [1, 2, 3]
 
 

@@ -14,7 +14,8 @@ data class EntityNode(
 )
 
 data class EntityConfig(
-    val nodes: Map<String, EntityNode>
+    val nodes: Map<String, EntityNode>,
+    val version: String = "0"
 ) {
     val negativeKeys: Set<String>
         get() = nodes.values.filter { it.impact == -1 && it.active }.map { it.key }.toSet()

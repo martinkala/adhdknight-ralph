@@ -232,6 +232,122 @@ class EntityConfigLoaderTest {
     }
 
     @Test
+    fun load_nestedChildren_parsedWithCorrectParentAndWeight() {
+        val yaml = """
+            nodes:
+              overall_feeling:
+                label: "Celkový pocit"
+                weight: 13.0
+                impact: 1
+                active: true
+                scale: [1, 2, 3, 4, 5]
+              head:
+                label: "Mentálne aktivity"
+                weight: 11.0
+                children:
+                  food:
+                    label: "Strava"
+                    weight: 11.0
+                    active: true
+                    children:
+                      caffeine:
+                        label: "Kofeín"
+                        weight: 6.0
+                        impact: -1
+                        active: true
+                        scale: [1, 2, 3]
+                  mindfulness:
+                    label: "Mindfulness"
+                    weight: 11.0
+                    impact: 1
+                    active: true
+        """
+        val config = EntityConfigLoader.load(yamlStream(yaml))
+
+        assertEquals(5, config.nodes.size)
+        assertEquals("head", config.nodes["food"]?.parent)
+        assertEquals("food", config.nodes["caffeine"]?.parent)
+        assertEquals("head", config.nodes["mindfulness"]?.parent)
+        assertEquals(6.0, config.nodes["caffeine"]?.weight ?: 0.0, 0.001)
+        assertNull(config.nodes["head"]?.impact)
+        assertTrue(config.groupNodes.containsKey("food"))
+        assertTrue(config.trackableNodes.containsKey("caffeine"))
+    }
+
+    @Test
+    fun load_invalidParentNode_skipsItsNestedChildren() {
+        val yaml = """
+            nodes:
+              overall_feeling:
+                label: "Celkový pocit"
+                weight: 13.0
+                impact: 1
+                active: true
+                scale: [1, 2, 3, 4, 5]
+              bad_group:
+                label: "Bad"
+                weight: -1.0
+                children:
+                  child_of_bad:
+                    label: "Child"
+                    weight: 5.0
+                    impact: 1
+                    active: true
+        """
+        val config = EntityConfigLoader.load(yamlStream(yaml))
+
+        assertFalse(config.nodes.containsKey("bad_group"))
+        assertFalse(config.nodes.containsKey("child_of_bad"))
+    }
+
+    @Test
+    fun load_metadataVersion_parsedOntoConfig() {
+        val yaml = """
+            metadata:
+              version: "1.3"
+            nodes:
+              overall_feeling:
+                label: "Celkový pocit"
+                weight: 13.0
+                impact: 1
+                active: true
+                scale: [1, 2, 3, 4, 5]
+        """
+        val config = EntityConfigLoader.load(yamlStream(yaml))
+
+        assertEquals("1.3", config.version)
+    }
+
+    @Test
+    fun load_missingMetadata_defaultsVersionToZero() {
+        val config = EntityConfigLoader.load(yamlStream(fullYaml))
+
+        assertEquals("0", config.version)
+    }
+
+    @Test
+    fun isNewerVersion_higherMinor_isNewer() {
+        assertTrue(EntityConfigLoader.isNewerVersion("1.10", "1.9"))
+        assertFalse(EntityConfigLoader.isNewerVersion("1.9", "1.10"))
+    }
+
+    @Test
+    fun isNewerVersion_equalVersions_isNotNewer() {
+        assertFalse(EntityConfigLoader.isNewerVersion("1.0", "1.0"))
+    }
+
+    @Test
+    fun isNewerVersion_higherMajor_isNewer() {
+        assertTrue(EntityConfigLoader.isNewerVersion("2.0", "1.9"))
+    }
+
+    @Test
+    fun isNewerVersion_differentSegmentCounts_comparedCorrectly() {
+        assertTrue(EntityConfigLoader.isNewerVersion("1.2.1", "1.2"))
+        assertFalse(EntityConfigLoader.isNewerVersion("1.2", "1.2.1"))
+    }
+
+    @Test
     fun load_trackableNodesExcludeGroupNodes() {
         val config = EntityConfigLoader.load(yamlStream(fullYaml))
 

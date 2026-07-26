@@ -21,7 +21,12 @@ This will:
 2. Install dependencies from `requirements.txt`
 3. Copy `.env.example` → `.env` if not present
 4. Run Alembic migrations (SQLite by default)
-5. Start Uvicorn on `http://localhost:8000`
+5. Start Uvicorn on `http://192.168.77.24:8095`
+
+> **Note**: the `dev` target in `Makefile` binds to a hardcoded LAN IP (`192.168.77.24`) so a phone on the same network can reach it — this is *not* `0.0.0.0`, so if your machine's IP differs, `make dev` will fail to bind. Either edit the `--host` value in `Makefile`, or run Uvicorn directly with `--host 0.0.0.0` to listen on all interfaces:
+> ```bash
+> .venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8095
+> ```
 
 ## Running Tests
 
@@ -33,21 +38,21 @@ make test-all    # both with coverage report
 
 ## API Documentation
 
-Once running, open: **http://localhost:8000/docs**
+Once running, open: **http://192.168.77.24:8095/docs** (or `http://localhost:8095/docs` if you started Uvicorn with `--host 0.0.0.0`/`localhost` yourself)
 
 ### Key endpoints
 
 ```bash
 # Health check
-curl http://localhost:8000/api/v1/health
+curl http://192.168.77.24:8095/api/v1/health
 
 # Compute daily index
-curl -X POST http://localhost:8000/api/v1/compute/daily \
+curl -X POST http://192.168.77.24:8095/api/v1/compute/daily \
   -H "Content-Type: application/json" \
   -d '{"schema_version":"1.0","date":"2026-06-30","entity_config":{"sleep":{"weight":15.0,"impact":1,"parent":null,"scale":true}},"values":[{"element_key":"sleep","value_binary":1,"value_scale":4}],"active_keys":["sleep"]}'
 
 # Compute range (multiple days)
-curl -X POST http://localhost:8000/api/v1/compute/range \
+curl -X POST http://192.168.77.24:8095/api/v1/compute/range \
   -H "Content-Type: application/json" \
   -d '{"schema_version":"1.0","entity_config":{"sleep":{"weight":15.0,"impact":1,"parent":null,"scale":true}},"days":[{"date":"2026-06-30","values":[{"element_key":"sleep","value_binary":1,"value_scale":5}],"active_keys":["sleep"]}]}'
 ```
@@ -82,4 +87,6 @@ DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/adhd_tracker
 
 **`sqlite3.OperationalError: no such table`** — run `alembic upgrade head` or `make migrate`.
 
-**Port 8000 already in use** — `lsof -ti:8000 | xargs kill` or change port in Makefile.
+**Port 8095 already in use** — `lsof -ti:8095 | xargs kill` or change the port in `Makefile`.
+
+**`make dev` hangs or fails with an address/bind error** — the `dev` target binds to a hardcoded IP (`192.168.77.24`); if that's not this machine's current IP, either update it in `Makefile` or run `uvicorn app.main:app --reload --host 0.0.0.0 --port 8095` directly.

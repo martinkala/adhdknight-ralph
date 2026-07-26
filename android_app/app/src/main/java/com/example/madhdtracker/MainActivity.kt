@@ -26,6 +26,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.room.Room
 import com.example.madhdtracker.data.AppDatabase
 import com.example.madhdtracker.data.TrackerRepository
+import com.example.madhdtracker.data.repository.EntitiesConfigRepository
 import com.example.madhdtracker.data.repository.PreferencesRepository
 import com.example.madhdtracker.notifications.NotificationRules
 import com.example.madhdtracker.notifications.NotificationScheduler
@@ -76,7 +77,7 @@ private fun AppRoot() {
             .build()
     }
     val appConfig = remember { AppConfigLoader.load(context.assets) }
-    val elementConfig = remember { EntityConfigLoader.load(context.assets) }
+    val elementConfig = remember { EntityConfigLoader.load(context) }
     val repository = remember { TrackerRepository(db, appConfig, elementConfig) }
     val navController = rememberNavController()
     val trackerViewModel: TrackerViewModel = viewModel(
@@ -97,6 +98,13 @@ private fun AppRoot() {
     val accountViewModel: AccountViewModel = viewModel()
 
     PermissionHelper.RequestPostNotificationsPermission()
+
+    // Fire-and-forget: checks the server for a newer entities.yaml and downloads it if so.
+    // Server is the source of truth going forward; this session keeps using elementConfig
+    // as already loaded above — a newer config takes effect on the next app start.
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) { EntitiesConfigRepository(context).checkForUpdate() }
+    }
 
     LaunchedEffect(Unit) {
         val prefs = PreferencesRepository(context)

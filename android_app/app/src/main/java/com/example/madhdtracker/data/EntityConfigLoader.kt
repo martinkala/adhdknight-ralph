@@ -1,13 +1,52 @@
 package com.example.madhdtracker.data
 
+import android.content.Context
 import android.content.res.AssetManager
 import android.util.Log
 import com.example.madhdtracker.domain.model.EntityConfig
 import com.example.madhdtracker.domain.model.EntityNode
 import org.yaml.snakeyaml.Yaml
+import java.io.File
 import java.io.InputStream
 
 object EntityConfigLoader {
+
+    const val OVERRIDE_FILE_NAME = "entities_override.yaml"
+
+    // Server-downloaded config (see EntitiesConfigRepository) takes precedence over the
+    // bundled asset once present — this is what makes the server the source of truth while
+    // still letting the app work offline from first launch on the bundled copy.
+    fun load(context: Context): EntityConfig {
+        val overrideFile = File(context.filesDir, OVERRIDE_FILE_NAME)
+        if (overrideFile.exists()) {
+            try {
+                return load(overrideFile.inputStream())
+            } catch (e: Exception) {
+                Log.d("EntityConfig", "override file unreadable, falling back to bundled asset: ${e.message}")
+            }
+        }
+        return load(context.assets)
+    }
+
+    // Persists a server-downloaded entities.yaml as the override — caller is expected to
+    // have already validated it parses (e.g. via load(text.byteInputStream())) before
+    // calling this, so a malformed remote response can never brick the local config.
+    fun saveOverride(context: Context, yamlText: String) {
+        File(context.filesDir, OVERRIDE_FILE_NAME).writeText(yamlText)
+    }
+
+    // Semver-style comparison ("1.10" > "1.9"), tolerant of non-numeric segments (treated as 0).
+    fun isNewerVersion(remoteVersion: String, localVersion: String): Boolean {
+        fun parts(v: String) = v.trim().split(".").map { it.takeWhile(Char::isDigit).toIntOrNull() ?: 0 }
+        val remoteParts = parts(remoteVersion)
+        val localParts = parts(localVersion)
+        for (i in 0 until maxOf(remoteParts.size, localParts.size)) {
+            val r = remoteParts.getOrElse(i) { 0 }
+            val l = localParts.getOrElse(i) { 0 }
+            if (r != l) return r > l
+        }
+        return false
+    }
 
     fun load(assetManager: AssetManager): EntityConfig =
         try {
@@ -39,22 +78,27 @@ object EntityConfigLoader {
             return buildFallback()
         }
 
+        @Suppress("UNCHECKED_CAST")
+        val metadata = data["metadata"] as? Map<String, Any?>
+        val version = metadata?.get("version")?.toString() ?: "0"
+
         val parsedNodes = mutableMapOf<String, EntityNode>()
 
-        nodeMap.forEach { (key, value) ->
-            @Suppress("UNCHECKED_CAST")
-            val props = value as? Map<String, Any?> ?: return@forEach
+        // Nodes may nest their subcategories under `children:` (tree form) and/or declare
+        // `parent:` directly (flat form, kept for backward compatibility). Both are merged
+        // into the same flat `parsedNodes` map that the rest of the app operates on.
+        fun parseNode(key: String, props: Map<String, Any?>, inheritedParent: String?) {
             val weight = (props["weight"] as? Number)?.toDouble()
             if (weight == null || weight <= 0.0) {
                 Log.d("EntityConfig", "invalid weight for node: $key")
-                return@forEach
+                return
             }
             val impact = (props["impact"] as? Number)?.toInt()
             if (impact != null && impact != 1 && impact != -1) {
                 Log.d("EntityConfig", "invalid impact for node: $key")
-                return@forEach
+                return
             }
-            val parent = props["parent"] as? String
+            val parent = (props["parent"] as? String) ?: inheritedParent
             val label = (props["label"] as? String) ?: key
             val active = (props["active"] as? Boolean) ?: true
             val clickable = (props["clickable"] as? Boolean) ?: false
@@ -79,6 +123,19 @@ object EntityConfigLoader {
                 scaleMin = scaleMin,
                 scaleMax = scaleMax
             )
+
+            @Suppress("UNCHECKED_CAST")
+            val children = props["children"] as? Map<String, Any?>
+            children?.forEach { (childKey, childValue) ->
+                val childProps = childValue as? Map<String, Any?> ?: return@forEach
+                parseNode(childKey, childProps, key)
+            }
+        }
+
+        nodeMap.forEach { (key, value) ->
+            @Suppress("UNCHECKED_CAST")
+            val props = value as? Map<String, Any?> ?: return@forEach
+            parseNode(key, props, null)
         }
 
         // Validate: parent references exist
@@ -97,8 +154,8 @@ object EntityConfigLoader {
 
         if (parsedNodes.isEmpty()) return buildFallback()
 
-        Log.d("EntityConfig", "config loaded: ${parsedNodes.size} nodes")
-        return EntityConfig(parsedNodes)
+        Log.d("EntityConfig", "config loaded: ${parsedNodes.size} nodes, version=$version")
+        return EntityConfig(parsedNodes, version)
     }
 
     internal fun buildFallback(): EntityConfig {

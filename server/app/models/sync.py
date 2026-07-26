@@ -17,6 +17,7 @@ class SyncRecord(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    app_id: Mapped[str] = mapped_column(String(50), nullable=False, default="adhd_tracker", server_default="adhd_tracker")
     device_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     sync_type: Mapped[SyncType] = mapped_column(SAEnum(SyncType), nullable=False)
     records_sent: Mapped[int] = mapped_column(Integer, default=0)

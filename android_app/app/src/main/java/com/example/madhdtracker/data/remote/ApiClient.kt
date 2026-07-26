@@ -11,6 +11,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -54,11 +55,30 @@ data class SyncDayItem(
 )
 
 @Serializable
+data class EntityNodeSyncItem(
+    val weight: Double,
+    val impact: Int? = null,
+    val parent: String? = null,
+    val scale: Boolean = false,
+    val scale_min: Int? = null,
+    val scale_max: Int? = null,
+)
+
+@Serializable
 data class BatchSyncRequest(
     val schema_version: String = "1.0",
+    val app_id: String = APP_ID,
     val device_id: String? = null,
+    // Active-only entity tree (leaves + their ancestor chain) so the server can recompute
+    // and persist a DailyIndex per day (see IndexCalculator.computeDailyIndexGrouped for
+    // the matching Android-side algorithm). Omit to sync without server-side computation.
+    val entity_config: Map<String, EntityNodeSyncItem>? = null,
     val days: List<SyncDayItem>,
 )
+
+// Identifies which app is talking to the server, so one account (login) can be shared
+// across multiple apps (e.g. "adhd_tracker", "food_diary") without their days colliding.
+const val APP_ID = "adhd_tracker"
 
 @Serializable
 data class SyncSummaryResponse(
@@ -74,6 +94,9 @@ data class BatchSyncResponse(
     val sync_id: String,
     val summary: SyncSummaryResponse,
 )
+
+@Serializable
+data class EntitiesVersionResponse(val app_id: String, val version: String)
 
 class ApiClient(httpClient: HttpClient? = null) {
 
@@ -131,13 +154,35 @@ class ApiClient(httpClient: HttpClient? = null) {
 
     suspend fun getMe(baseUrl: String, token: String): Result<MeResponse> {
         return runCatching {
-            val response: HttpResponse = client.get("$baseUrl/api/v1/user/me") {
+            val response: HttpResponse = client.get("$baseUrl/api/v1/user/me?app_id=$APP_ID") {
                 bearerAuth(token)
             }
             if (response.status.isSuccess()) {
                 response.body<MeResponse>()
             } else {
                 throw ApiException(response.status.value, "GetMe failed: ${response.status.description}")
+            }
+        }
+    }
+
+    suspend fun getEntitiesVersion(baseUrl: String, appId: String = APP_ID): Result<EntitiesVersionResponse> {
+        return runCatching {
+            val response: HttpResponse = client.get("$baseUrl/api/v1/config/entities/version?app_id=$appId")
+            if (response.status.isSuccess()) {
+                response.body<EntitiesVersionResponse>()
+            } else {
+                throw ApiException(response.status.value, "GetEntitiesVersion failed: ${response.status.description}")
+            }
+        }
+    }
+
+    suspend fun getEntitiesConfig(baseUrl: String, appId: String = APP_ID): Result<String> {
+        return runCatching {
+            val response: HttpResponse = client.get("$baseUrl/api/v1/config/entities?app_id=$appId")
+            if (response.status.isSuccess()) {
+                response.bodyAsText()
+            } else {
+                throw ApiException(response.status.value, "GetEntitiesConfig failed: ${response.status.description}")
             }
         }
     }

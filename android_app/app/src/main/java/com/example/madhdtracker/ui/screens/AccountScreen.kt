@@ -32,6 +32,9 @@ import com.example.madhdtracker.ui.AccountUiState
 import com.example.madhdtracker.ui.AccountViewModel
 import com.example.madhdtracker.ui.SyncUiState
 
+// Matches the server's RegisterRequest.password_min_length validator (schemas/auth.py)
+private const val MIN_PASSWORD_LENGTH = 8
+
 @Composable
 fun AccountScreen(viewModel: AccountViewModel) {
     val state by viewModel.uiState.collectAsState()
@@ -127,9 +130,16 @@ private fun LoginForm(
             TextButton(
                 onClick = { onRegister(email.value, password.value) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = email.value.isNotBlank() && password.value.length >= 6
+                enabled = email.value.isNotBlank() && password.value.length >= MIN_PASSWORD_LENGTH
             ) {
                 Text("Registrovať sa")
+            }
+            if (password.value.isNotEmpty() && password.value.length < MIN_PASSWORD_LENGTH) {
+                Text(
+                    text = "Heslo musí mať aspoň $MIN_PASSWORD_LENGTH znakov",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }

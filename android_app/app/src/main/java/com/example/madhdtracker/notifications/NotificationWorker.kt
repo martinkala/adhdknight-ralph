@@ -23,7 +23,7 @@ class NotificationWorker(
         if (!prefs.areNotificationsEnabled()) return Result.success()
 
         val appConfig = AppConfigLoader.load(applicationContext.assets)
-        val elementConfig = EntityConfigLoader.load(applicationContext.assets)
+        val elementConfig = EntityConfigLoader.load(applicationContext)
         val notifRules = NotificationRules(appConfig.notification, elementConfig.trackableKeys)
         if (notifRules.isQuietWindow(LocalTime.now())) return Result.success()
 

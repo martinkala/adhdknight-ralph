@@ -7,10 +7,13 @@ from app.db.database import Base
 
 class TrackingDay(Base):
     __tablename__ = "tracking_days"
-    __table_args__ = (UniqueConstraint("user_id", "date", name="uq_user_date"),)
+    __table_args__ = (UniqueConstraint("user_id", "app_id", "date", name="uq_user_app_date"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Scopes a day's data to the app that wrote it (e.g. "adhd_tracker", "food_diary") so one
+    # account can be shared across multiple apps without their days colliding on (user_id, date).
+    app_id: Mapped[str] = mapped_column(String(50), nullable=False, default="adhd_tracker", server_default="adhd_tracker")
     date: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
     is_complete: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
