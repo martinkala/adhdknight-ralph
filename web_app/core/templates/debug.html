@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Diagnostika – ADHD Tracker{% endblock %}
+{% block extra_head %}
+<style>
+    table.debug-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    table.debug-table th, table.debug-table td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #eee; }
+    table.debug-table th { color: #555; font-weight: 600; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+    .badge-yes { background: #e8f5e9; color: #2e7d32; }
+    .badge-no { background: #ffebee; color: #c62828; }
+    .summary-row { display: flex; gap: 2rem; margin-bottom: 0.5rem; }
+    .summary-row .num { font-size: 1.75rem; font-weight: 700; }
+    .summary-row .label { font-size: 0.8rem; color: #666; }
+    .mono { font-family: ui-monospace, monospace; font-size: 0.8rem; color: #777; }
+</style>
+{% endblock %}
+{% block content %}
+<h2 style="margin-bottom:1rem;">Diagnostika</h2>
+
+{% if debug.error %}
+    <div class="alert alert-error">
+        {% if debug.error == "server_unavailable" %}Server nie je dostupný.
+        {% elif debug.error == "server_error" %}Chyba servera pri načítaní diagnostiky.
+        {% else %}{{ debug.error }}{% endif %}
+    </div>
+{% else %}
+    <div class="card">
+        <div class="summary-row">
+            <div>
+                <div class="num">{{ debug.total_days }}</div>
+                <div class="label">dní so záznamom (app_id: {{ debug.app_id }})</div>
+            </div>
+            <div>
+                <div class="num">{{ debug.days_with_index }}</div>
+                <div class="label">dní s vypočítaným indexom</div>
+            </div>
+        </div>
+        <div class="mono">{{ debug.email }}</div>
+    </div>
+
+    {% if debug.total_days > 0 and debug.days_with_index == 0 %}
+    <div class="alert alert-error">
+        Žiadny deň nemá vypočítaný index, hoci dáta sú zosynchronizované — to je presne dôvod,
+        prečo je Trend prázdny. Najčastejšia príčina: appka, ktorou sa naposledy synchronizovalo,
+        neposiela <code>entity_config</code> v sync requeste (starší build pred touto opravou).
+        Over si, že máš na telefóne najnovšiu verziu appky a znova stlač „Synchronizovať dáta".
+    </div>
+    {% elif debug.total_days > 0 and debug.days_with_index < debug.total_days %}
+    <div class="alert alert-success">
+        {{ debug.days_with_index }} z {{ debug.total_days }} dní má vypočítaný index — zvyšné dni
+        boli pravdepodobne zosynchronizované ešte pred touto opravou. Nasledujúca synchronizácia
+        ich dopočíta (index sa pri každom syncu prepočítava nanovo, nie len raz).
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <table class="debug-table">
+            <thead>
+                <tr>
+                    <th>Dátum</th>
+                    <th>Záznamov</th>
+                    <th>Vyplnený</th>
+                    <th>Index</th>
+                    <th>Hodnota</th>
+                    <th>Vypočítané</th>
+                    <th>Device ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in debug.days %}
+                <tr>
+                    <td>{{ day.date }}</td>
+                    <td>{{ day.element_count }}</td>
+                    <td>
+                        {% if day.is_complete %}<span class="badge badge-yes">áno</span>
+                        {% else %}<span class="badge badge-no">nie</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if day.has_daily_index %}<span class="badge badge-yes">áno</span>
+                        {% else %}<span class="badge badge-no">nie</span>{% endif %}
+                    </td>
+                    <td>{% if day.index_value != None %}{{ day.index_value|floatformat:1 }}{% else %}—{% endif %}</td>
+                    <td class="mono">{% if day.index_computed_at %}{{ day.index_computed_at }}{% else %}—{% endif %}</td>
+                    <td class="mono">{{ day.device_id|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7">Žiadne dáta.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}

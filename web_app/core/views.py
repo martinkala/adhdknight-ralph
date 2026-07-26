@@ -91,3 +91,14 @@ def account(request):
 
 def info(request):
     return render(request, "info.html")
+
+
+def debug_view(request):
+    if not _require_login(request):
+        return redirect("login")
+    token = request.session["token"]
+    debug = api_client.get_debug(token, days=60)
+    if debug.get("error") == "unauthorized":
+        request.session.flush()
+        return _expired_redirect()
+    return render(request, "debug.html", {"debug": debug})
