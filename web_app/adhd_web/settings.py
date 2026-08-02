@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,14 +20,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+#
+# Production values come from env vars (set via systemd EnvironmentFile=web_app/.env,
+# see deploy/systemd/adhd-web.service). Unset env vars = current dev behavior, unchanged.
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-p(dqgutj7@p8nf6q6z@-l6&b7hwvyzzmute5x0%bpre_esap70'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-p(dqgutj7@p8nf6q6z@-l6&b7hwvyzzmute5x0%bpre_esap70',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h]
+
+# console.adhdknight.com is the only production host for this app (spec 018).
+CSRF_TRUSTED_ORIGINS = ['https://console.adhdknight.com']
+
+# Nginx terminates TLS and forwards this header — lets Django know the original
+# request was HTTPS even though it reaches Gunicorn over plain HTTP on localhost.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -76,13 +90,31 @@ WSGI_APPLICATION = 'adhd_web.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+#
+# DJANGO_DATABASE_URL unset (local dev) -> SQLite, unchanged.
+# DJANGO_DATABASE_URL=postgresql://user:pass@127.0.0.1:5432/adhd_web -> Postgres (production, FR-006).
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+_database_url = os.environ.get('DJANGO_DATABASE_URL', '')
+
+if _database_url:
+    _parsed = urlparse(_database_url)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': _parsed.path.lstrip('/'),
+            'USER': _parsed.username,
+            'PASSWORD': _parsed.password,
+            'HOST': _parsed.hostname,
+            'PORT': _parsed.port or 5432,
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -121,3 +153,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# collectstatic target for production — served directly by Nginx (deploy/nginx/console.adhdknight.com.conf),
+# never through Gunicorn/Django.
+STATIC_ROOT = BASE_DIR / 'staticfiles'

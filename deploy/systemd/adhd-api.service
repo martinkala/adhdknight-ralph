@@ -1,0 +1,17 @@
+[Unit]
+Description=ADHD Tracker FastAPI server (api.adhdknight.com)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=adhdmad
+Group=adhdmad
+WorkingDirectory=/opt/adhdmad/server
+EnvironmentFile=/opt/adhdmad/server/.env
+ExecStart=/opt/adhdmad/server/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8095
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

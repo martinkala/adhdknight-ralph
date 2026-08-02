@@ -1,0 +1,17 @@
+[Unit]
+Description=ADHD Tracker Django web console (console.adhdknight.com)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=adhdmad
+Group=adhdmad
+WorkingDirectory=/opt/adhdmad/web_app
+EnvironmentFile=/opt/adhdmad/web_app/.env
+ExecStart=/opt/adhdmad/web_app/.venv/bin/gunicorn adhd_web.wsgi:application --bind 127.0.0.1:8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

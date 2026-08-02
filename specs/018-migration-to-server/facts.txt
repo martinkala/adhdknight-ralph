@@ -1,0 +1,15 @@
+Priprav mi podrobny step by step postup na instalaciu servera , postgresu , webservera na produkcny debian server.
+Na produkcnom debian serveri je nainstalovany iba nginx ako web server.
+
+Sucastou instalcie bude aj migracia testovacie sqllite do postgresu .
+
+server aj webserver musia fungovat na https pomocou certitikatov pomocou lets encrypt
+
+adresa api bude https://api.adhdknight.com
+adresa web servera bude https://console.adhdknight.com
+console.adhdknight.com bude este za additional basic http authentikaciou zo creadentials admin:admin
+(placeholder - realne heslo nastavi human obsluha priamo pri instalacii, nezapisovat skutocne heslo do repozitara)
+postgres nebude dostupny z vonkajses siete , len api bude na postgres pristupovat lokalne , rovnako webserver
+
+Android aplikacia bude pristupovat na api na adrese https://api.adhdknight.com
+

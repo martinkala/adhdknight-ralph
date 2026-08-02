@@ -79,6 +79,97 @@ pip install asyncpg
 DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/adhd_tracker
 ```
 
+## Produkčné nasadenie (feature 018)
+
+Cieľ: `https://api.adhdknight.com` (tento FastAPI server) a `https://console.adhdknight.com`
+(Django web konzola, `web_app/`) na jednom Debian produkčnom serveri, za Nginx reverse
+proxy s Let's Encrypt certifikátmi, konzola navyše chránená HTTP Basic Auth, PostgreSQL
+viazaný len na `localhost`. Podrobný kontext: `specs/018-migration-to-server/`
+(`plan.md`, `research.md`, `data-model.md`, `quickstart.md`).
+
+Všetky kroky nižšie spúšťa **inštalačný skript `deploy/scripts/install.sh`** — bud ho
+spusti celý (`./deploy/scripts/install.sh`), alebo krok po kroku cez `--step <name>`
+(pozri hlavičku skriptu pre presné názvy krokov). Skript predpokladá checkout repozitára
+v `/opt/adhdmad` a systémového používateľa `adhdmad` (uprav `deploy/systemd/*.service`
+a `APP_ROOT`/`APP_USER` v skripte, ak sa tvoj server líši).
+
+### Predpoklady na serveri
+
+- Debian s verejnou IP, DNS `A` záznamy pre obe domény smerujúce na túto IP
+- Nainštalovaný Nginx, PostgreSQL
+- Checkout tohto repozitára v `/opt/adhdmad` (`git clone ... /opt/adhdmad`)
+- SQLite→PostgreSQL migračný nástroj z **017-migration-to-postgres** — pozri
+  `specs/018-migration-to-server/research.md` Decision 8. Ak `server/scripts/migrate_sqlite_to_postgres.py`
+  ešte neexistuje, krok `migrate-data` nižšie zlyhá zámerne — je to blocker z 017, nie chyba tohto skriptu.
+
+### Krok za krokom
+
+1. **PostgreSQL — localhost-only** (`./deploy/scripts/install.sh --step postgres`)
+   Overí/nastaví `listen_addresses = 'localhost'` v `postgresql.conf`. `pg_hba.conf`
+   sa manuálne skontroluje (skript vypíše cestu k súboru) — MUST obsahovať len `local`
+   (peer) a `host ... 127.0.0.1/32` riadky, žiadne `0.0.0.0/0`.
+
+2. **Vytvor databázy** (`./deploy/scripts/install.sh --step databases`)
+   Vytvorí role a databázy `adhd_server` (FastAPI) a `adhd_web` (Django) s placeholder
+   heslami. **Zmeň placeholder heslá** (`ALTER ROLE adhd_server PASSWORD '...'` atď.)
+   a zapíš skutočné heslá do `server/.env` (`DATABASE_URL`) a `web_app/.env`
+   (`DJANGO_DATABASE_URL`) v ďalšom kroku.
+
+3. **Priprav `.env` súbory**
+   - `cp server/.env.example server/.env` → nastav `DATABASE_URL=postgresql+asyncpg://adhd_server:<heslo>@127.0.0.1:5432/adhd_server`, `ENVIRONMENT=production`, reálny `SECRET_KEY`.
+   - `cp web_app/.env.example web_app/.env` → nastav `DJANGO_DEBUG=false`, `DJANGO_ALLOWED_HOSTS=console.adhdknight.com`, reálny `DJANGO_SECRET_KEY`, `DJANGO_DATABASE_URL=postgresql://adhd_web:<heslo>@127.0.0.1:5432/adhd_web`.
+   - Žiadny z týchto súborov sa necommituje (obidva `.gitignore` ich pokrývajú).
+
+4. **Nainštaluj závislosti, spusti migrácie, naštartuj appky** (`./deploy/scripts/install.sh --step deps-and-migrate`)
+   Vytvorí `.venv` pre `server/` aj `web_app/`, nainštaluje `requirements.txt`, spustí
+   `alembic upgrade head` (FastAPI) a `manage.py migrate` + `collectstatic` (Django),
+   nainštaluje a naštartuje `systemd` jednotky `adhd-api.service` (Uvicorn, `127.0.0.1:8095`)
+   a `adhd-web.service` (Gunicorn, `127.0.0.1:8000`). Po tomto kroku appky bežia lokálne,
+   ale ešte nie sú dostupné z internetu (Nginx ešte nie je nakonfigurovaný).
+
+5. **Dátová migrácia zo SQLite** (`./deploy/scripts/install.sh --step migrate-data`)
+   Spustí nástroj z **017**. Ak chýba, skript **zlyhá s explicitnou chybou** — dorieš
+   najprv 017, potom sa vráť k tomuto kroku (appka môže dovtedy bežať aj s SQLite
+   fallbackom, viď `017 FR-002`).
+
+6. **Nginx + Let's Encrypt certifikáty** (`./deploy/scripts/install.sh --step nginx-and-certs`)
+   Nainštaluje `deploy/nginx/api.adhdknight.com.conf` a `console.adhdknight.com.conf` do
+   `/etc/nginx/sites-available/` + symlink do `sites-enabled/`, overí `nginx -t`, a spustí
+   `certbot --nginx` pre obe domény (HTTP-01 challenge — vyžaduje funkčný DNS + verejnú IP
+   v tomto momente). Certbot pri tomto kroku **priamo upraví** live Nginx config na serveri
+   (pridá `listen 443 ssl` blok a HTTP→HTTPS redirect) — súbory v repozitári zostávajú
+   zámerne "pred-certbot" verzia, aby opätovné nasadenie z gitu neprepísalo certbotom
+   spravovanú TLS konfiguráciu.
+   Ak server nemá verejnú IP pre HTTP-01: `sudo certbot certonly --manual --preferred-challenges dns -d <domena>`.
+
+7. **Auto-obnova certifikátov** (`./deploy/scripts/install.sh --step certbot-timer`)
+   Povolí `certbot.timer` (súčasť Debian balíčka `certbot`) — obnova beží automaticky,
+   žiadna akcia na strane appiek/klientov nie je potrebná (FR-002).
+
+8. **Basic Auth pre konzolu** (`./deploy/scripts/install.sh --step basic-auth`)
+   Vytvorí `/etc/nginx/.htpasswd_console` s **placeholder** credentials `admin`/`admin`.
+   **AKCIA VYŽADOVANÁ MANUÁLNE**: hneď po tomto kroku spusti na serveri interaktívne:
+   ```bash
+   sudo htpasswd /etc/nginx/.htpasswd_console admin
+   ```
+   a zadaj skutočné produkčné heslo. Placeholder sa **nikdy** nesmie dostať do produkcie
+   nezmenený a nikdy sa nezapisuje do repozitára (FR-005).
+
+9. **Validácia** — spusti scenáre zo `specs/018-migration-to-server/quickstart.md` (TLS bez
+   warningu, HTTP→HTTPS redirect, Basic Auth 401/200 na konzole vs. žiadny na API,
+   `certbot renew --dry-run`, PostgreSQL odmietne pripojenie zvonku, `make dev` lokálne
+   nezmenené).
+
+### Poznámky
+
+- `api.adhdknight.com` **nikdy** nemá `auth_basic` — `deploy/scripts/install.sh` to pri
+  každom behu overí (`assert_api_has_no_basic_auth`) a odmietne pokračovať, ak by niekto
+  túto direktívu do `deploy/nginx/api.adhdknight.com.conf` omylom pridal.
+- Android `network_security_config.xml` (016) už povoľuje cleartext HTTP pre private IP —
+  lokálny dev flow (`make dev`) sa touto featurou vôbec nemení (FR-004, SC-003).
+- Rollback: `nginx -t` beží pred každým `systemctl reload nginx` v skripte; SQLite dáta
+  (`server/dev.db`, `web_app/db.sqlite3`) zostávajú nedotknuté, kým migrácia neprebehne úspešne.
+
 ## Troubleshooting
 
 **`python: command not found`** — use `python3` or ensure Python 3.11+ is on PATH.

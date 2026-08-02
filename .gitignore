@@ -27,6 +27,12 @@ local.properties
 .DS_Store
 Thumbs.db
 
+# Editor swap files
+*.swp
+*.swo
+
+# Heap dumps
+*.hprof
 
 # python
 *.pyc
