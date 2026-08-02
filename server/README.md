@@ -127,8 +127,10 @@ z ktorého by server sám ťahal kód.
 ### Krok za krokom (na serveri, po `push-deploy.sh`)
 
 0. **Systémové balíky** (`./deploy/scripts/install.sh --step packages`)
-   `apt-get install` pre `nginx`, `postgresql`/`postgresql-contrib`, `certbot`/`python3-certbot-nginx`,
-   `apache2-utils` (`htpasswd`), `rsync`, `python3-venv`. Idempotentné — bezpečné spustiť opakovane.
+   `apt-get install` pre `nginx`, `certbot`/`python3-certbot-nginx`, `apache2-utils` (`htpasswd`),
+   `rsync`, `python3-venv`. PostgreSQL sa inštaluje cez oficiálny PGDG repozitár (nie distro default —
+   Django 6 vyžaduje PostgreSQL 14+, napr. Debian 11 má v repách len 13), pinovaná verzia `postgresql-16`
+   (nastaviteľné cez `PG_VERSION` env premennú). Idempotentné — bezpečné spustiť opakovane.
 
 1. **PostgreSQL — localhost-only** (`./deploy/scripts/install.sh --step postgres`)
    Overí/nastaví `listen_addresses = 'localhost'` v `postgresql.conf`. `pg_hba.conf`

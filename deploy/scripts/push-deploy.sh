@@ -16,8 +16,17 @@
 # Only syncs what's actually committed to git (via `git archive`) — your
 # local uncommitted changes and gitignored files never reach the server.
 # Server-side state (venv, .env, dev.db, staticfiles) is left untouched.
+#
+# rsync connects as $SERVER's user (root by default), so every synced file
+# lands owned by that user — clobbering the $APP_USER ownership install.sh
+# sets up for the systemd services. Re-chown after every sync; override the
+# owner with DEPLOY_OWNER if your install.sh uses a different APP_USER.
+# Best-effort: skipped (not fatal) if that user doesn't exist on the server yet,
+# e.g. before the first install.sh run.
 
 set -euo pipefail
+
+DEPLOY_OWNER="${DEPLOY_OWNER:-adhdmad}"
 
 SERVER_ARG="${1:-}"
 if [[ -n "$SERVER_ARG" ]]; then
@@ -48,6 +57,9 @@ rsync -avz --delete \
   --exclude 'staticfiles/' \
   --exclude '__pycache__/' \
   "$WORKDIR/" "$SERVER:$REMOTE_PATH/"
+
+echo "==> Restoring ownership ($DEPLOY_OWNER) so systemd services can read the synced files"
+ssh "$SERVER" "id '$DEPLOY_OWNER' >/dev/null 2>&1 && chown -R '$DEPLOY_OWNER:$DEPLOY_OWNER' '$REMOTE_PATH' || echo '(skipped — $DEPLOY_OWNER not created yet on this server)'"
 
 echo "==> Done. Next, run the install/update steps on the server:"
 echo "    ssh $SERVER"
