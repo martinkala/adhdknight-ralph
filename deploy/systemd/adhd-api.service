@@ -7,9 +7,9 @@ Wants=postgresql.service
 Type=simple
 User=adhdmad
 Group=adhdmad
-WorkingDirectory=/opt/adhdmad/server
-EnvironmentFile=/opt/adhdmad/server/.env
-ExecStart=/opt/adhdmad/server/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8095
+WorkingDirectory=/opt/adhknight/server
+EnvironmentFile=/opt/adhknight/server/.env
+ExecStart=/opt/adhknight/server/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8095
 Restart=on-failure
 RestartSec=5
 

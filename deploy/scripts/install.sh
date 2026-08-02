@@ -7,6 +7,7 @@
 #   ./deploy/scripts/install.sh --step <name>    # run a single step (see STEP NAMES below)
 #
 # STEP NAMES (in execution order):
+#   packages            install_packages          - apt-get install nginx, postgresql, certbot, rsync, etc.
 #   postgres            setup_postgres           - FR-006: Postgres listens on localhost only
 #   databases           create_databases          - create adhd_server / adhd_web DBs+roles
 #   deps-and-migrate     install_deps_and_migrate  - venv, pip install, alembic/django migrate, collectstatic, start services
@@ -22,13 +23,29 @@
 set -euo pipefail
 
 REPO_ROOT="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APP_ROOT="/opt/adhdmad"
+APP_ROOT="/opt/adhknight"
 APP_USER="adhdmad"
 SERVER_DIR="$APP_ROOT/server"
 WEB_DIR="$APP_ROOT/web_app"
 
 log() { echo "==> $*"; }
 die() { echo "ERROR: $*" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
+# Step 0: install the system packages everything else here depends on.
+# Idempotent — apt-get install on an already-installed package is a no-op.
+# ---------------------------------------------------------------------------
+install_packages() {
+    log "Installing required system packages (nginx, postgresql, certbot, rsync, apache2-utils, python3-venv)"
+    sudo apt-get update
+    sudo apt-get install -y \
+        nginx \
+        postgresql postgresql-contrib \
+        certbot python3-certbot-nginx \
+        apache2-utils \
+        rsync \
+        python3-venv python3-pip
+}
 
 # ---------------------------------------------------------------------------
 # Phase 2 (Foundational) — T005: PostgreSQL localhost-only binding (FR-006)
@@ -200,6 +217,7 @@ main() {
     local step="${2:-}"
     if [[ "${1:-}" == "--step" ]]; then
         case "$step" in
+            packages) install_packages ;;
             postgres) setup_postgres ;;
             databases) create_databases ;;
             deps-and-migrate) install_deps_and_migrate ;;
@@ -212,6 +230,7 @@ main() {
         exit 0
     fi
 
+    install_packages
     setup_postgres
     create_databases
     install_deps_and_migrate

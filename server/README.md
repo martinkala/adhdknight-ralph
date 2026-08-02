@@ -90,19 +90,45 @@ viazaný len na `localhost`. Podrobný kontext: `specs/018-migration-to-server/`
 Všetky kroky nižšie spúšťa **inštalačný skript `deploy/scripts/install.sh`** — bud ho
 spusti celý (`./deploy/scripts/install.sh`), alebo krok po kroku cez `--step <name>`
 (pozri hlavičku skriptu pre presné názvy krokov). Skript predpokladá checkout repozitára
-v `/opt/adhdmad` a systémového používateľa `adhdmad` (uprav `deploy/systemd/*.service`
+v `/opt/adhknight` a systémového používateľa `adhdmad` (uprav `deploy/systemd/*.service`
 a `APP_ROOT`/`APP_USER` v skripte, ak sa tvoj server líši).
 
 ### Predpoklady na serveri
 
 - Debian s verejnou IP, DNS `A` záznamy pre obe domény smerujúce na túto IP
-- Nainštalovaný Nginx, PostgreSQL
-- Checkout tohto repozitára v `/opt/adhdmad` (`git clone ... /opt/adhdmad`)
+- `apt` prístup na inštaláciu balíkov (krok `packages` nižšie doinštaluje Nginx,
+  PostgreSQL, certbot, rsync a ostatné — netreba nič pripravovať vopred)
+- SSH prístup z dev hosta na server (bežný admin prístup — **žiadny GitHub kľúč sa na
+  server neukladá**, zámerne, viď nižšie)
 - SQLite→PostgreSQL migračný nástroj z **017-migration-to-postgres** — pozri
   `specs/018-migration-to-server/research.md` Decision 8. Ak `server/scripts/migrate_sqlite_to_postgres.py`
   ešte neexistuje, krok `migrate-data` nižšie zlyhá zámerne — je to blocker z 017, nie chyba tohto skriptu.
 
-### Krok za krokom
+### Nasadenie kódu na server — bez GitHub kľúča na serveri
+
+Server **neklonuje** repozitár z GitHubu sám (`git clone`) — to by vyžadovalo uložiť
+deploy kľúč priamo na produkčnom stroji, čo pri kompromitácii servera zároveň
+kompromituje prístup k repozitáru. Namiesto toho sa kód pushuje **z dev hosta** cez SSH,
+ktorý na server aj tak už máš (bežný admin prístup):
+
+```bash
+# Na DEV hostovi (nie na serveri):
+./deploy/scripts/push-deploy.sh                    # pushne HEAD aktuálnej vetvy do /opt/adhknight na app01
+./deploy/scripts/push-deploy.sh master              # alebo konkrétny ref/branch
+DEPLOY_SERVER=root@1.2.3.4 ./deploy/scripts/push-deploy.sh   # iný server/IP
+```
+
+Skript spraví `git archive` (pushne sa len to, čo je commitnuté — žiadne lokálne
+rozrobené zmeny ani gitignored súbory) a `rsync --delete` na server, pričom necháva
+nedotknuté server-side stavové veci (`.venv/`, `.env`, `dev.db`, `db.sqlite3`,
+`staticfiles/`). GitHub repozitár tak slúži len ako záloha/verzovanie, nie ako zdroj,
+z ktorého by server sám ťahal kód.
+
+### Krok za krokom (na serveri, po `push-deploy.sh`)
+
+0. **Systémové balíky** (`./deploy/scripts/install.sh --step packages`)
+   `apt-get install` pre `nginx`, `postgresql`/`postgresql-contrib`, `certbot`/`python3-certbot-nginx`,
+   `apache2-utils` (`htpasswd`), `rsync`, `python3-venv`. Idempotentné — bezpečné spustiť opakovane.
 
 1. **PostgreSQL — localhost-only** (`./deploy/scripts/install.sh --step postgres`)
    Overí/nastaví `listen_addresses = 'localhost'` v `postgresql.conf`. `pg_hba.conf`
