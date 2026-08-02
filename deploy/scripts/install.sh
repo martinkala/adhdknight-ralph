@@ -173,7 +173,10 @@ migrate_data() {
         die "017 migration tool not found at $migration_tool — see specs/017-migration-to-postgres. 018 calls this tool but does not implement it; it must be delivered by 017 before this step can run."
     fi
     log "Running SQLite->PostgreSQL migration via $migration_tool"
-    "$SERVER_DIR/.venv/bin/python" "$migration_tool"
+    # cd into SERVER_DIR first — get_settings() resolves ".env" relative to cwd,
+    # not to the script's location, so running from elsewhere silently falls
+    # back to the SQLite default and the tool rejects the run.
+    (cd "$SERVER_DIR" && .venv/bin/python "$migration_tool")
 }
 
 # ---------------------------------------------------------------------------

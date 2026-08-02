@@ -8,13 +8,22 @@ documented in specs/017-migration-to-postgres/contracts/cli-contract.md.
 """
 import argparse
 import asyncio
+import os
 import sys
 import traceback
 from pathlib import Path
 
+_SERVER_DIR = Path(__file__).resolve().parent.parent
+
 # Allow `import app.*` when invoked directly (python server/scripts/migrate_sqlite_to_postgres.py)
 # from a cwd other than server/ — same convention as app/db/migrations/env.py.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(_SERVER_DIR))
+
+# get_settings() resolves ".env" relative to the CURRENT WORKING DIRECTORY, not
+# to this script's location — running from anywhere other than server/ silently
+# falls back to the SQLite default and this tool rejects the run. Force cwd to
+# server/ regardless of how/from-where the script was invoked.
+os.chdir(_SERVER_DIR)
 
 from sqlalchemy import select, insert, func
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
