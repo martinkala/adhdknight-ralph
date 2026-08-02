@@ -89,6 +89,17 @@ Po tom, čo `DATABASE_URL` ukazuje na PostgreSQL a `alembic upgrade head` vytvor
 
 Skript je transakčný (rollback pri akejkoľvek chybe) a odmietne beh, ak cieľová DB už obsahuje dáta (pridaj `--force` na vedomé opakovanie). Podrobnosti a validačné scenáre: `specs/017-migration-to-postgres/quickstart.md`, kontrakt (exit kódy): `specs/017-migration-to-postgres/contracts/cli-contract.md`.
 
+### Reset hesla používateľa
+
+Appka nemá "forgot password" flow — ak si niekto zabudne heslo, resetuje sa priamo v DB:
+
+```bash
+.venv/bin/python scripts/reset_user_password.py used-email@example.com          # opýta sa na nové heslo (2x)
+.venv/bin/python scripts/reset_user_password.py used-email@example.com --password 'novehesolo'
+```
+
+Funguje proti aktuálne nakonfigurovanej `DATABASE_URL` (SQLite lokálne, PostgreSQL na produkcii).
+
 ## Produkčné nasadenie (feature 018)
 
 Cieľ: `https://api.adhdknight.com` (tento FastAPI server) a `https://console.adhdknight.com`
