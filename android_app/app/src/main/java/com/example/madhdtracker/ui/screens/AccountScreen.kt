@@ -39,6 +39,7 @@ private const val MIN_PASSWORD_LENGTH = 8
 fun AccountScreen(viewModel: AccountViewModel) {
     val state by viewModel.uiState.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
+    val lastSyncAt by viewModel.lastSyncAt.collectAsState()
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Účet", style = MaterialTheme.typography.titleLarge)
@@ -70,6 +71,7 @@ fun AccountScreen(viewModel: AccountViewModel) {
                     totalDays = info.totalDays,
                     createdAt = info.createdAt,
                     syncState = syncState,
+                    lastSyncAt = lastSyncAt,
                     onSync = { viewModel.sync() },
                     onLogout = { viewModel.logout() }
                 )
@@ -89,6 +91,12 @@ private fun LoginForm(
 
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Stav: Neprihlásený",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
             Text("Prihlásenie", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -151,6 +159,7 @@ private fun UserInfoCard(
     totalDays: Int,
     createdAt: String,
     syncState: SyncUiState,
+    lastSyncAt: String?,
     onSync: () -> Unit,
     onLogout: () -> Unit,
 ) {
@@ -163,6 +172,7 @@ private fun UserInfoCard(
             InfoRow("E-mail", email)
             if (totalDays > 0) InfoRow("Sledovaných dní", totalDays.toString())
             if (createdAt.isNotBlank()) InfoRow("Registrovaný", createdAt.take(10))
+            InfoRow("Posledná synchronizácia", lastSyncAt?.replace("T", " ")?.take(16) ?: "Zatiaľ nikdy")
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(

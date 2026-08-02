@@ -11,10 +11,14 @@ import com.example.madhdtracker.data.remote.BatchSyncRequest
 import com.example.madhdtracker.data.remote.EntityNodeSyncItem
 import com.example.madhdtracker.data.remote.SyncDayItem
 import com.example.madhdtracker.data.remote.SyncValueItem
+import java.time.OffsetDateTime
 
 sealed class SyncAllResult {
     data class Success(val accepted: Int, val conflicted: Int) : SyncAllResult()
     data class Error(val message: String) : SyncAllResult()
+    // Distinct from Error: session was cleared because the refresh token is also invalid/
+    // expired — caller MUST transition its UI to LoggedOut, not just show a message.
+    data class SessionExpired(val message: String) : SyncAllResult()
     object NoServer : SyncAllResult()
     object NotLoggedIn : SyncAllResult()
 }
@@ -42,6 +46,8 @@ class UserRepository(private val context: Context) {
     }
 
     fun getServerUrl(): String = prefsRepo.getServerUrl()
+
+    fun getLastSyncAt(): String? = encryptedPrefs.lastSyncAt.ifBlank { null }
 
     suspend fun checkServerReachable(): Boolean {
         val url = prefsRepo.getServerUrl()
@@ -166,19 +172,28 @@ class UserRepository(private val context: Context) {
 
             result.fold(
                 onSuccess = { resp ->
+                    encryptedPrefs.lastSyncAt = OffsetDateTime.now().toString()
                     SyncAllResult.Success(
                         accepted = resp.summary.records_accepted,
                         conflicted = resp.summary.records_conflicted,
                     )
                 },
                 onFailure = { ex ->
-                    val msg = when {
-                        ex is ApiException && ex.statusCode == 401 -> "Prihlásenie vypršalo, prihláste sa znova"
-                        isConnectionError(ex) -> "Server nie je dostupný"
-                        isTimeoutError(ex) -> "Server neodpovedá, skúste neskôr"
-                        else -> "Synchronizácia zlyhala"
+                    if (ex is ApiException && ex.statusCode == 401) {
+                        // Refresh already attempted above and either failed or the retry
+                        // itself came back 401 — the session is unrecoverable. Auto-logout
+                        // per spec.md Edge Case "JWT token vyprší počas sync operácie":
+                        // local tracker data is untouched, only the session is cleared.
+                        encryptedPrefs.clearSession()
+                        SyncAllResult.SessionExpired("Prihlásenie vypršalo, prihláste sa znova")
+                    } else {
+                        val msg = when {
+                            isConnectionError(ex) -> "Server nie je dostupný"
+                            isTimeoutError(ex) -> "Server neodpovedá, skúste neskôr"
+                            else -> "Synchronizácia zlyhala"
+                        }
+                        SyncAllResult.Error(msg)
                     }
-                    SyncAllResult.Error(msg)
                 }
             )
         } finally {

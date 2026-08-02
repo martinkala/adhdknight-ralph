@@ -146,3 +146,11 @@ T014 (ApiClientTest) — môže bežať paralelne s T009-T013
 - [X] T017 [US1] Add "Test connection" button and connection status text to `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/SettingsScreen.kt` — after URL save, show "Pripojený" or "Server nedostupný" status label per US1/AC1 (partial)
 - [X] T018 Add `serverUnavailable_connectException_resultIsFailure` test case to `android_app/app/src/test/java/com/example/madhdtracker/data/remote/ApiClientTest.kt` — use `MockEngine` that throws `IOException`; assert `ApiClient.login()` returns failure per T014 spec (missing)
 - [X] T019 Add URL format validation to `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/SettingsScreen.kt` — before saving, check that URL starts with `http://` or `https://`; show inline error text if invalid per spec §Edge Cases (missing)
+
+---
+
+## Phase 7: Convergence
+
+- [X] T020 Auto-logout on unrecoverable token expiry during sync in `android_app/app/src/main/java/com/example/madhdtracker/data/repository/UserRepository.kt` (call `encryptedPrefs.clearSession()` when a post-refresh retry still fails with 401) and propagate the resulting `LoggedOut` state from `android_app/app/src/main/java/com/example/madhdtracker/ui/AccountViewModel.kt` per Edge Case "Čo ak sa JWT token vyprší počas sync operácie?" (contradicts)
+- [X] T021 Persist and surface last successful sync timestamp in `android_app/app/src/main/java/com/example/madhdtracker/data/repository/EncryptedPreferencesRepository.kt` and display it in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/AccountScreen.kt` per Key Entities: SyncRecord (partial)
+- [X] T022 Add an explicit "Neprihlásený" status label to the logged-out form in `android_app/app/src/main/java/com/example/madhdtracker/ui/screens/AccountScreen.kt` per US2/AC1 (partial)

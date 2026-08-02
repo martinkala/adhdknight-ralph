@@ -34,6 +34,9 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
     private val _syncState = MutableStateFlow<SyncUiState>(SyncUiState.Idle)
     val syncState: StateFlow<SyncUiState> = _syncState
 
+    private val _lastSyncAt = MutableStateFlow(userRepository.getLastSyncAt())
+    val lastSyncAt: StateFlow<String?> = _lastSyncAt
+
     init {
         val user = userRepository.getCurrentUser()
         if (user != null) {
@@ -76,11 +79,18 @@ class AccountViewModel(application: Application) : AndroidViewModel(application)
     fun sync() {
         viewModelScope.launch {
             _syncState.value = SyncUiState.Syncing
-            _syncState.value = when (val result = userRepository.syncAll()) {
-                is SyncAllResult.Success -> SyncUiState.Done(result.accepted, result.conflicted)
-                is SyncAllResult.Error -> SyncUiState.Error(result.message)
-                SyncAllResult.NoServer -> SyncUiState.Error("Zadajte URL servera v nastaveniach")
-                SyncAllResult.NotLoggedIn -> SyncUiState.Error("Prihláste sa pred synchronizáciou")
+            when (val result = userRepository.syncAll()) {
+                is SyncAllResult.Success -> {
+                    _syncState.value = SyncUiState.Done(result.accepted, result.conflicted)
+                    _lastSyncAt.value = userRepository.getLastSyncAt()
+                }
+                is SyncAllResult.SessionExpired -> {
+                    _syncState.value = SyncUiState.Error(result.message)
+                    _uiState.value = AccountUiState.LoggedOut
+                }
+                is SyncAllResult.Error -> _syncState.value = SyncUiState.Error(result.message)
+                SyncAllResult.NoServer -> _syncState.value = SyncUiState.Error("Zadajte URL servera v nastaveniach")
+                SyncAllResult.NotLoggedIn -> _syncState.value = SyncUiState.Error("Prihláste sa pred synchronizáciou")
             }
         }
     }

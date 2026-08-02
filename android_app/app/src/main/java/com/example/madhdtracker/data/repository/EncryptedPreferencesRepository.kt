@@ -30,6 +30,12 @@ class EncryptedPreferencesRepository(context: Context) {
         get() = prefs.getString(KEY_REFRESH_TOKEN, "") ?: ""
         set(value) { prefs.edit().putString(KEY_REFRESH_TOKEN, value).apply() }
 
+    // Not cleared on logout — "last synced" history is independent of the current session
+    // (spec.md Key Entities: SyncRecord).
+    var lastSyncAt: String
+        get() = prefs.getString(KEY_LAST_SYNC_AT, "") ?: ""
+        set(value) { prefs.edit().putString(KEY_LAST_SYNC_AT, value).apply() }
+
     fun clearSession() {
         prefs.edit()
             .remove(KEY_ACCESS_TOKEN)
@@ -42,5 +48,6 @@ class EncryptedPreferencesRepository(context: Context) {
         private const val KEY_ACCESS_TOKEN = "access_token"
         private const val KEY_USER_EMAIL = "user_email"
         private const val KEY_REFRESH_TOKEN = "refresh_token"
+        private const val KEY_LAST_SYNC_AT = "last_sync_at"
     }
 }
