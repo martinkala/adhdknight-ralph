@@ -27,6 +27,17 @@ APP_ROOT="/opt/adhknight"
 APP_USER="adhdmad"
 SERVER_DIR="$APP_ROOT/server"
 WEB_DIR="$APP_ROOT/web_app"
+# The interpreter used to create the venvs. MUST live somewhere world-readable —
+# venvs always resolve their stdlib back to this interpreter's own install prefix
+# at runtime (even with --copies), so if this points into e.g. /root/.pyenv/...,
+# the systemd services (running as $APP_USER, not root) fail with
+# "ModuleNotFoundError: No module named 'encodings'" because they can't read it.
+# Override on a per-server basis, e.g.: PYTHON_BIN=/opt/python/3.12.4/bin/python3
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+# Django 6 requires PostgreSQL 14+. Debian's own repos track whatever major
+# version shipped with the release (13 on Debian 11) — too old — so we pin a
+# modern version from the official PGDG repo instead of the distro default.
+PG_VERSION="${PG_VERSION:-16}"
 
 log() { echo "==> $*"; }
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -36,15 +47,28 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 # Idempotent — apt-get install on an already-installed package is a no-op.
 # ---------------------------------------------------------------------------
 install_packages() {
-    log "Installing required system packages (nginx, postgresql, certbot, rsync, apache2-utils, python3-venv)"
+    log "Installing required system packages (nginx, certbot, rsync, apache2-utils, python3-venv)"
     sudo apt-get update
     sudo apt-get install -y \
         nginx \
-        postgresql postgresql-contrib \
         certbot python3-certbot-nginx \
         apache2-utils \
         rsync \
-        python3-venv python3-pip
+        python3-venv python3-pip \
+        postgresql-common
+
+    if command -v psql >/dev/null && [[ "$(psql --version | grep -oE '[0-9]+' | head -1)" -ge 14 ]]; then
+        log "PostgreSQL $(psql --version | grep -oE '[0-9]+' | head -1) already installed (>= 14, OK)"
+        return
+    fi
+
+    log "Installing PostgreSQL $PG_VERSION via the PGDG repo (distro default is too old for Django 6)"
+    log "NOTE: if an older PostgreSQL cluster (e.g. distro-default 13) is already running on this"
+    log "host, the new cluster will NOT get port 5432 automatically — see 'pg_lsclusters' and"
+    log "'pg_dropcluster <old-version> main --stop' (safe only if that old cluster has no real data)."
+    sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+    sudo apt-get update
+    sudo apt-get install -y "postgresql-$PG_VERSION" "postgresql-contrib-$PG_VERSION"
 }
 
 # ---------------------------------------------------------------------------
@@ -108,19 +132,27 @@ SQL
 # T011: venv + deps + migrate + collectstatic + start services
 # ---------------------------------------------------------------------------
 install_deps_and_migrate() {
+    # --copies: venv's python must NOT be a symlink out to whatever interpreter
+    # created it (e.g. a pyenv install under /root/.pyenv) — the systemd units
+    # run as $APP_USER, which typically cannot traverse another user's home dir,
+    # so a symlinked interpreter causes "203/EXEC: Permission denied" at start.
     log "Installing FastAPI server (venv, deps, alembic migrate)"
-    (cd "$SERVER_DIR" && python3 -m venv .venv --upgrade-deps 2>/dev/null || python3 -m venv .venv)
+    (cd "$SERVER_DIR" && "$PYTHON_BIN" -m venv --copies .venv --upgrade-deps 2>/dev/null || "$PYTHON_BIN" -m venv --copies .venv)
     "$SERVER_DIR/.venv/bin/pip" install --quiet -r "$SERVER_DIR/requirements.txt"
     [[ -f "$SERVER_DIR/.env" ]] || die "$SERVER_DIR/.env missing — copy from .env.example and set DATABASE_URL to adhd_server (see create_databases step)"
     (cd "$SERVER_DIR" && .venv/bin/alembic upgrade head)
 
     log "Installing Django web console (venv, deps, migrate, collectstatic)"
-    (cd "$WEB_DIR" && python3 -m venv .venv --upgrade-deps 2>/dev/null || python3 -m venv .venv)
+    (cd "$WEB_DIR" && "$PYTHON_BIN" -m venv --copies .venv --upgrade-deps 2>/dev/null || "$PYTHON_BIN" -m venv --copies .venv)
     "$WEB_DIR/.venv/bin/pip" install --quiet -r "$WEB_DIR/requirements.txt"
     [[ -f "$WEB_DIR/.env" ]] || die "$WEB_DIR/.env missing — copy from .env.example and set DJANGO_* vars (see create_databases step)"
     set -a; source "$WEB_DIR/.env"; set +a
     (cd "$WEB_DIR" && .venv/bin/python manage.py migrate)
     (cd "$WEB_DIR" && .venv/bin/python manage.py collectstatic --noinput)
+
+    log "Fixing ownership: $APP_ROOT -> $APP_USER:$APP_USER (systemd units run as $APP_USER)"
+    id "$APP_USER" >/dev/null 2>&1 || die "system user '$APP_USER' does not exist — create it first: sudo useradd -r -s /usr/sbin/nologin $APP_USER"
+    sudo chown -R "$APP_USER:$APP_USER" "$APP_ROOT"
 
     log "Installing systemd units"
     sudo install -m 644 "$REPO_ROOT/deploy/systemd/adhd-api.service" /etc/systemd/system/adhd-api.service
@@ -172,7 +204,10 @@ setup_nginx_and_certs() {
 
 # T020: guard against api.adhdknight.com ever getting a Basic Auth directive (SC-004)
 assert_api_has_no_basic_auth() {
-    if grep -q "auth_basic" "$REPO_ROOT/deploy/nginx/api.adhdknight.com.conf"; then
+    # Strip comments first — grepping the raw file would also match this
+    # check's own explanatory comments in the .conf file, not just a real
+    # directive.
+    if grep -vE '^\s*#' "$REPO_ROOT/deploy/nginx/api.adhdknight.com.conf" | grep -qE '\bauth_basic\b'; then
         die "deploy/nginx/api.adhdknight.com.conf must NOT contain auth_basic (FR-005 / SC-004) — API uses JWT, not Basic Auth."
     fi
 }
