@@ -166,7 +166,7 @@ z ktorého by server sám ťahal kód.
 
 3. **Priprav `.env` súbory**
    - `cp server/.env.example server/.env` → nastav `DATABASE_URL=postgresql+asyncpg://adhd_server:<heslo>@127.0.0.1:5432/adhd_server`, `ENVIRONMENT=production`, reálny `SECRET_KEY`.
-   - `cp web_app/.env.example web_app/.env` → nastav `DJANGO_DEBUG=false`, `DJANGO_ALLOWED_HOSTS=console.adhdknight.com`, reálny `DJANGO_SECRET_KEY`, `DJANGO_DATABASE_URL=postgresql://adhd_web:<heslo>@127.0.0.1:5432/adhd_web`.
+   - `cp web_app/.env.example web_app/.env` → nastav `DJANGO_DEBUG=false`, `DJANGO_ALLOWED_HOSTS=console.adhdknight.com`, reálny `DJANGO_SECRET_KEY`, `DJANGO_DATABASE_URL=postgresql://adhd_web:<heslo>@127.0.0.1:5432/adhd_web`, a **`FASTAPI_URL=http://127.0.0.1:8095`** (default v `.env.example` je LAN adresa dev stroja — na produkcii oba servisy bežia na tom istom serveri, inak konzola hlási "Server nie je dostupný").
    - Žiadny z týchto súborov sa necommituje (obidva `.gitignore` ich pokrývajú).
 
 4. **Nainštaluj závislosti, spusti migrácie, naštartuj appky** (`./deploy/scripts/install.sh --step deps-and-migrate`)
@@ -230,3 +230,5 @@ z ktorého by server sám ťahal kód.
 **Port 8095 already in use** — `lsof -ti:8095 | xargs kill` or change the port in `Makefile`.
 
 **`make dev` hangs or fails with an address/bind error** — the `dev` target binds to a hardcoded IP (`192.168.77.24`); if that's not this machine's current IP, either update it in `Makefile` or run `uvicorn app.main:app --reload --host 0.0.0.0 --port 8095` directly.
+
+**Web console shows "Server nie je dostupný. Skúste neskôr."** — Django can't reach the FastAPI backend. Check `FASTAPI_URL` in `web_app/.env` — on production it MUST be `http://127.0.0.1:8095` (both services run on the same server), not the LAN dev default. `sudo journalctl -u adhd-web.service -n 100` will show the underlying `httpx.ConnectError`.
