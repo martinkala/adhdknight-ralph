@@ -79,6 +79,16 @@ pip install asyncpg
 DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/adhd_tracker
 ```
 
+### Dátová migrácia zo SQLite (feature 017)
+
+Po tom, čo `DATABASE_URL` ukazuje na PostgreSQL a `alembic upgrade head` vytvoril prázdnu schému, prenes existujúce dáta z lokálneho `dev.db`:
+
+```bash
+.venv/bin/python scripts/migrate_sqlite_to_postgres.py [cesta-k-dev.db]   # default: server/dev.db
+```
+
+Skript je transakčný (rollback pri akejkoľvek chybe) a odmietne beh, ak cieľová DB už obsahuje dáta (pridaj `--force` na vedomé opakovanie). Podrobnosti a validačné scenáre: `specs/017-migration-to-postgres/quickstart.md`, kontrakt (exit kódy): `specs/017-migration-to-postgres/contracts/cli-contract.md`.
+
 ## Produkčné nasadenie (feature 018)
 
 Cieľ: `https://api.adhdknight.com` (tento FastAPI server) a `https://console.adhdknight.com`
