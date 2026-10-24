@@ -30,6 +30,7 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 LOG_DIR="$PROJECT_DIR/logs"
+USAGE_TSV="$LOG_DIR/ralph_usage.tsv"
 CONSTITUTION="$PROJECT_DIR/.specify/memory/constitution.md"
 
 # Configuration
@@ -107,7 +108,8 @@ print_latest_output() {
 
     [ -f "$log_file" ] || return 0
 
-    if [ ! -w "$target" ]; then
+    # Local change: -w passes even without a controlling terminal, so try to open it
+    if ! { : > "$target"; } 2>/dev/null; then
         target="/dev/stdout"
     fi
 
@@ -134,7 +136,7 @@ watch_latest_output() {
 
     [ -f "$log_file" ] || return 0
 
-    if [ ! -w "$target" ]; then
+    if ! { : > "$target"; } 2>/dev/null; then
         target="/dev/stdout"
     else
         use_tty=true
@@ -266,7 +268,8 @@ if [ ! -f "$PROMPT_FILE" ]; then
 fi
 
 # Build Claude flags
-CLAUDE_FLAGS="-p --model $CLAUDE_MODEL"
+# Local change: stream-json so the log shows progress live and records token usage (scripts/lib/ralph_stream.py)
+CLAUDE_FLAGS="-p --model $CLAUDE_MODEL --output-format stream-json --verbose"
 if [ "$YOLO_ENABLED" = true ]; then
     CLAUDE_FLAGS="$CLAUDE_FLAGS $YOLO_FLAG"
 fi
@@ -354,6 +357,8 @@ while true; do
 
     # Log file for this iteration
     LOG_FILE="$LOG_DIR/ralph_${MODE}_iter_${ITERATION}_$(date '+%Y%m%d_%H%M%S').log"
+    RAW_FILE="${LOG_FILE%.log}.jsonl"
+    RESULT_FILE="${LOG_FILE%.log}.result.txt"
     : > "$LOG_FILE"
     WATCH_PID=""
 
@@ -364,7 +369,11 @@ while true; do
 
     # Run Claude with prompt via stdin, capture output
     CLAUDE_OUTPUT=""
-    if CLAUDE_OUTPUT=$(cat "$PROMPT_FILE" | "$CLAUDE_CMD" $CLAUDE_FLAGS 2>&1 | tee "$LOG_FILE"); then
+    DETECTED_SIGNAL=""
+    if CLAUDE_OUTPUT=$(cat "$PROMPT_FILE" | "$CLAUDE_CMD" $CLAUDE_FLAGS 2>&1 \
+        | python3 "$SCRIPT_DIR/lib/ralph_stream.py" --raw "$RAW_FILE" --result "$RESULT_FILE" \
+            --usage-tsv "$USAGE_TSV" --iteration "$ITERATION" \
+        | tee "$LOG_FILE"); then
         if [ -n "$WATCH_PID" ]; then
             kill "$WATCH_PID" 2>/dev/null || true
             wait "$WATCH_PID" 2>/dev/null || true
@@ -373,8 +382,9 @@ while true; do
         echo -e "${GREEN}✓ Claude execution completed${NC}"
         
         # Check if DONE promise was output (accept both DONE and ALL_DONE variants)
-        if echo "$CLAUDE_OUTPUT" | grep -qE "<promise>(ALL_)?DONE</promise>"; then
-            DETECTED_SIGNAL=$(echo "$CLAUDE_OUTPUT" | grep -oE "<promise>(ALL_)?DONE</promise>" | tail -1)
+        # Local change: only the final result counts, not text the agent wrote while working
+        if grep -qE "<promise>(ALL_)?DONE</promise>" "$RESULT_FILE" 2>/dev/null; then
+            DETECTED_SIGNAL=$(grep -oE "<promise>(ALL_)?DONE</promise>" "$RESULT_FILE" | tail -1)
             echo -e "${GREEN}✓ Completion signal detected: ${DETECTED_SIGNAL}${NC}"
             echo -e "${GREEN}✓ Task completed successfully!${NC}"
             CONSECUTIVE_FAILURES=0
@@ -420,6 +430,14 @@ while true; do
         echo -e "${YELLOW}Check log: $LOG_FILE${NC}"
         CONSECUTIVE_FAILURES=$((CONSECUTIVE_FAILURES + 1))
         print_latest_output "$LOG_FILE" "Claude"
+    fi
+
+    # Local change: errors that no retry can fix (no credit, no login) end the loop.
+    # Only the final result and CLI stderr (non-JSON lines) are checked, not the agent's own text.
+    FATAL_PATTERN="credit balance is too low|invalid api key|please run /login"
+    if [ -z "${DETECTED_SIGNAL:-}" ] && { cat "$RESULT_FILE"; grep -v '^{' "$RAW_FILE" || true; } 2>/dev/null | grep -qiE "$FATAL_PATTERN"; then
+        echo -e "${RED}✗ Fatal Claude error (credit or login), stopping the loop${NC}"
+        STOP_AFTER_PUSH=true
     fi
 
     # Push changes after each iteration (if any)

@@ -42,6 +42,15 @@ akýkoľvek príkaz. Preto beží v kontajneri, ktorý:
 
 Logy sú v `logs/` v repe. Commity sú lokálne v tvojom repe (bind mount) a zároveň na sandboxe.
 
+- `ralph_build_iter_N_*.log`: čitateľný priebeh iterácie naživo (text agenta, jeden riadok na volanie
+  nástroja, na konci výsledok a riadok `TOKENS: ...`). Sledovanie: `tail -f logs/ralph_build_iter_*.log`.
+- `ralph_build_iter_N_*.jsonl`: surový `stream-json` výstup Claude Code.
+- `ralph_usage.tsv`: tokeny, cena, počet krokov a trvanie za každú iteráciu.
+
+Kontajner je prihlásený vlastným loginom (`login` nižšie). Ak je to účet s predplateným API kreditom,
+spotreba sa neukáže v limitoch tvojho predplatného, ale v kreditoch. Keď kredit dôjde
+(`Credit balance is too low`) alebo login neplatí, loop sa sám zastaví.
+
 ## Prevzatie výsledku do skutočného repa
 
 Commity robí kontajner priamo v tvojom lokálnom repe, takže stačí ich skontrolovať a pushnúť:
