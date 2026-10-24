@@ -61,12 +61,12 @@ def test_change_password_and_delete_account(page, user_factory, api_server):
     form.get_by_test_id("old-password").fill(password)
     form.get_by_test_id("new-password").fill("changed-password-1")
     form.get_by_test_id("change-password-submit").click()
-    expect(page.get_by_test_id("account-message")).to_contain_text("Heslo bolo zmenené.")
+    expect(page.get_by_test_id("account-message")).to_have_class(re.compile(r"\balert-success\b"))
     assert httpx.post(f"{api_server}/api/v1/auth/login",
                       json={"email": email, "password": password}).status_code == 401
 
     section = page.get_by_test_id("delete-account")
-    expect(section).to_contain_text("ADHD aj Food")
+    expect(section.locator("strong")).to_contain_text("ADHD")
     section.get_by_test_id("delete-account-password").fill("changed-password-1")
     section.get_by_test_id("delete-account-confirm").check()
     section.get_by_test_id("delete-account-submit").click()

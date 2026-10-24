@@ -17,11 +17,13 @@ for arg in "$@"; do
 done
 
 # Creates <component>/<venv> if missing or broken and (re)installs requirements
-# only when requirements.txt changed (hash stored inside the venv).
+# only when requirements changed (hash stored inside the venv). requirements-dev.txt
+# (dev tools such as babel) is used instead of requirements.txt when it exists.
 ensure_venv() {
     local dir="$ROOT/$1"
     local venv="$dir/$VENV"
     local req="$dir/requirements.txt"
+    [[ -f "$dir/requirements-dev.txt" ]] && req="$dir/requirements-dev.txt"
     local stamp="$venv/.requirements.sha256"
 
     # pip check also catches venvs left over from another Python version (interpreter runs, packages missing)
@@ -31,9 +33,9 @@ ensure_venv() {
         python3 -m venv "$venv"
     fi
     local want
-    want="$(sha256sum "$req" | cut -d' ' -f1)"
+    want="$(cat "$dir/requirements.txt" "$req" | sha256sum | cut -d' ' -f1)"
     if [[ ! -f "$stamp" || "$(cat "$stamp")" != "$want" ]]; then
-        echo ">> Installing $1/requirements.txt into $1/$VENV"
+        echo ">> Installing $1/$(basename "$req") into $1/$VENV"
         "$venv/bin/python" -m pip install -q --upgrade pip
         "$venv/bin/python" -m pip install -q -r "$req"
         echo "$want" > "$stamp"

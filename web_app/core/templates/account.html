@@ -1,67 +1,83 @@
 {% extends "base.html" %}
-{% block title %}Účet – ADHD Tracker{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Account" %} – ADHD Tracker{% endblock %}
 {% block content %}
-<h2 style="margin-bottom:1rem;">Môj účet</h2>
+<h2 style="margin-bottom:1rem;">{% translate "My account" %}</h2>
 {% for message in messages %}
     <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" data-testid="account-message">{{ message }}</div>
 {% endfor %}
 {% if me.error %}
-    <div class="alert alert-error">{{ me.error }}</div>
+    <div class="alert alert-error">{{ me_error }}</div>
 {% else %}
     <div class="card" style="max-width:480px;">
         <table style="width:100%;border-collapse:collapse;">
             <tr>
-                <td style="padding:0.6rem 0;color:#555;width:40%;">E-mail</td>
+                <td style="padding:0.6rem 0;color:#555;width:40%;">{% translate "E-mail" %}</td>
                 <td style="padding:0.6rem 0;font-weight:500;">{{ me.email }}</td>
             </tr>
             <tr style="border-top:1px solid #eee;">
-                <td style="padding:0.6rem 0;color:#555;">Registrovaný</td>
+                <td style="padding:0.6rem 0;color:#555;">{% translate "Registered" %}</td>
                 <td style="padding:0.6rem 0;">{{ me.created_at|slice:":10" }}</td>
             </tr>
             <tr style="border-top:1px solid #eee;">
-                <td style="padding:0.6rem 0;color:#555;">Sledovaných dní</td>
+                <td style="padding:0.6rem 0;color:#555;">{% translate "Tracked days" %}</td>
                 <td style="padding:0.6rem 0;">{{ me.total_days }}</td>
             </tr>
         </table>
         <div style="margin-top:1.5rem;">
-            <a href="{% url 'logout' %}" class="btn btn-secondary">Odhlásiť sa</a>
+            <a href="{% url 'logout' %}" class="btn btn-secondary">{% translate "Log out" %}</a>
         </div>
     </div>
 {% endif %}
 
+{% get_current_language as LANGUAGE_CODE %}{% get_available_languages as LANGUAGES %}
 <div class="card" style="max-width:480px;">
-    <h3 style="margin-bottom:1rem;font-size:1.05rem;">Zmena hesla</h3>
+    <h3 style="margin-bottom:1rem;font-size:1.05rem;">{% translate "Language" %}</h3>
+    <form method="post" action="{% url 'change_language' %}" data-testid="language-form">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="language">{% translate "Language of the application" %}</label>
+            <select id="language" name="language" style="min-height:44px;" data-testid="language-select" onchange="this.form.requestSubmit()">
+                {% for code, name in LANGUAGES %}<option value="{{ code }}" lang="{{ code }}"{% if code == LANGUAGE_CODE %} selected{% endif %}>{{ name }}</option>{% endfor %}
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-primary" style="min-height:44px;">{% translate "Save" %}</button></noscript>
+    </form>
+</div>
+
+<div class="card" style="max-width:480px;">
+    <h3 style="margin-bottom:1rem;font-size:1.05rem;">{% translate "Change password" %}</h3>
     <form method="post" action="{% url 'change_password' %}" data-testid="change-password-form">
         {% csrf_token %}
         <div class="form-group">
-            <label for="old_password">Súčasné heslo</label>
+            <label for="old_password">{% translate "Current password" %}</label>
             <input type="password" id="old_password" name="old_password" required autocomplete="current-password" data-testid="old-password">
         </div>
         <div class="form-group">
-            <label for="new_password">Nové heslo (aspoň 8 znakov)</label>
+            <label for="new_password">{% translate "New password (at least 8 characters)" %}</label>
             <input type="password" id="new_password" name="new_password" required minlength="8" autocomplete="new-password" data-testid="new-password">
         </div>
-        <button type="submit" class="btn btn-primary" style="min-height:44px;" data-testid="change-password-submit">Zmeniť heslo</button>
+        <button type="submit" class="btn btn-primary" style="min-height:44px;" data-testid="change-password-submit">{% translate "Change password" %}</button>
     </form>
 </div>
 
 <div class="card" style="max-width:480px;border:1px solid #ef9a9a;" data-testid="delete-account">
-    <h3 style="margin-bottom:0.75rem;font-size:1.05rem;color:#c62828;">Zmazať účet</h3>
+    <h3 style="margin-bottom:0.75rem;font-size:1.05rem;color:#c62828;">{% translate "Delete account" %}</h3>
     <p style="margin-bottom:1rem;font-size:0.9rem;">
-        Účet je spoločný pre všetky aplikácie. Zmazaním účtu sa natrvalo zmažú
-        <strong>všetky dáta ADHD aj Food</strong>. Túto akciu nie je možné vrátiť.
+        {% blocktranslate trimmed %}The account is shared by all apps. Deleting the account permanently deletes
+        <strong>all ADHD and Food data</strong>. This cannot be undone.{% endblocktranslate %}
     </p>
     <form method="post" action="{% url 'delete_account' %}">
         {% csrf_token %}
         <div class="form-group">
-            <label for="delete_password">Heslo</label>
+            <label for="delete_password">{% translate "Password" %}</label>
             <input type="password" id="delete_password" name="password" required autocomplete="current-password" data-testid="delete-account-password">
         </div>
         <label style="display:flex;align-items:center;gap:0.5rem;min-height:44px;font-size:0.9rem;margin-bottom:1rem;">
             <input type="checkbox" name="confirm" required style="width:22px;height:22px;" data-testid="delete-account-confirm">
-            Rozumiem, že sa zmažú dáta ADHD aj Food.
+            {% translate "I understand that both ADHD and Food data will be deleted." %}
         </label>
-        <button type="submit" class="btn" style="background:#c62828;color:white;min-height:44px;" data-testid="delete-account-submit">Zmazať účet</button>
+        <button type="submit" class="btn" style="background:#c62828;color:white;min-height:44px;" data-testid="delete-account-submit">{% translate "Delete account" %}</button>
     </form>
 </div>
 {% endblock %}

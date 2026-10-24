@@ -1,5 +1,5 @@
 {% extends "food/base_food.html" %}
-{% load i18n static %}
+{% load i18n food_format static %}
 {% block content %}
 {% include "food/_messages.html" %}
 <a class="back-link" href="{% url 'food:home' %}?month={{ day.date|slice:':7' }}" data-testid="back-to-calendar">&#8249; {% translate "Calendar" %}</a>
@@ -9,7 +9,7 @@
     {% else %}
     <span class="day-nav disabled" data-testid="prev-day" aria-disabled="true">&#8249;</span>
     {% endif %}
-    <h2 data-testid="day-title" data-date="{{ day.date }}">{{ day_date|date:"l" }}<br><span>{{ day_date|date:"j. n. Y" }}</span></h2>
+    <h2 data-testid="day-title" data-date="{{ day.date }}">{{ day_date|date:"l" }}<br><span>{{ day_date|food_date }}</span></h2>
     {% if day.next_date %}
     <a class="day-nav" href="{% url 'food:day' day=day.next_date %}" data-testid="next-day" aria-label="{% translate 'Next day' %}">&#8250;</a>
     {% else %}
@@ -55,7 +55,7 @@
 </div>
 
 <dialog id="delete-day-dialog-1" class="food-dialog" data-testid="delete-day-confirm-1">
-    <p>{% blocktranslate with date=day_date|date:"j. n. Y" %}Really delete the day {{ date }} with all its entries?{% endblocktranslate %}</p>
+    <p>{% blocktranslate with date=day_date|food_date %}Really delete the day {{ date }} with all its entries?{% endblocktranslate %}</p>
     <div class="dialog-actions">
         <button type="button" class="btn btn-secondary" data-testid="delete-day-cancel-1">{% translate "Cancel" %}</button>
         <button type="button" class="btn btn-danger" data-testid="delete-day-continue">{% translate "Delete" %}</button>

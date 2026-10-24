@@ -1,0 +1,617 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: AdhdKnight web console 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-24 17:05+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: AdhdKnight\n"
+"Language: sk\n"
+"Language-Team: sk\n"
+"Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: core/templates/account.html:3 core/templates/base.html:72
+msgid "Account"
+msgstr "Účet"
+
+#: core/templates/account.html:5
+msgid "My account"
+msgstr "Môj účet"
+
+#: core/templates/account.html:15 core/templates/login.html:20 core/templates/register.html:22
+msgid "E-mail"
+msgstr "E-mail"
+
+#: core/templates/account.html:19
+msgid "Registered"
+msgstr "Registrovaný"
+
+#: core/templates/account.html:23
+msgid "Tracked days"
+msgstr "Sledovaných dní"
+
+#: core/templates/account.html:28 core/templates/base.html:73
+msgid "Log out"
+msgstr "Odhlásiť"
+
+#: core/templates/account.html:35
+msgid "Language"
+msgstr "Jazyk"
+
+#: core/templates/account.html:39
+msgid "Language of the application"
+msgstr "Jazyk aplikácie"
+
+#: core/templates/account.html:44 food/templates/food/_bp.html:13 food/templates/food/_entries.html:24
+#: food/templates/food/_meds.html:28 food/templates/food/_weight.html:14
+msgid "Save"
+msgstr "Uložiť"
+
+#: core/templates/account.html:49 core/templates/account.html:60
+msgid "Change password"
+msgstr "Zmeniť heslo"
+
+#: core/templates/account.html:53
+msgid "Current password"
+msgstr "Súčasné heslo"
+
+#: core/templates/account.html:57
+msgid "New password (at least 8 characters)"
+msgstr "Nové heslo (aspoň 8 znakov)"
+
+#: core/templates/account.html:65 core/templates/account.html:80
+msgid "Delete account"
+msgstr "Zmazať účet"
+
+#: core/templates/account.html:67
+msgid ""
+"The account is shared by all apps. Deleting the account permanently deletes <strong>all ADHD and Food data</strong>. "
+"This cannot be undone."
+msgstr ""
+"Účet je spoločný pre všetky aplikácie. Zmazaním účtu sa natrvalo zmažú <strong>všetky dáta ADHD aj Food</strong>. "
+"Túto akciu nie je možné vrátiť."
+
+#: core/templates/account.html:73 core/templates/login.html:24
+msgid "Password"
+msgstr "Heslo"
+
+#: core/templates/account.html:78
+msgid "I understand that both ADHD and Food data will be deleted."
+msgstr "Rozumiem, že sa zmažú dáta ADHD aj Food."
+
+#: core/templates/base.html:60
+msgid "Food"
+msgstr "Food"
+
+#: core/templates/base.html:62
+msgid "Menu"
+msgstr "Menu"
+
+#: core/templates/base.html:69
+msgid "Diagnostics"
+msgstr "Diagnostika"
+
+#: core/templates/login.html:3 core/templates/login.html:7 core/templates/login.html:27 core/templates/register.html:12
+#: core/templates/register.html:34
+msgid "Log in"
+msgstr "Prihlásiť sa"
+
+#: core/templates/login.html:9
+msgid "Your session expired. Please log in again."
+msgstr "Prihlásenie vypršalo. Prihláste sa znova."
+
+#: core/templates/login.html:12
+msgid "The account and all its data were deleted."
+msgstr "Účet a všetky jeho dáta boli zmazané."
+
+#: core/templates/login.html:30
+msgid "No account yet?"
+msgstr "Nemáte účet?"
+
+#: core/templates/login.html:30
+msgid "Register"
+msgstr "Registrujte sa"
+
+#: core/templates/register.html:3 core/templates/register.html:7
+msgid "Registration"
+msgstr "Registrácia"
+
+#: core/templates/register.html:15 core/views.py:23
+msgid "Registration is possible only by invitation."
+msgstr "Registrácia je možná iba na pozvánku."
+
+#: core/templates/register.html:15
+msgid "Open the registration link you received."
+msgstr "Otvorte registračný link, ktorý ste dostali."
+
+#: core/templates/register.html:26
+msgid "Password (at least 8 characters)"
+msgstr "Heslo (aspoň 8 znakov)"
+
+#: core/templates/register.html:29
+msgid "Create account"
+msgstr "Vytvoriť účet"
+
+#: core/templates/register.html:34
+msgid "Already have an account?"
+msgstr "Máte účet?"
+
+#: core/views.py:13 food/views.py:40
+msgid "Server is not available. Try again later."
+msgstr "Server nie je dostupný. Skúste neskôr."
+
+#: core/views.py:14 food/views.py:41
+msgid "Loading data failed. Try again."
+msgstr "Načítanie dát zlyhalo. Skúste to znova."
+
+#: core/views.py:18
+msgid "Wrong e-mail or password."
+msgstr "Nesprávny e-mail alebo heslo."
+
+#: core/views.py:24
+msgid "The invitation is invalid, expired or already used. Ask for a new one."
+msgstr "Pozvánka je neplatná, expirovala alebo už bola použitá. Požiadajte o novú."
+
+#: core/views.py:25
+msgid "This e-mail is already registered."
+msgstr "Tento e-mail je už zaregistrovaný."
+
+#: core/views.py:26
+msgid "Enter a valid e-mail and a password with at least 8 characters."
+msgstr "Zadajte platný e-mail a heslo s aspoň 8 znakmi."
+
+#: core/views.py:31
+msgid "Wrong password."
+msgstr "Nesprávne heslo."
+
+#: core/views.py:32
+msgid "The new password must have at least 8 characters."
+msgstr "Nové heslo musí mať aspoň 8 znakov."
+
+#: core/views.py:71
+msgid "Login failed."
+msgstr "Prihlásenie zlyhalo."
+
+#: core/views.py:88
+msgid "The account was created. You can log in now."
+msgstr "Účet bol vytvorený. Teraz sa môžete prihlásiť."
+
+#: core/views.py:90
+msgid "Registration failed."
+msgstr "Registrácia zlyhala."
+
+#: core/views.py:136
+msgid "Choose a language."
+msgstr "Vyberte jazyk."
+
+#: core/views.py:144
+msgid "The language was changed."
+msgstr "Jazyk bol zmenený."
+
+#: core/views.py:161
+msgid "The password was changed."
+msgstr "Heslo bolo zmenené."
+
+#: core/views.py:171
+msgid "Confirm that you want to delete the account with all its data."
+msgstr "Potvrďte, že chcete zmazať účet so všetkými dátami."
+
+#: food/templates/food/_bp.html:9
+msgid "pulse"
+msgstr "pulz"
+
+#: food/templates/food/_bp.html:11 food/templates/food/day.html:27 food/templates/food/day.html:32
+msgid "Blood pressure"
+msgstr "Tlak"
+
+#: food/templates/food/_bp.html:12 food/templates/food/_weight.html:13
+msgid "Note"
+msgstr "Poznámka"
+
+#: food/templates/food/_bp.html:16 food/templates/food/_entries.html:41 food/templates/food/_meds_dictionary.html:18
+#: food/templates/food/_weight.html:17 food/templates/food/day.html:61
+msgid "Delete"
+msgstr "Zmazať"
+
+#: food/templates/food/_day_values.html:3
+msgid "Saved"
+msgstr "Uložené"
+
+#: food/templates/food/_day_values.html:3
+msgid "Saving failed"
+msgstr "Uloženie zlyhalo"
+
+#: food/templates/food/_day_values.html:5 food/templates/food/list.html:23
+msgid "Stool / gas"
+msgstr "Stolica / vetry"
+
+#: food/templates/food/_day_values.html:6
+msgid "Stool"
+msgstr "Stolica"
+
+#: food/templates/food/_day_values.html:6 food/templates/food/_day_values.html:12
+msgid "(1 = all OK, 10 = worst)"
+msgstr "(1 = všetko OK, 10 = najhoršie)"
+
+#: food/templates/food/_day_values.html:12
+msgid "Gas"
+msgstr "Vetry"
+
+#: food/templates/food/_day_values.html:20 food/templates/food/list.html:24
+msgid "Sleep"
+msgstr "Spánok"
+
+#: food/templates/food/_entries.html:13 food/templates/food/_qty_popover.html:13 food/templates/food/_qty_popover.html:14
+msgid "Quantity"
+msgstr "Množstvo"
+
+#: food/templates/food/_entries.html:19 food/templates/food/_entries.html:21
+msgid "Edit"
+msgstr "Upraviť"
+
+#: food/templates/food/_entries.html:28
+msgid "Intensity 1–5"
+msgstr "Intenzita 1–5"
+
+#: food/templates/food/_entries.html:29
+msgid "Intensity"
+msgstr "Intenzita"
+
+#: food/templates/food/_entries.html:37 food/templates/food/_entries.html:38
+msgid "Move to supplements"
+msgstr "Presunúť do doplnkov"
+
+#: food/templates/food/_entries.html:37 food/templates/food/_entries.html:38
+msgid "Move to medication"
+msgstr "Presunúť do liekov"
+
+#: food/templates/food/_entry_section.html:8 food/templates/food/_entry_section.html:11
+#: food/templates/food/_meds_section.html:10
+msgid "Add…"
+msgstr "Pridať…"
+
+#: food/templates/food/_meds.html:13
+msgid "Medication or supplement?"
+msgstr "Liek alebo doplnok?"
+
+#: food/templates/food/_meds.html:21 food/views.py:26 food/views.py:73
+msgid "Medication"
+msgstr "Lieky"
+
+#: food/templates/food/_meds.html:22 food/views.py:73
+msgid "Supplement"
+msgstr "Doplnok"
+
+#: food/templates/food/_meds.html:27 food/templates/food/day.html:60 food/templates/food/day.html:72
+msgid "Cancel"
+msgstr "Zrušiť"
+
+#: food/templates/food/_meds_dictionary.html:23
+msgid "The dictionary is empty. Items are added when you enter medication or supplements."
+msgstr "Slovník je prázdny. Položky sa pridajú pri zadaní liekov alebo doplnkov."
+
+#: food/templates/food/_meds_section.html:4 food/templates/food/_meds_section.html:11 food/templates/food/base_food.html:9
+#: food/templates/food/meds_dictionary.html:5
+msgid "Medication and supplements"
+msgstr "Lieky a doplnky"
+
+#: food/templates/food/_meds_section.html:5
+msgid "Dictionary"
+msgstr "Slovník"
+
+#: food/templates/food/_qty_popover.html:15
+msgid "Unit"
+msgstr "Jednotka"
+
+#: food/templates/food/_qty_popover.html:16
+msgid "pcs"
+msgstr "ks"
+
+#: food/templates/food/_qty_popover.html:18 food/views.py:35
+msgid "OK"
+msgstr "OK"
+
+#: food/templates/food/_qty_popover.html:22
+msgid "No quantity"
+msgstr "Bez množstva"
+
+#: food/templates/food/_qty_popover.html:23
+msgid "Close"
+msgstr "Zavrieť"
+
+#: food/templates/food/_severity_dot.html:1
+msgid "No stool / gas values"
+msgstr "Bez hodnôt stolice / vetrov"
+
+#: food/templates/food/_severity_dot.html:1
+#, python-format
+msgid "Stool %(stool)s, gas %(gas)s"
+msgstr "Stolica %(stool)s, vetry %(gas)s"
+
+#: food/templates/food/_view_toggle.html:2
+msgid "View"
+msgstr "Zobrazenie"
+
+#: food/templates/food/_view_toggle.html:3 food/templates/food/day.html:5
+msgid "Calendar"
+msgstr "Kalendár"
+
+#: food/templates/food/_view_toggle.html:4
+msgid "List"
+msgstr "Zoznam"
+
+#: food/templates/food/_weight.html:11 food/templates/food/day.html:43
+msgid "Weight (kg)"
+msgstr "Váha (kg)"
+
+#: food/templates/food/_weight.html:12 food/templates/food/day.html:44
+msgid "Time"
+msgstr "Čas"
+
+#: food/templates/food/base_food.html:3
+msgid "Food diary"
+msgstr "Denník stravy"
+
+#: food/templates/food/base_food.html:8
+msgid "Diary"
+msgstr "Denník"
+
+#: food/templates/food/base_food.html:10 food/templates/food/export.html:5
+msgid "Export"
+msgstr "Export"
+
+#: food/templates/food/day.html:8
+msgid "Previous day"
+msgstr "Predchádzajúci deň"
+
+#: food/templates/food/day.html:14
+msgid "Next day"
+msgstr "Nasledujúci deň"
+
+#: food/templates/food/day.html:33 food/templates/food/day.html:45 food/templates/food/home.html:66
+msgid "Add"
+msgstr "Pridať"
+
+#: food/templates/food/day.html:38
+msgid "Weight"
+msgstr "Váha"
+
+#: food/templates/food/day.html:54 food/templates/food/day.html:73
+msgid "Delete day"
+msgstr "Zmazať deň"
+
+#: food/templates/food/day.html:58
+#, python-format
+msgid "Really delete the day %(date)s with all its entries?"
+msgstr "Naozaj zmazať deň %(date)s so všetkými záznamami?"
+
+#: food/templates/food/day.html:68
+#, python-format
+msgid "To confirm, type the date of the day: <strong>%(date)s</strong>"
+msgstr "Pre potvrdenie napíšte dátum dňa: <strong>%(date)s</strong>"
+
+#: food/templates/food/day_missing.html:6
+msgid "This day does not exist."
+msgstr "Tento deň neexistuje."
+
+#: food/templates/food/day_missing.html:11
+msgid "Create this day"
+msgstr "Vytvoriť tento deň"
+
+#: food/templates/food/day_missing.html:14
+msgid "Back to the diary"
+msgstr "Späť do denníka"
+
+#: food/templates/food/export.html:6
+msgid "Download all your entries, measurements and day values for analysis. Empty dates mean the whole period."
+msgstr "Stiahnite si všetky záznamy, merania a hodnoty dní na analýzu. Prázdne dátumy znamenajú celé obdobie."
+
+#: food/templates/food/export.html:10
+msgid "From"
+msgstr "Od"
+
+#: food/templates/food/export.html:13
+msgid "To"
+msgstr "Do"
+
+#: food/templates/food/export.html:18
+msgid "Format"
+msgstr "Formát"
+
+#: food/templates/food/export.html:26
+msgid "Download"
+msgstr "Stiahnuť"
+
+#: food/templates/food/home.html:8 food/templates/food/list.html:8
+msgid "Today"
+msgstr "Dnes"
+
+#: food/templates/food/home.html:16
+msgid "Previous month"
+msgstr "Predchádzajúci mesiac"
+
+#: food/templates/food/home.html:19
+msgid "Next month"
+msgstr "Nasledujúci mesiac"
+
+#: food/templates/food/home.html:33
+#, python-format
+msgid "Add the day %(date)s"
+msgstr "Pridať deň %(date)s"
+
+#: food/templates/food/home.html:38
+msgid "OK (1–3)"
+msgstr "OK (1–3)"
+
+#: food/templates/food/home.html:39
+msgid "Problems (4–6)"
+msgstr "Problémy (4–6)"
+
+#: food/templates/food/home.html:40
+msgid "Bad (7–10)"
+msgstr "Zlé (7–10)"
+
+#: food/templates/food/home.html:41
+msgid "No values"
+msgstr "Bez hodnôt"
+
+#: food/templates/food/home.html:49
+msgid "Add a day"
+msgstr "Pridať deň"
+
+#: food/templates/food/home.html:53
+msgid "Open the day"
+msgstr "Otvoriť deň"
+
+#: food/templates/food/home.html:62
+msgid "Date"
+msgstr "Dátum"
+
+#: food/templates/food/list.html:33
+msgid "Pages"
+msgstr "Stránky"
+
+#: food/templates/food/list.html:34
+msgid "Newer"
+msgstr "Novšie"
+
+#: food/templates/food/list.html:36
+msgid "Older"
+msgstr "Staršie"
+
+#: food/templates/food/list.html:39
+msgid "No days yet."
+msgstr "Zatiaľ žiadne dni."
+
+#: food/templates/food/meds_dictionary.html:6
+msgid "Entering medication and supplements together uses this dictionary. Changing an item moves its entries in all days."
+msgstr "Spoločné zadávanie liekov a doplnkov používa tento slovník. Zmena položky presunie jej záznamy vo všetkých dňoch."
+
+#: food/views.py:19
+msgid "Breakfast"
+msgstr "Raňajky"
+
+#: food/views.py:20
+msgid "Morning snack"
+msgstr "Desiata"
+
+#: food/views.py:21
+msgid "Lunch"
+msgstr "Obed"
+
+#: food/views.py:22
+msgid "Afternoon snack"
+msgstr "Olovrant"
+
+#: food/views.py:23
+msgid "Dinner"
+msgstr "Večera"
+
+#: food/views.py:24
+msgid "After dinner"
+msgstr "Po večeri"
+
+#: food/views.py:25
+msgid "Unassigned / during the day"
+msgstr "Nezaradené / počas dňa"
+
+#: food/views.py:27
+msgid "Supplements"
+msgstr "Doplnky"
+
+#: food/views.py:28
+msgid "Sport"
+msgstr "Šport"
+
+#: food/views.py:29
+msgid "Notes"
+msgstr "Poznámky"
+
+#: food/views.py:35
+msgid "Bad"
+msgstr "zlý"
+
+#: food/views.py:35
+msgid "Average"
+msgstr "priemer"
+
+#: food/views.py:42 food/views.py:59
+msgid "Enter a valid date."
+msgstr "Zadajte platný dátum."
+
+#: food/views.py:43
+msgid "Day already exists"
+msgstr "Deň už existuje"
+
+#: food/views.py:44
+msgid "A day in the future cannot be added."
+msgstr "Deň v budúcnosti nie je možné pridať."
+
+#: food/views.py:45
+msgid "The day does not exist anymore."
+msgstr "Deň už neexistuje."
+
+#: food/views.py:46
+msgid "The entry does not exist anymore."
+msgstr "Záznam už neexistuje."
+
+#: food/views.py:47
+msgid "The measurement does not exist anymore."
+msgstr "Meranie už neexistuje."
+
+#: food/views.py:48
+msgid "Enter a text."
+msgstr "Zadajte text."
+
+#: food/views.py:49
+msgid "The text is too long (max. 200 characters)."
+msgstr "Text je príliš dlhý (max. 200 znakov)."
+
+#: food/views.py:50 food/views.py:51 food/views.py:52
+msgid "Enter a valid quantity."
+msgstr "Zadajte platné množstvo."
+
+#: food/views.py:53
+msgid "Enter blood pressure as 130/85, optionally with pulse and time: 130/85 72 7:30."
+msgstr "Zadajte tlak ako 130/85, voliteľne s pulzom a časom: 130/85 72 7:30."
+
+#: food/views.py:54
+msgid "Blood pressure is out of range (systolic 60–260, diastolic 30–160, pulse 30–220)."
+msgstr "Tlak je mimo rozsahu (systolický 60–260, diastolický 30–160, pulz 30–220)."
+
+#: food/views.py:55
+msgid "Enter weight between 20 and 300 kg."
+msgstr "Zadajte váhu medzi 20 a 300 kg."
+
+#: food/views.py:56
+msgid "Enter time as HH:MM."
+msgstr "Zadajte čas ako HH:MM."
+
+#: food/views.py:57
+msgid "Choose medication or supplement."
+msgstr "Vyberte liek alebo doplnok."
+
+#: food/views.py:58
+msgid "The item is not in the dictionary anymore."
+msgstr "Položka už nie je v slovníku."
+
+#: food/views.py:60
+msgid "The start date must not be after the end date."
+msgstr "Dátum od nesmie byť po dátume do."
+
+#: food/views.py:289
+msgid "The day was not deleted: the date does not match."
+msgstr "Deň nebol zmazaný: dátum sa nezhoduje."
+
+#: food/views.py:295
+msgid "The day was deleted."
+msgstr "Deň bol zmazaný."
+

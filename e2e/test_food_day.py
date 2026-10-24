@@ -137,7 +137,7 @@ def test_delete_day_two_confirmations(logged_in_page, base_url):
     date = _days_ago(6)
     _add_day(page, date)
     page.get_by_test_id("delete-day").click()
-    expect(page.get_by_test_id("delete-day-confirm-1")).to_contain_text(".")
+    expect(page.get_by_test_id("delete-day-confirm-1")).to_contain_text(str(int(date[8:])))
     page.get_by_test_id("delete-day-continue").click()
     page.get_by_test_id("delete-day-confirm-input").fill(date)
     expect(page.get_by_test_id("delete-day-submit")).to_be_enabled()

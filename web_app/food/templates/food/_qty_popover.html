@@ -13,9 +13,9 @@
         <input type="text" name="quantity" inputmode="decimal" required placeholder="{% translate 'Quantity' %}"
                aria-label="{% translate 'Quantity' %}" data-testid="qty-input">
         <select name="unit" aria-label="{% translate 'Unit' %}" data-testid="qty-unit">
-            {% for u in unit_choices %}<option value="{% if u != 'ks' %}{{ u }}{% endif %}">{{ u }}</option>{% endfor %}
+            {% for u in unit_choices %}<option value="{% if u != 'ks' %}{{ u }}{% endif %}">{% if u == 'ks' %}{% translate "pcs" %}{% else %}{{ u }}{% endif %}</option>{% endfor %}
         </select>
-        <button type="submit" class="btn btn-primary" data-testid="qty-save">OK</button>
+        <button type="submit" class="btn btn-primary" data-testid="qty-save">{% translate "OK" %}</button>
     </form>
     <div class="qty-actions">
         <button type="button" class="btn btn-secondary" hx-patch="{{ entry_url }}" hx-target="#entries-{{ section.key }}" hx-swap="outerHTML"

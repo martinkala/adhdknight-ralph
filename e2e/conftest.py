@@ -21,6 +21,8 @@ SERVER_DIR = ROOT / "server"
 WEB_DIR = ROOT / "web_app"
 STARTUP_TIMEOUT = 20.0
 TEST_PASSWORD = "e2e-password-123"
+# UI language of users made by user_factory (food-010): `E2E_LANGUAGE=en pytest e2e` runs the suite in English.
+E2E_LANGUAGE = os.environ.get("E2E_LANGUAGE")
 
 
 def _free_port() -> int:
@@ -176,9 +178,19 @@ def user_factory(api_server, api_db_path):
             json={"email": email, "password": TEST_PASSWORD, "invite_token": token},
         )
         assert r.status_code in (200, 201), r.text
+        if E2E_LANGUAGE:
+            set_user_language(api_server, email, TEST_PASSWORD, E2E_LANGUAGE)
         return email, TEST_PASSWORD
 
     return create
+
+
+def set_user_language(api_server: str, email: str, password: str, language: str) -> None:
+    """Stores users.language through the API, as the account page does; the web takes it over at login."""
+    token = httpx.post(f"{api_server}/api/v1/auth/login", json={"email": email, "password": password}).json()
+    r = httpx.patch(f"{api_server}/api/v1/user/settings", json={"language": language},
+                    headers={"Authorization": f"Bearer {token['access_token']}"})
+    assert r.status_code == 200, r.text
 
 
 def login(page, email: str, password: str) -> None:

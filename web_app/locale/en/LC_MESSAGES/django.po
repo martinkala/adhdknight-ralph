@@ -1,0 +1,617 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: AdhdKnight web console 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-24 17:05+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: AdhdKnight\n"
+"Language: en\n"
+"Language-Team: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: core/templates/account.html:3 core/templates/base.html:72
+msgid "Account"
+msgstr "Account"
+
+#: core/templates/account.html:5
+msgid "My account"
+msgstr "My account"
+
+#: core/templates/account.html:15 core/templates/login.html:20 core/templates/register.html:22
+msgid "E-mail"
+msgstr "E-mail"
+
+#: core/templates/account.html:19
+msgid "Registered"
+msgstr "Registered"
+
+#: core/templates/account.html:23
+msgid "Tracked days"
+msgstr "Tracked days"
+
+#: core/templates/account.html:28 core/templates/base.html:73
+msgid "Log out"
+msgstr "Log out"
+
+#: core/templates/account.html:35
+msgid "Language"
+msgstr "Language"
+
+#: core/templates/account.html:39
+msgid "Language of the application"
+msgstr "Language of the application"
+
+#: core/templates/account.html:44 food/templates/food/_bp.html:13 food/templates/food/_entries.html:24
+#: food/templates/food/_meds.html:28 food/templates/food/_weight.html:14
+msgid "Save"
+msgstr "Save"
+
+#: core/templates/account.html:49 core/templates/account.html:60
+msgid "Change password"
+msgstr "Change password"
+
+#: core/templates/account.html:53
+msgid "Current password"
+msgstr "Current password"
+
+#: core/templates/account.html:57
+msgid "New password (at least 8 characters)"
+msgstr "New password (at least 8 characters)"
+
+#: core/templates/account.html:65 core/templates/account.html:80
+msgid "Delete account"
+msgstr "Delete account"
+
+#: core/templates/account.html:67
+msgid ""
+"The account is shared by all apps. Deleting the account permanently deletes <strong>all ADHD and Food data</strong>. "
+"This cannot be undone."
+msgstr ""
+"The account is shared by all apps. Deleting the account permanently deletes <strong>all ADHD and Food data</strong>. "
+"This cannot be undone."
+
+#: core/templates/account.html:73 core/templates/login.html:24
+msgid "Password"
+msgstr "Password"
+
+#: core/templates/account.html:78
+msgid "I understand that both ADHD and Food data will be deleted."
+msgstr "I understand that both ADHD and Food data will be deleted."
+
+#: core/templates/base.html:60
+msgid "Food"
+msgstr "Food"
+
+#: core/templates/base.html:62
+msgid "Menu"
+msgstr "Menu"
+
+#: core/templates/base.html:69
+msgid "Diagnostics"
+msgstr "Diagnostics"
+
+#: core/templates/login.html:3 core/templates/login.html:7 core/templates/login.html:27 core/templates/register.html:12
+#: core/templates/register.html:34
+msgid "Log in"
+msgstr "Log in"
+
+#: core/templates/login.html:9
+msgid "Your session expired. Please log in again."
+msgstr "Your session expired. Please log in again."
+
+#: core/templates/login.html:12
+msgid "The account and all its data were deleted."
+msgstr "The account and all its data were deleted."
+
+#: core/templates/login.html:30
+msgid "No account yet?"
+msgstr "No account yet?"
+
+#: core/templates/login.html:30
+msgid "Register"
+msgstr "Register"
+
+#: core/templates/register.html:3 core/templates/register.html:7
+msgid "Registration"
+msgstr "Registration"
+
+#: core/templates/register.html:15 core/views.py:23
+msgid "Registration is possible only by invitation."
+msgstr "Registration is possible only by invitation."
+
+#: core/templates/register.html:15
+msgid "Open the registration link you received."
+msgstr "Open the registration link you received."
+
+#: core/templates/register.html:26
+msgid "Password (at least 8 characters)"
+msgstr "Password (at least 8 characters)"
+
+#: core/templates/register.html:29
+msgid "Create account"
+msgstr "Create account"
+
+#: core/templates/register.html:34
+msgid "Already have an account?"
+msgstr "Already have an account?"
+
+#: core/views.py:13 food/views.py:40
+msgid "Server is not available. Try again later."
+msgstr "Server is not available. Try again later."
+
+#: core/views.py:14 food/views.py:41
+msgid "Loading data failed. Try again."
+msgstr "Loading data failed. Try again."
+
+#: core/views.py:18
+msgid "Wrong e-mail or password."
+msgstr "Wrong e-mail or password."
+
+#: core/views.py:24
+msgid "The invitation is invalid, expired or already used. Ask for a new one."
+msgstr "The invitation is invalid, expired or already used. Ask for a new one."
+
+#: core/views.py:25
+msgid "This e-mail is already registered."
+msgstr "This e-mail is already registered."
+
+#: core/views.py:26
+msgid "Enter a valid e-mail and a password with at least 8 characters."
+msgstr "Enter a valid e-mail and a password with at least 8 characters."
+
+#: core/views.py:31
+msgid "Wrong password."
+msgstr "Wrong password."
+
+#: core/views.py:32
+msgid "The new password must have at least 8 characters."
+msgstr "The new password must have at least 8 characters."
+
+#: core/views.py:71
+msgid "Login failed."
+msgstr "Login failed."
+
+#: core/views.py:88
+msgid "The account was created. You can log in now."
+msgstr "The account was created. You can log in now."
+
+#: core/views.py:90
+msgid "Registration failed."
+msgstr "Registration failed."
+
+#: core/views.py:136
+msgid "Choose a language."
+msgstr "Choose a language."
+
+#: core/views.py:144
+msgid "The language was changed."
+msgstr "The language was changed."
+
+#: core/views.py:161
+msgid "The password was changed."
+msgstr "The password was changed."
+
+#: core/views.py:171
+msgid "Confirm that you want to delete the account with all its data."
+msgstr "Confirm that you want to delete the account with all its data."
+
+#: food/templates/food/_bp.html:9
+msgid "pulse"
+msgstr "pulse"
+
+#: food/templates/food/_bp.html:11 food/templates/food/day.html:27 food/templates/food/day.html:32
+msgid "Blood pressure"
+msgstr "Blood pressure"
+
+#: food/templates/food/_bp.html:12 food/templates/food/_weight.html:13
+msgid "Note"
+msgstr "Note"
+
+#: food/templates/food/_bp.html:16 food/templates/food/_entries.html:41 food/templates/food/_meds_dictionary.html:18
+#: food/templates/food/_weight.html:17 food/templates/food/day.html:61
+msgid "Delete"
+msgstr "Delete"
+
+#: food/templates/food/_day_values.html:3
+msgid "Saved"
+msgstr "Saved"
+
+#: food/templates/food/_day_values.html:3
+msgid "Saving failed"
+msgstr "Saving failed"
+
+#: food/templates/food/_day_values.html:5 food/templates/food/list.html:23
+msgid "Stool / gas"
+msgstr "Stool / gas"
+
+#: food/templates/food/_day_values.html:6
+msgid "Stool"
+msgstr "Stool"
+
+#: food/templates/food/_day_values.html:6 food/templates/food/_day_values.html:12
+msgid "(1 = all OK, 10 = worst)"
+msgstr "(1 = all OK, 10 = worst)"
+
+#: food/templates/food/_day_values.html:12
+msgid "Gas"
+msgstr "Gas"
+
+#: food/templates/food/_day_values.html:20 food/templates/food/list.html:24
+msgid "Sleep"
+msgstr "Sleep"
+
+#: food/templates/food/_entries.html:13 food/templates/food/_qty_popover.html:13 food/templates/food/_qty_popover.html:14
+msgid "Quantity"
+msgstr "Quantity"
+
+#: food/templates/food/_entries.html:19 food/templates/food/_entries.html:21
+msgid "Edit"
+msgstr "Edit"
+
+#: food/templates/food/_entries.html:28
+msgid "Intensity 1–5"
+msgstr "Intensity 1–5"
+
+#: food/templates/food/_entries.html:29
+msgid "Intensity"
+msgstr "Intensity"
+
+#: food/templates/food/_entries.html:37 food/templates/food/_entries.html:38
+msgid "Move to supplements"
+msgstr "Move to supplements"
+
+#: food/templates/food/_entries.html:37 food/templates/food/_entries.html:38
+msgid "Move to medication"
+msgstr "Move to medication"
+
+#: food/templates/food/_entry_section.html:8 food/templates/food/_entry_section.html:11
+#: food/templates/food/_meds_section.html:10
+msgid "Add…"
+msgstr "Add…"
+
+#: food/templates/food/_meds.html:13
+msgid "Medication or supplement?"
+msgstr "Medication or supplement?"
+
+#: food/templates/food/_meds.html:21 food/views.py:26 food/views.py:73
+msgid "Medication"
+msgstr "Medication"
+
+#: food/templates/food/_meds.html:22 food/views.py:73
+msgid "Supplement"
+msgstr "Supplement"
+
+#: food/templates/food/_meds.html:27 food/templates/food/day.html:60 food/templates/food/day.html:72
+msgid "Cancel"
+msgstr "Cancel"
+
+#: food/templates/food/_meds_dictionary.html:23
+msgid "The dictionary is empty. Items are added when you enter medication or supplements."
+msgstr "The dictionary is empty. Items are added when you enter medication or supplements."
+
+#: food/templates/food/_meds_section.html:4 food/templates/food/_meds_section.html:11 food/templates/food/base_food.html:9
+#: food/templates/food/meds_dictionary.html:5
+msgid "Medication and supplements"
+msgstr "Medication and supplements"
+
+#: food/templates/food/_meds_section.html:5
+msgid "Dictionary"
+msgstr "Dictionary"
+
+#: food/templates/food/_qty_popover.html:15
+msgid "Unit"
+msgstr "Unit"
+
+#: food/templates/food/_qty_popover.html:16
+msgid "pcs"
+msgstr "pcs"
+
+#: food/templates/food/_qty_popover.html:18 food/views.py:35
+msgid "OK"
+msgstr "OK"
+
+#: food/templates/food/_qty_popover.html:22
+msgid "No quantity"
+msgstr "No quantity"
+
+#: food/templates/food/_qty_popover.html:23
+msgid "Close"
+msgstr "Close"
+
+#: food/templates/food/_severity_dot.html:1
+msgid "No stool / gas values"
+msgstr "No stool / gas values"
+
+#: food/templates/food/_severity_dot.html:1
+#, python-format
+msgid "Stool %(stool)s, gas %(gas)s"
+msgstr "Stool %(stool)s, gas %(gas)s"
+
+#: food/templates/food/_view_toggle.html:2
+msgid "View"
+msgstr "View"
+
+#: food/templates/food/_view_toggle.html:3 food/templates/food/day.html:5
+msgid "Calendar"
+msgstr "Calendar"
+
+#: food/templates/food/_view_toggle.html:4
+msgid "List"
+msgstr "List"
+
+#: food/templates/food/_weight.html:11 food/templates/food/day.html:43
+msgid "Weight (kg)"
+msgstr "Weight (kg)"
+
+#: food/templates/food/_weight.html:12 food/templates/food/day.html:44
+msgid "Time"
+msgstr "Time"
+
+#: food/templates/food/base_food.html:3
+msgid "Food diary"
+msgstr "Food diary"
+
+#: food/templates/food/base_food.html:8
+msgid "Diary"
+msgstr "Diary"
+
+#: food/templates/food/base_food.html:10 food/templates/food/export.html:5
+msgid "Export"
+msgstr "Export"
+
+#: food/templates/food/day.html:8
+msgid "Previous day"
+msgstr "Previous day"
+
+#: food/templates/food/day.html:14
+msgid "Next day"
+msgstr "Next day"
+
+#: food/templates/food/day.html:33 food/templates/food/day.html:45 food/templates/food/home.html:66
+msgid "Add"
+msgstr "Add"
+
+#: food/templates/food/day.html:38
+msgid "Weight"
+msgstr "Weight"
+
+#: food/templates/food/day.html:54 food/templates/food/day.html:73
+msgid "Delete day"
+msgstr "Delete day"
+
+#: food/templates/food/day.html:58
+#, python-format
+msgid "Really delete the day %(date)s with all its entries?"
+msgstr "Really delete the day %(date)s with all its entries?"
+
+#: food/templates/food/day.html:68
+#, python-format
+msgid "To confirm, type the date of the day: <strong>%(date)s</strong>"
+msgstr "To confirm, type the date of the day: <strong>%(date)s</strong>"
+
+#: food/templates/food/day_missing.html:6
+msgid "This day does not exist."
+msgstr "This day does not exist."
+
+#: food/templates/food/day_missing.html:11
+msgid "Create this day"
+msgstr "Create this day"
+
+#: food/templates/food/day_missing.html:14
+msgid "Back to the diary"
+msgstr "Back to the diary"
+
+#: food/templates/food/export.html:6
+msgid "Download all your entries, measurements and day values for analysis. Empty dates mean the whole period."
+msgstr "Download all your entries, measurements and day values for analysis. Empty dates mean the whole period."
+
+#: food/templates/food/export.html:10
+msgid "From"
+msgstr "From"
+
+#: food/templates/food/export.html:13
+msgid "To"
+msgstr "To"
+
+#: food/templates/food/export.html:18
+msgid "Format"
+msgstr "Format"
+
+#: food/templates/food/export.html:26
+msgid "Download"
+msgstr "Download"
+
+#: food/templates/food/home.html:8 food/templates/food/list.html:8
+msgid "Today"
+msgstr "Today"
+
+#: food/templates/food/home.html:16
+msgid "Previous month"
+msgstr "Previous month"
+
+#: food/templates/food/home.html:19
+msgid "Next month"
+msgstr "Next month"
+
+#: food/templates/food/home.html:33
+#, python-format
+msgid "Add the day %(date)s"
+msgstr "Add the day %(date)s"
+
+#: food/templates/food/home.html:38
+msgid "OK (1–3)"
+msgstr "OK (1–3)"
+
+#: food/templates/food/home.html:39
+msgid "Problems (4–6)"
+msgstr "Problems (4–6)"
+
+#: food/templates/food/home.html:40
+msgid "Bad (7–10)"
+msgstr "Bad (7–10)"
+
+#: food/templates/food/home.html:41
+msgid "No values"
+msgstr "No values"
+
+#: food/templates/food/home.html:49
+msgid "Add a day"
+msgstr "Add a day"
+
+#: food/templates/food/home.html:53
+msgid "Open the day"
+msgstr "Open the day"
+
+#: food/templates/food/home.html:62
+msgid "Date"
+msgstr "Date"
+
+#: food/templates/food/list.html:33
+msgid "Pages"
+msgstr "Pages"
+
+#: food/templates/food/list.html:34
+msgid "Newer"
+msgstr "Newer"
+
+#: food/templates/food/list.html:36
+msgid "Older"
+msgstr "Older"
+
+#: food/templates/food/list.html:39
+msgid "No days yet."
+msgstr "No days yet."
+
+#: food/templates/food/meds_dictionary.html:6
+msgid "Entering medication and supplements together uses this dictionary. Changing an item moves its entries in all days."
+msgstr "Entering medication and supplements together uses this dictionary. Changing an item moves its entries in all days."
+
+#: food/views.py:19
+msgid "Breakfast"
+msgstr "Breakfast"
+
+#: food/views.py:20
+msgid "Morning snack"
+msgstr "Morning snack"
+
+#: food/views.py:21
+msgid "Lunch"
+msgstr "Lunch"
+
+#: food/views.py:22
+msgid "Afternoon snack"
+msgstr "Afternoon snack"
+
+#: food/views.py:23
+msgid "Dinner"
+msgstr "Dinner"
+
+#: food/views.py:24
+msgid "After dinner"
+msgstr "After dinner"
+
+#: food/views.py:25
+msgid "Unassigned / during the day"
+msgstr "Unassigned / during the day"
+
+#: food/views.py:27
+msgid "Supplements"
+msgstr "Supplements"
+
+#: food/views.py:28
+msgid "Sport"
+msgstr "Sport"
+
+#: food/views.py:29
+msgid "Notes"
+msgstr "Notes"
+
+#: food/views.py:35
+msgid "Bad"
+msgstr "Bad"
+
+#: food/views.py:35
+msgid "Average"
+msgstr "Average"
+
+#: food/views.py:42 food/views.py:59
+msgid "Enter a valid date."
+msgstr "Enter a valid date."
+
+#: food/views.py:43
+msgid "Day already exists"
+msgstr "Day already exists"
+
+#: food/views.py:44
+msgid "A day in the future cannot be added."
+msgstr "A day in the future cannot be added."
+
+#: food/views.py:45
+msgid "The day does not exist anymore."
+msgstr "The day does not exist anymore."
+
+#: food/views.py:46
+msgid "The entry does not exist anymore."
+msgstr "The entry does not exist anymore."
+
+#: food/views.py:47
+msgid "The measurement does not exist anymore."
+msgstr "The measurement does not exist anymore."
+
+#: food/views.py:48
+msgid "Enter a text."
+msgstr "Enter a text."
+
+#: food/views.py:49
+msgid "The text is too long (max. 200 characters)."
+msgstr "The text is too long (max. 200 characters)."
+
+#: food/views.py:50 food/views.py:51 food/views.py:52
+msgid "Enter a valid quantity."
+msgstr "Enter a valid quantity."
+
+#: food/views.py:53
+msgid "Enter blood pressure as 130/85, optionally with pulse and time: 130/85 72 7:30."
+msgstr "Enter blood pressure as 130/85, optionally with pulse and time: 130/85 72 7:30."
+
+#: food/views.py:54
+msgid "Blood pressure is out of range (systolic 60–260, diastolic 30–160, pulse 30–220)."
+msgstr "Blood pressure is out of range (systolic 60–260, diastolic 30–160, pulse 30–220)."
+
+#: food/views.py:55
+msgid "Enter weight between 20 and 300 kg."
+msgstr "Enter weight between 20 and 300 kg."
+
+#: food/views.py:56
+msgid "Enter time as HH:MM."
+msgstr "Enter time as HH:MM."
+
+#: food/views.py:57
+msgid "Choose medication or supplement."
+msgstr "Choose medication or supplement."
+
+#: food/views.py:58
+msgid "The item is not in the dictionary anymore."
+msgstr "The item is not in the dictionary anymore."
+
+#: food/views.py:60
+msgid "The start date must not be after the end date."
+msgstr "The start date must not be after the end date."
+
+#: food/views.py:289
+msgid "The day was not deleted: the date does not match."
+msgstr "The day was not deleted: the date does not match."
+
+#: food/views.py:295
+msgid "The day was deleted."
+msgstr "The day was deleted."
+

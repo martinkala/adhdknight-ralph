@@ -1,0 +1,3 @@
+-r requirements.txt
+# Compiles locale/*.po to .mo without gettext (scripts/compile_messages.sh), food-010.
+babel>=2.14

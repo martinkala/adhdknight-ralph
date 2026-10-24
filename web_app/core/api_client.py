@@ -13,7 +13,7 @@ def post_login(email: str, password: str) -> dict:
         r = httpx.post(_url("/api/v1/auth/login"), json={"email": email, "password": password}, timeout=_TIMEOUT)
         if r.status_code == 200:
             return r.json()
-        return {"error": r.json().get("detail", "Nesprávne prihlasovacie údaje")}
+        return {"error": r.json().get("detail", "login_failed")}
     except httpx.ConnectError:
         return {"error": "server_unavailable"}
 
@@ -29,7 +29,7 @@ def post_register(email: str, password: str, invite_token: str | None = None) ->
             return r.json()
         if r.status_code == 422:
             return {"error": "invalid_input"}
-        return {"error": r.json().get("detail", "Registrácia zlyhala")}
+        return {"error": r.json().get("detail", "registration_failed")}
     except httpx.ConnectError:
         return {"error": "server_unavailable"}
 
@@ -155,3 +155,7 @@ def get_me(token: str) -> dict:
         return {"error": "server_error"}
     except httpx.ConnectError:
         return {"error": "server_unavailable"}
+
+
+def update_user_settings(token: str, **changes) -> dict:
+    return _auth_request(token, "PATCH", "/api/v1/user/settings", json=changes)

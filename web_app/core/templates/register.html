@@ -1,38 +1,40 @@
 {% extends "base.html" %}
-{% block title %}Registrácia – ADHD Tracker{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Registration" %} – ADHD Tracker{% endblock %}
 {% block content %}
 <div style="max-width:380px;margin:4rem auto;">
     <div class="card">
-        <h2 style="margin-bottom:1.5rem;font-size:1.25rem;">Registrácia</h2>
+        <h2 style="margin-bottom:1.5rem;font-size:1.25rem;">{% translate "Registration" %}</h2>
         {% if error %}
         <div class="alert alert-error" data-testid="register-error">{{ error }}</div>
         {% endif %}
         {% if success %}
-        <div class="alert alert-success" data-testid="register-success">{{ success }} <a href="{% url 'login' %}">Prihlásiť sa</a></div>
+        <div class="alert alert-success" data-testid="register-success">{{ success }} <a href="{% url 'login' %}">{% translate "Log in" %}</a></div>
         {% elif not invite %}
         <div class="alert alert-info" data-testid="invite-required">
-            Registrácia je možná iba na pozvánku. Otvorte registračný link, ktorý ste dostali.
+            {% translate "Registration is possible only by invitation." %} {% translate "Open the registration link you received." %}
         </div>
         {% else %}
         <form method="post">
             {% csrf_token %}
             <input type="hidden" name="invite" value="{{ invite }}">
             <div class="form-group">
-                <label for="email">E-mail</label>
+                <label for="email">{% translate "E-mail" %}</label>
                 <input type="email" id="email" name="email" required autofocus data-testid="register-email">
             </div>
             <div class="form-group">
-                <label for="password">Heslo (aspoň 8 znakov)</label>
+                <label for="password">{% translate "Password (at least 8 characters)" %}</label>
                 <input type="password" id="password" name="password" required minlength="8" data-testid="register-password">
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;min-height:44px;" data-testid="register-submit">Vytvoriť účet</button>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;min-height:44px;" data-testid="register-submit">{% translate "Create account" %}</button>
         </form>
         {% endif %}
         {% if not success %}
         <p style="margin-top:1rem;font-size:0.875rem;text-align:center;">
-            Máte účet? <a href="{% url 'login' %}">Prihláste sa</a>
+            {% translate "Already have an account?" %} <a href="{% url 'login' %}">{% translate "Log in" %}</a>
         </p>
         {% endif %}
+        {% include "_language_switch.html" %}
     </div>
 </div>
 {% endblock %}

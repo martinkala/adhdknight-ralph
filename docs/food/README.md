@@ -49,7 +49,8 @@ VENV_NAME=.venv-docker ./scripts/test-food.sh   # iný názov venv (Ralph kontaj
 
 Skript:
 1. vytvorí `server/<venv>`, `web_app/<venv>`, `e2e/<venv>` (default `.venv`), ak chýbajú alebo sú
-   nefunkčné, a reinštaluje závislosti iba pri zmene `requirements.txt` (hash vo venv),
+   nefunkčné, a reinštaluje závislosti iba pri zmene `requirements.txt` (hash vo venv); ak existuje
+   `requirements-dev.txt` (web_app: `babel`), inštaluje ten,
 2. stiahne Playwright Chromium, ak chýba,
 3. spustí `server` pytest (`tests/unit tests/api`), Django testy (`manage.py test`) a e2e,
 4. vypíše súhrn `server: OK|FAIL, web: OK|FAIL, e2e: OK|FAIL|SKIPPED`; exit ≠ 0 pri akomkoľvek FAIL.
@@ -69,3 +70,27 @@ Fixtures v `e2e/conftest.py`:
 
 Procesy sa po session vždy ukončia. Pri zlyhaní testov sa logy API a webu vypíšu v súhrne pytest.
 **Selektory iba cez `data-testid`** (UI je viacjazyčné).
+
+## Preklady (food-010)
+
+UI jazyky `sk` (default), `cs`, `en`. msgid v kóde a šablónach sú anglické texty (`{% translate %}`,
+`gettext_lazy`). Preklady sú vo `web_app/locale/{sk,cs,en}/LC_MESSAGES/django.po`; skompilované `django.mo`
+sú **commitnuté** (deploy nespúšťa `compilemessages`).
+
+Jazyk: prihlásený používateľ `session["language"]` (z `users.language` pri logine, zmena na stránke Účet
+cez `PATCH /api/v1/user/settings`), inak cookie `django_language` (prepínač na login / registrácii),
+inak `sk` (`core.middleware.LanguageMiddleware`).
+
+Postup pri zmene textov:
+
+```bash
+cd web_app
+# 1. nové msgid do .po (potrebuje gettext: msgfmt, xgettext, msgmerge)
+.venv/bin/python manage.py makemessages -l sk -l cs -l en --no-obsolete --ignore 'staticfiles/*' --ignore 'logs/*'
+# 2. doplň msgstr v sk a cs (en: msgstr = msgid), odstráň `#, fuzzy`
+# 3. kompilácia bez gettextu (babel z requirements-dev.txt)
+scripts/compile_messages.sh          # alebo: .venv/bin/python manage.py compilemessages
+```
+
+Testy (`web_app/core/tests/test_i18n.py`) zlyhajú, ak má sk / cs `.po` prázdny `msgstr` alebo `fuzzy`
+záznam, alebo ak `.mo` nezodpovedá `.po` (zabudnutá kompilácia).

@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Prihlásenie – ADHD Tracker{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Log in" %} – ADHD Tracker{% endblock %}
 {% block content %}
 <div style="max-width:380px;margin:4rem auto;">
     <div class="card">
-        <h2 style="margin-bottom:1.5rem;font-size:1.25rem;">Prihlásenie</h2>
+        <h2 style="margin-bottom:1.5rem;font-size:1.25rem;">{% translate "Log in" %}</h2>
         {% if request.GET.expired %}
-        <div class="alert alert-error">Prihlásenie vypršalo. Prihláste sa znova.</div>
+        <div class="alert alert-error">{% translate "Your session expired. Please log in again." %}</div>
         {% endif %}
         {% if request.GET.deleted %}
-        <div class="alert alert-success" data-testid="account-deleted">Účet a všetky jeho dáta boli zmazané.</div>
+        <div class="alert alert-success" data-testid="account-deleted">{% translate "The account and all its data were deleted." %}</div>
         {% endif %}
         {% if error %}
         <div class="alert alert-error">{{ error }}</div>
@@ -16,18 +17,19 @@
         <form method="post">
             {% csrf_token %}
             <div class="form-group">
-                <label for="email">E-mail</label>
+                <label for="email">{% translate "E-mail" %}</label>
                 <input type="email" id="email" name="email" required autofocus data-testid="login-email">
             </div>
             <div class="form-group">
-                <label for="password">Heslo</label>
+                <label for="password">{% translate "Password" %}</label>
                 <input type="password" id="password" name="password" required data-testid="login-password">
             </div>
-            <button type="submit" data-testid="login-submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">Prihlásiť sa</button>
+            <button type="submit" data-testid="login-submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;min-height:44px;">{% translate "Log in" %}</button>
         </form>
         <p style="margin-top:1rem;font-size:0.875rem;text-align:center;">
-            Nemáte účet? <a href="{% url 'register' %}">Registrujte sa</a>
+            {% translate "No account yet?" %} <a href="{% url 'register' %}">{% translate "Register" %}</a>
         </p>
+        {% include "_language_switch.html" %}
     </div>
 </div>
 {% endblock %}

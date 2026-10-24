@@ -1,4 +1,5 @@
 """food-008: month calendar (severity dots, creating a day by tap, future days, mobile grid) and days list."""
+import re
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -60,7 +61,7 @@ def test_calendar_severity_dots(page, user_factory, api_server, console_errors, 
         cell = page.locator(f'[data-testid="cal-day"][data-date="{month}-{day}"]')
         expect(cell.get_by_test_id("cal-dot")).to_have_attribute("data-severity", severity)
     expect(page.locator(f'[data-testid="cal-day"][data-date="{month}-04"] [data-testid="cal-dot"]')) \
-        .to_have_attribute("aria-label", "Stool 2, gas 9")
+        .to_have_attribute("aria-label", re.compile(r"^\w+ 2, \w+ 9$"))
     expect(page.get_by_test_id("cal-legend")).to_be_visible()
 
     # Tap opens the existing day; going back returns to its month.

@@ -17,7 +17,7 @@
         <a class="card list-row" href="{% url 'food:day' day=day.date %}" data-testid="list-day" data-date="{{ day.date }}">
             <span class="list-head">
                 {% include "food/_severity_dot.html" with dot_testid="list-dot" %}
-                <strong>{{ day.day_date|date:"j. n. Y" }}</strong> <span class="list-weekday">{{ day.day_date|date:"l" }}</span>
+                <strong>{{ day.day_date|food_date }}</strong> <span class="list-weekday">{{ day.day_date|date:"l" }}</span>
             </span>
             <span class="list-values" data-testid="list-values">
                 <span data-testid="list-digestion" title="{% translate 'Stool / gas' %}">{{ day.stool|default:"–" }}/{{ day.gas|default:"–" }}</span>

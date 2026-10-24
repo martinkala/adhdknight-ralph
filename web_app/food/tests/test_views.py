@@ -203,7 +203,7 @@ class FoodDayScreenTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(("PATCH", "/days/2026-10-20", {"stool": 4}), fake.calls)
         self.assertContains(response, 'data-testid="save-status"')
-        self.assertContains(response, "Saved")
+        self.assertContains(response, "Uložené")
 
     def test_values_empty_clears(self):
         fake, p = _patch_api({("PATCH", "/days/2026-10-20"): _day_detail()})
@@ -265,7 +265,7 @@ class FoodEntriesTests(TestCase):
         for key in ("breakfast", "unassigned", "meds", "sport", "note", "bp", "weight"):
             self.assertIn(f'data-testid="add-{key}"', html)
         self.assertIn("2×", html)
-        self.assertIn("0.5 l", html)
+        self.assertIn("0,5 l", html)
         self.assertIn('data-testid="entry-intensity"', html)
         self.assertIn('<option value="3" selected>', html)
         self.assertIn('hx-delete="/food/day/2026-10-20/entries/breakfast/e1/"', html)
@@ -341,7 +341,7 @@ class FoodEntriesTests(TestCase):
         html = response.content.decode()
         self.assertIn('data-testid="qty-popover"', html)
         self.assertEqual(html.count('data-testid="qty-option"'), 2)
-        self.assertLess(html.index("2×"), html.index("0.5 l"))
+        self.assertLess(html.index("2×"), html.index("0,5 l"))
         self.assertIn('data-testid="qty-none"', html)
         self.assertIn('data-testid="qty-input"', html)
 
@@ -412,8 +412,9 @@ class QtyFilterTests(TestCase):
         self.assertEqual(qty({"quantity": 2.0, "unit": None}), "2×")
         self.assertEqual(qty({"quantity": 200.0, "unit": "g"}), "200 g")
         self.assertEqual(qty({"quantity": None, "unit": None}), "")
-        self.assertEqual(number(80.6), "80.6")
         from django.utils import translation
+        with translation.override("en"):
+            self.assertEqual(number(80.6), "80.6")
         with translation.override("sk"):
             self.assertEqual(qty({"quantity": 0.5, "unit": "l"}), "0,5 l")
 
@@ -653,8 +654,8 @@ class FoodCalendarTests(TestCase):
         html = response.content.decode()
         self.assertEqual(fake.params, [None])
         self.assertIn('href="/food/day/2026-10-05/" data-testid="cal-day" data-date="2026-10-05"', html)
-        self.assertIn('data-severity="bad" title="Stool 2, gas 9"', html)
-        self.assertIn('data-severity="none" title="No stool / gas values"', html)
+        self.assertIn('data-severity="bad" title="Stolica 2, vetry 9"', html)
+        self.assertIn('data-severity="none" title="Bez hodnôt stolice / vetrov"', html)
         self.assertEqual(html.count('data-testid="cal-dot"'), 2)
         # Missing past day and today: submit buttons creating the day; future day: no link.
         self.assertIn('name="date" value="2026-10-07"', html)
@@ -696,9 +697,9 @@ class FoodListTests(TestCase):
             html = self.client.get("/food/list/").content.decode()
         self.assertEqual(fake.params, [{"page": 1, "page_size": 30}])
         self.assertIn('href="/food/day/2026-10-20/" data-testid="list-day"', html)
-        self.assertIn('title="Stool / gas">4/6</span>', html)
+        self.assertIn('title="Stolica / vetry">4/6</span>', html)
         self.assertIn("toasty, kafe", html)
-        self.assertIn("80.6 kg", html)
+        self.assertIn("80,6 kg", html)
         self.assertIn("130/85 72", html)
         self.assertIn('data-severity="mid"', html)
         self.assertNotIn('data-testid="list-next-page"', html)

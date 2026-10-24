@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from django import template
 from django.utils import formats
+from django.utils.dateformat import format as format_date
+from django.utils.translation import get_language
 
 register = template.Library()
 
@@ -25,6 +27,18 @@ def qty(item) -> str:
 @register.filter
 def number(value) -> str:
     return "" if value is None else _number(value)
+
+
+# Date of a day by UI language (food-010 FR-2): sk/cs "24. 10. 2026", en "24 Oct 2026".
+DATE_FORMATS = {"en": "j M Y"}
+DEFAULT_DATE_FORMAT = "j. n. Y"
+
+
+@register.filter
+def food_date(value) -> str:
+    if not value:
+        return ""
+    return format_date(value, DATE_FORMATS.get(get_language(), DEFAULT_DATE_FORMAT))
 
 
 @register.filter

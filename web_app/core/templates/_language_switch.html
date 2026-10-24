@@ -1,0 +1,9 @@
+{% load i18n %}{% get_current_language as LANGUAGE_CODE %}{% get_available_languages as LANGUAGES %}
+{# Before login the language is only a cookie (Django set_language); after login it comes from the account. #}
+<form method="post" action="{% url 'set_language' %}" class="lang-switch" data-testid="lang-switch">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    {% for code, name in LANGUAGES %}
+    <button type="submit" name="language" value="{{ code }}" lang="{{ code }}" aria-pressed="{% if code == LANGUAGE_CODE %}true{% else %}false{% endif %}" data-testid="lang-{{ code }}">{{ name }}</button>
+    {% endfor %}
+</form>

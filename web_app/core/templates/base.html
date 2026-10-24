@@ -1,5 +1,5 @@
-{% load static %}<!DOCTYPE html>
-<html lang="sk">
+{% load static i18n %}{% get_current_language as LANGUAGE_CODE %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -39,9 +39,12 @@
         .alert-error { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
         .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
         .alert-info { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+        .lang-switch { display: flex; justify-content: center; gap: 0.25rem; margin-top: 1rem; }
+        .lang-switch button { background: none; border: none; color: #1976D2; font-size: 0.875rem; min-width: 44px; min-height: 44px; cursor: pointer; }
+        .lang-switch button[aria-pressed="true"] { font-weight: 700; color: #333; cursor: default; }
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; font-size: 0.875rem; margin-bottom: 0.35rem; color: #555; }
-        .form-group input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
         .form-group input:focus { outline: none; border-color: #1976D2; }
     </style>
     <script src="{% static 'js/htmx.min.js' %}"></script>
@@ -54,20 +57,20 @@
         <span class="brand">AdhdKnight</span>
         <span class="app-switch">
             <a href="{% url 'dashboard' %}" data-testid="app-switch-adhd" class="{% if active_app == 'adhd' %}active{% endif %}">ADHD</a>
-            <a href="{% url 'food:home' %}" data-testid="app-switch-food" class="{% if active_app == 'food' %}active{% endif %}">Food</a>
+            <a href="{% url 'food:home' %}" data-testid="app-switch-food" class="{% if active_app == 'food' %}active{% endif %}">{% translate "Food" %}</a>
         </span>
-        <button type="button" class="nav-toggle" data-testid="nav-toggle" aria-controls="nav-links" aria-expanded="false" aria-label="Menu">&#9776;</button>
+        <button type="button" class="nav-toggle" data-testid="nav-toggle" aria-controls="nav-links" aria-expanded="false" aria-label="{% translate 'Menu' %}">&#9776;</button>
     </div>
     <div class="nav-links" id="nav-links">
         {% block app_nav %}
         <a href="{% url 'dashboard' %}">Dashboard</a>
         <a href="{% url 'trend' %}">Trend</a>
         <a href="{% url 'info' %}">Info</a>
-        <a href="{% url 'debug' %}">Diagnostika</a>
+        <a href="{% url 'debug' %}">{% translate "Diagnostics" %}</a>
         {% endblock %}
         <span class="spacer"></span>
-        <a href="{% url 'account' %}" data-testid="nav-account">Účet</a>
-        <a href="{% url 'logout' %}" data-testid="nav-logout">Odhlásiť</a>
+        <a href="{% url 'account' %}" data-testid="nav-account">{% translate "Account" %}</a>
+        <a href="{% url 'logout' %}" data-testid="nav-logout">{% translate "Log out" %}</a>
     </div>
 </nav>
 <script>

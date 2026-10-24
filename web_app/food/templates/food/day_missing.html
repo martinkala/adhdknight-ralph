@@ -1,8 +1,8 @@
 {% extends "food/base_food.html" %}
-{% load i18n %}
+{% load i18n food_format %}
 {% block content %}
 <div class="card" data-testid="day-missing">
-    <h2 class="food-title">{% if day_date %}{{ day_date|date:"l, j. n. Y" }}{% else %}{{ day }}{% endif %}</h2>
+    <h2 class="food-title">{% if day_date %}{{ day_date|date:"l" }}, {{ day_date|food_date }}{% else %}{{ day }}{% endif %}</h2>
     <p>{% translate "This day does not exist." %}</p>
     {% if can_create %}
     <form method="post" action="{% url 'food:new_day' %}">

@@ -1,5 +1,7 @@
 # Specification: food-010 — Viacjazyčné UI (sk / cs / en)
 
+## Status: COMPLETE
+
 ## Feature: Preklady food časti a spoločného layoutu, voľba jazyka v účte
 
 ### Overview
@@ -26,8 +28,8 @@ takže ho neskôr prevezme aj Android appka (constitution B4).
   Zapíš postup do `docs/food/README.md`.
 
 **Acceptance Criteria:**
-- [ ] `.po` a `.mo` pre sk, cs, en existujú; `.mo` sú aktuálne (test porovná, že každý msgid z `.po` je v `.mo`)
-- [ ] Django test: session `language=cs` → stránka má `<html lang="cs">`
+- [x] `.po` a `.mo` pre sk, cs, en existujú; `.mo` sú aktuálne (test porovná, že každý msgid z `.po` je v `.mo`)
+- [x] Django test: session `language=cs` → stránka má `<html lang="cs">`
 
 ### FR-2: Preklady
 - Preložiť všetky texty v `web_app/food/` (šablóny, views, formuláre, hlášky chýb z API kódov ako
@@ -39,9 +41,9 @@ takže ho neskôr prevezme aj Android appka (constitution B4).
 - Test pokrytia: žiadny prázdny `msgstr` v sk a cs `.po` súboroch.
 
 **Acceptance Criteria:**
-- [ ] Unit test: sk a cs `.po` nemajú prázdne `msgstr` (okrem hlavičky) ani `fuzzy` záznamy
-- [ ] Django test: obrazovka dňa v sk obsahuje „Raňajky“, v cs „Snídaně“, v en „Breakfast“
-- [ ] Django test: chyba `day_exists` sa zobrazí v jazyku session
+- [x] Unit test: sk a cs `.po` nemajú prázdne `msgstr` (okrem hlavičky) ani `fuzzy` záznamy
+- [x] Django test: obrazovka dňa v sk obsahuje „Raňajky“, v cs „Snídaně“, v en „Breakfast“
+- [x] Django test: chyba `day_exists` sa zobrazí v jazyku session
 
 ### FR-3: Voľba jazyka
 - Stránka Účet: výber jazyka (`data-testid="language-select"`), uloží cez `PATCH /api/v1/user/settings`,
@@ -50,8 +52,8 @@ takže ho neskôr prevezme aj Android appka (constitution B4).
 - Login a registrácia majú malý prepínač jazyka (iba cookie).
 
 **Acceptance Criteria:**
-- [ ] e2e: prepnutie na en → navigácia a obrazovka dňa sú po anglicky; odhlásenie a prihlásenie → stále en
-- [ ] e2e: e2e testy z predchádzajúcich specs prechádzajú vo všetkých jazykoch (selektory `data-testid`), pusti smoke test v cs a en
+- [x] e2e: prepnutie na en → navigácia a obrazovka dňa sú po anglicky; odhlásenie a prihlásenie → stále en
+- [x] e2e: e2e testy z predchádzajúcich specs prechádzajú vo všetkých jazykoch (selektory `data-testid`), pusti smoke test v cs a en
 
 ---
 
@@ -69,15 +71,26 @@ takže ho neskôr prevezme aj Android appka (constitution B4).
 ## Completion Signal
 
 ### Implementation Checklist
-- [ ] i18n nastavenia + middleware
-- [ ] `.po` / `.mo` sk, cs, en + compile skript
-- [ ] Preklady food, layoutu, login, registrácie, účtu
-- [ ] Voľba jazyka
+- [x] i18n nastavenia + middleware
+- [x] `.po` / `.mo` sk, cs, en + compile skript
+- [x] Preklady food, layoutu, login, registrácie, účtu
+- [x] Voľba jazyka
 
 ### Testing Requirements
-- [ ] `./scripts/test-food.sh` → exit 0
+- [x] `./scripts/test-food.sh` → exit 0
 
 ### Iteration Instructions
 Ak niečo zlyhá: oprav, spusti testy znova, over kritériá, commitni a pushni. Až keď je všetko zelené: `<promise>DONE</promise>`.
 
-<!-- NR_OF_TRIES: 0 -->
+## Implementation notes
+- msgid sú anglické texty (food šablóny ich už tak mali); sk / cs sú preklady, en `.po` má `msgstr = msgid`,
+  aby `.mo` obsahovalo všetky msgid (test aktuálnosti `.mo`).
+- Jazyk aktivuje `core.middleware.LanguageMiddleware`: `session["language"]` → cookie `django_language` → `sk`.
+  Login uloží jazyk z API do session aj cookie, takže po odhlásení ostane login stránka v jazyku používateľa.
+- Prepínač na login / registrácii používa Django `set_language` (`/i18n/setlang/`, iba cookie).
+- Dátum dňa cez filter `food_date` (sk/cs `j. n. Y`, en `j M Y`); názvy dní a mesiacov cez Django `date` filter
+  v aktívnom jazyku; desatinná čiarka cez `DECIMAL_SEPARATOR` jazyka (už z food-005).
+- Jednotka `ks` sa v en zobrazuje ako `pcs` (hodnota ostáva `ks`/prázdna).
+- `E2E_LANGUAGE=cs|en` v e2e harness nastaví jazyk používateľov z `user_factory` — celý e2e beh v inom jazyku.
+
+<!-- NR_OF_TRIES: 1 -->
