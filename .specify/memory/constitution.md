@@ -52,8 +52,8 @@ Každý nový endpoint MUSÍ mať test izolácie (používateľ B nevidí/nezmen
   Auth sa nemení.
 
 ### A3. Testy sú backpressure
-- Žiadna spec nie je hotová bez zelených testov: `./scripts/test-food.sh` (od food-001) +
-  existujúce testy (`cd server && make test`, `cd web_app && .venv/bin/python manage.py test`).
+- Žiadna spec nie je hotová bez zelených testov: `./scripts/test-food.sh` (od food-001), ktorý spúšťa
+  aj všetky existujúce server a web testy. Venvy sú `<komponent>/${VENV_NAME:-.venv}` (v Dockeri `.venv-docker`).
 - Existujúce ADHD testy sa NESMÚ rozbiť ani vypnúť.
 - Testy sú deterministické, offline a bez reálnych externých služieb. Server testy bežia nad SQLite
   in-memory, preto **žiadne Postgres-only funkcie** (unaccent, pg_trgm, JSONB operátory, ARRAY)

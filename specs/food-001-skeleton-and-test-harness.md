@@ -17,19 +17,35 @@ ktorý spustí skutočný FastAPI + Django proti dočasnej databáze. Bez tohto 
 
 ### FR-1: Test runner `scripts/test-food.sh`
 Skript v koreni repa (spustiteľný, bash, `set -euo pipefail`):
-1. Ak neexistujú, vytvorí venv `server/.venv`, `web_app/.venv`, `e2e/.venv` (`python3 -m venv`)
-   a nainštaluje závislosti (`server/requirements.txt`, `web_app/requirements.txt`, `e2e/requirements.txt`).
+1. Názov venv priečinka je `${VENV_NAME:-.venv}` (Ralph v Dockeri používa `.venv-docker`,
+   `scripts/ralph-docker/`). Ak venv neexistuje alebo je nefunkčný (`<venv>/bin/python -c pass` zlyhá),
+   vytvorí `server/<venv>`, `web_app/<venv>`, `e2e/<venv>` (`python3 -m venv`) a nainštaluje závislosti
+   (`server/requirements.txt`, `web_app/requirements.txt`, `e2e/requirements.txt`).
    Reinštalácia iba ak sa zmenil requirements súbor (porovnanie hashu uloženého vo venv).
-2. Spustí server testy: `cd server && .venv/bin/pytest tests/unit tests/api -q`.
-3. Spustí Django testy: `cd web_app && .venv/bin/python manage.py test -v 1` (všetky appky).
-4. Spustí e2e: `e2e/.venv/bin/pytest e2e -q` (preskočí sa s `--no-e2e`).
+   Všetky ďalšie kroky (aj e2e harness) používajú tento `<venv>`, nie natvrdo `.venv`.
+2. Spustí server testy: `cd server && <venv>/bin/pytest tests/unit tests/api -q`.
+3. Spustí Django testy: `cd web_app && <venv>/bin/python manage.py test -v 1` (všetky appky).
+4. Spustí e2e: `e2e/<venv>/bin/pytest e2e -q` (preskočí sa s `--no-e2e`).
 5. Exit code ≠ 0, ak zlyhá ktorýkoľvek krok. Na konci vypíše súhrn `server: OK|FAIL, web: OK|FAIL, e2e: OK|FAIL|SKIPPED`.
 
 **Acceptance Criteria:**
 - [ ] `./scripts/test-food.sh` na čistom checkoute (bez venv) vytvorí venvs a skončí s exit 0
 - [ ] Zámerne rozbitý test v ktorejkoľvek časti → exit ≠ 0 a súhrn ukáže FAIL pri danej časti
 - [ ] `./scripts/test-food.sh --no-e2e` nespúšťa Playwright
+- [ ] `VENV_NAME=.venv-docker ./scripts/test-food.sh` použije a vytvorí `.venv-docker` venvy a hostiteľské `.venv` nechá nedotknuté
 - [ ] Existujúce ADHD testy (server aj web) bežia a prechádzajú
+
+### FR-1a: Známy pokazený ADHD test
+`server/tests/api/test_future_date.py::test_sync_batch_tomorrow_returns_422` zlyháva už na `master`
+(nesúvisí s food). `/api/v1/sync/batch` budúci deň neodmietne s 422. Vráti 200, deň započíta do
+`records_rejected` a pridá konflikt `resolution: "rejected_future_date"`. Tak to opisuje aj kontrakt
+v `docs/reference/shared-account-sync-platform/contracts/api-contracts.md`.
+**Oprav test podľa kontraktu, nie server kód:** premenuj ho na `test_sync_batch_tomorrow_is_rejected`,
+over status 200, `summary.records_rejected > 0` a konflikt `rejected_future_date`. Ostatné ADHD testy nemeň.
+
+**Acceptance Criteria:**
+- [ ] `cd server && <venv>/bin/pytest tests/unit tests/api -q` → 0 failed
+- [ ] `app/services/sync_service.py` a `app/routers/sync.py` sú nezmenené
 
 ### FR-2: E2E harness (`e2e/`)
 - `e2e/requirements.txt`: `pytest`, `pytest-playwright`, `httpx`. Prehliadač Chromium cez

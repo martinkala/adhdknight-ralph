@@ -36,7 +36,7 @@ CONSTITUTION="$PROJECT_DIR/.specify/memory/constitution.md"
 MAX_ITERATIONS=0  # 0 = unlimited
 MODE="build"
 CLAUDE_CMD="${CLAUDE_CMD:-claude}"
-CLAUDE_MODEL="${CLAUDE_MODEL:-claude-opus-4-7}"
+CLAUDE_MODEL="${CLAUDE_MODEL:-claude-opus-5-5}"
 YOLO_FLAG="--dangerously-skip-permissions"
 TAIL_LINES=5
 TAIL_RENDERED_LINES=0
@@ -335,6 +335,7 @@ echo ""
 ITERATION=0
 CONSECUTIVE_FAILURES=0
 MAX_CONSECUTIVE_FAILURES=3
+STOP_AFTER_PUSH=false
 
 while true; do
     # Check max iterations
@@ -386,6 +387,11 @@ while true; do
                 echo -e "${CYAN}Or delete IMPLEMENTATION_PLAN.md to work directly from specs.${NC}"
                 break
             fi
+
+            # Local change: stop once the agent reports no work left
+            if [ "$DETECTED_SIGNAL" = "<promise>ALL_DONE</promise>" ]; then
+                STOP_AFTER_PUSH=true
+            fi
         else
             echo -e "${YELLOW}⚠ No completion signal found${NC}"
             echo -e "${YELLOW}  Agent did not output <promise>DONE</promise> or <promise>ALL_DONE</promise>${NC}"
@@ -423,6 +429,18 @@ while true; do
             git push -u origin "$CURRENT_BRANCH" 2>/dev/null || true
         fi
     }
+
+    # Local change: stop when every root spec is COMPLETE (or on ALL_DONE),
+    # instead of starting another iteration with nothing to do
+    if [ "$MODE" = "build" ] && [ "$HAS_PLAN" = false ] && [ -d "specs" ]; then
+        if [ "$(count_incomplete_root_specs "specs")" -eq 0 ]; then
+            echo -e "${GREEN}All $(count_root_specs "specs") specs are COMPLETE.${NC}"
+            STOP_AFTER_PUSH=true
+        fi
+    fi
+    if [ "$STOP_AFTER_PUSH" = true ]; then
+        break
+    fi
 
     # Brief pause between iterations
     echo ""
