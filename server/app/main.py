@@ -2,9 +2,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.routers import health, compute, auth, sync, migrate, user, config
+from app.routers import health, compute, auth, sync, migrate, user, config, monitoring
 from app.middleware.logging import RequestLoggingMiddleware
 from app.db.database import engine, Base
+from app.logging_config import configure_api_logging
+
+configure_api_logging()
 
 
 @asynccontextmanager
@@ -31,6 +34,7 @@ app = FastAPI(
         {"name": "migrate", "description": "Import historical Android data to server database"},
         {"name": "user", "description": "User profile and history for web client"},
         {"name": "config", "description": "Distributes the canonical entities.yaml per app_id, versioned"},
+        {"name": "monitoring", "description": "Operator-facing synthetic check + integrity monitoring status"},
     ],
     lifespan=lifespan,
 )
@@ -57,3 +61,4 @@ app.include_router(sync.router)
 app.include_router(migrate.router)
 app.include_router(user.router)
 app.include_router(config.router)
+app.include_router(monitoring.router)

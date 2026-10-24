@@ -9,8 +9,10 @@
 {% endblock %}
 {% block content %}
 <h2 style="margin-bottom:1rem;">Dashboard</h2>
-{% if history.error %}
-    <div class="alert alert-error">{{ history.error }}</div>
+{% if error_message %}
+    <div class="alert alert-error">{{ error_message }}</div>
+{% elif not has_data %}
+    <div class="alert alert-info">Zatiaľ nemáte žiadne dáta.</div>
 {% else %}
     <div class="card">
         <h3 style="margin-bottom:1rem;font-size:1rem;color:#555;">Posledných 30 dní — denný index</h3>
@@ -20,7 +22,7 @@
     </div>
     <script>
     (function() {
-        const days = {{ history.days|default:"[]"|safe }};
+        const days = {{ days_json|safe }};
         const labels = days.map(d => d.date).reverse();
         const values = days.map(d => d.index_value != null ? d.index_value : 0).reverse();
         const colors = values.map(v => v >= 50 ? 'rgba(76,175,80,0.7)' : 'rgba(244,67,54,0.7)');

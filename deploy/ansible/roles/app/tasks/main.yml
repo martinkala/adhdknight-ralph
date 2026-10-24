@@ -1,0 +1,161 @@
+---
+# Provisions ONLY the adhd-api (FastAPI) and adhd-web (Django) services on the
+# target, per FR-013 — no unrelated services. Code arrives via rsync from the
+# control machine's git checkout (committed content only), never via a git
+# clone/pull on the server itself — same "no GitHub credentials on the server"
+# principle as deploy/scripts/push-deploy.sh, so a compromised server can't
+# reach the source repo.
+
+- name: Ensure the app system user exists
+  become: true
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Ensure app_root exists
+  become: true
+  ansible.builtin.file:
+    path: "{{ app_root }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0755"
+
+- name: Sync committed repository content to the server (rsync, --delete)
+  become: true
+  ansible.posix.synchronize:
+    src: "{{ playbook_dir }}/../../"
+    dest: "{{ app_root }}/"
+    delete: true
+    rsync_opts:
+      - "--exclude=.venv/"
+      - "--exclude=.env"
+      - "--exclude=dev.db"
+      - "--exclude=db.sqlite3"
+      - "--exclude=staticfiles/"
+      - "--exclude=logs/"
+      - "--exclude=__pycache__/"
+      - "--exclude=.git/"
+  notify:
+    - restart adhd-api
+    - restart adhd-web
+
+- name: Create the FastAPI server virtualenv (idempotent — skips if already present)
+  become: true
+  become_user: "{{ app_user }}"
+  ansible.builtin.command:
+    cmd: "{{ python_bin }} -m venv --copies {{ server_dir }}/.venv"
+    creates: "{{ server_dir }}/.venv/bin/python"
+
+- name: Install FastAPI server dependencies
+  become: true
+  become_user: "{{ app_user }}"
+  ansible.builtin.pip:
+    requirements: "{{ server_dir }}/requirements.txt"
+    virtualenv: "{{ server_dir }}/.venv"
+  notify: restart adhd-api
+
+- name: Template server/.env from vault-sourced secrets (FR-015)
+  become: true
+  ansible.builtin.template:
+    src: server.env.j2
+    dest: "{{ server_dir }}/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0600"
+  notify: restart adhd-api
+
+- name: Apply FastAPI database migrations (Alembic)
+  become: true
+  become_user: "{{ app_user }}"
+  ansible.builtin.command:
+    cmd: "{{ server_dir }}/.venv/bin/alembic upgrade head"
+    chdir: "{{ server_dir }}"
+  changed_when: true  # alembic gives no simple idempotent signal; harmless to re-run at head
+
+- name: Create the Django web console virtualenv (idempotent — skips if already present)
+  become: true
+  become_user: "{{ app_user }}"
+  ansible.builtin.command:
+    cmd: "{{ python_bin }} -m venv --copies {{ web_dir }}/.venv"
+    creates: "{{ web_dir }}/.venv/bin/python"
+
+- name: Install Django web console dependencies
+  become: true
+  become_user: "{{ app_user }}"
+  ansible.builtin.pip:
+    requirements: "{{ web_dir }}/requirements.txt"
+    virtualenv: "{{ web_dir }}/.venv"
+  notify: restart adhd-web
+
+- name: Template web_app/.env from vault-sourced secrets (FR-015)
+  become: true
+  ansible.builtin.template:
+    src: web.env.j2
+    dest: "{{ web_dir }}/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0600"
+  notify: restart adhd-web
+
+- name: Apply Django database migrations
+  become: true
+  become_user: "{{ app_user }}"
+  environment:
+    DJANGO_SECRET_KEY: "{{ vault_django_secret_key }}"
+    DJANGO_DATABASE_URL: "{{ vault_django_database_url }}"
+  ansible.builtin.command:
+    cmd: "{{ web_dir }}/.venv/bin/python manage.py migrate --noinput"
+    chdir: "{{ web_dir }}"
+  changed_when: true
+
+- name: Collect Django static files
+  become: true
+  become_user: "{{ app_user }}"
+  environment:
+    DJANGO_SECRET_KEY: "{{ vault_django_secret_key }}"
+    DJANGO_DATABASE_URL: "{{ vault_django_database_url }}"
+  ansible.builtin.command:
+    cmd: "{{ web_dir }}/.venv/bin/python manage.py collectstatic --noinput"
+    chdir: "{{ web_dir }}"
+  changed_when: true
+
+- name: Install systemd units (adhd-api, adhd-web, adhd-monitoring)
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../deploy/systemd/{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: "0644"
+  loop:
+    - adhd-api.service
+    - adhd-web.service
+    - adhd-monitoring.service
+    - adhd-monitoring.timer
+  notify:
+    - reload systemd
+    - restart adhd-api
+    - restart adhd-web
+
+- name: Reload systemd immediately so subsequent enable/start tasks see the units
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable and start adhd-api, adhd-web
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - adhd-api.service
+    - adhd-web.service
+
+- name: Enable adhd-monitoring.timer (the .service itself is oneshot, triggered by the timer only)
+  become: true
+  ansible.builtin.systemd:
+    name: adhd-monitoring.timer
+    enabled: true
+    state: started

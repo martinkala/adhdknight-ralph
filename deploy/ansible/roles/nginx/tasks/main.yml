@@ -1,0 +1,27 @@
+---
+# Deploys the existing pre-certbot nginx templates from deploy/nginx/ as-is
+# (see the header comments in those files for why certbot's live in-place TLS
+# edits are intentionally not reproduced here — re-deploying must never
+# clobber a live certificate config).
+
+- name: Install nginx site configs
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../deploy/nginx/{{ item }}"
+    dest: "/etc/nginx/sites-available/{{ item }}"
+    mode: "0644"
+  loop:
+    - api.adhdknight.com.conf
+    - console.adhdknight.com.conf
+  notify: reload nginx
+
+- name: Enable nginx site configs
+  become: true
+  ansible.builtin.file:
+    src: "/etc/nginx/sites-available/{{ item }}"
+    dest: "/etc/nginx/sites-enabled/{{ item }}"
+    state: link
+  loop:
+    - api.adhdknight.com.conf
+    - console.adhdknight.com.conf
+  notify: reload nginx

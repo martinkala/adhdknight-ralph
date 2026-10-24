@@ -1,0 +1,17 @@
+---
+- name: reload systemd
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: restart adhd-api
+  become: true
+  ansible.builtin.systemd:
+    name: adhd-api.service
+    state: restarted
+
+- name: restart adhd-web
+  become: true
+  ansible.builtin.systemd:
+    name: adhd-web.service
+    state: restarted

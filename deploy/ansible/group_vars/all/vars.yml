@@ -1,0 +1,8 @@
+---
+# Non-secret defaults. Real secrets come from an external, Vault-encrypted file
+# (FR-015) — see deploy/ansible/README.md and group_vars/all/vault.yml.example.
+app_root: /opt/adhknight
+app_user: adhdmad
+server_dir: "{{ app_root }}/server"
+web_dir: "{{ app_root }}/web_app"
+python_bin: python3

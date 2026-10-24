@@ -14,6 +14,9 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Reserved account used by the scheduled synthetic checks in app/monitoring/ (FR-004).
+    # Excluded from IntegritySnapshot user/data counts so its own activity never skews them.
+    is_monitoring_account: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
     tracking_days: Mapped[list["TrackingDay"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     weight_configs: Mapped[list["WeightConfig"]] = relationship(back_populates="user", cascade="all, delete-orphan")

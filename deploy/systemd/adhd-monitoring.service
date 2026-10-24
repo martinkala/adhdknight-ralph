@@ -1,0 +1,11 @@
+[Unit]
+Description=ADHD Tracker synthetic uptime + integrity monitoring checks (one-shot)
+After=network.target adhd-api.service adhd-web.service
+
+[Service]
+Type=oneshot
+User=adhdmad
+Group=adhdmad
+WorkingDirectory=/opt/adhknight/server
+EnvironmentFile=/opt/adhknight/server/.env
+ExecStart=/opt/adhknight/server/.venv/bin/python scripts/run_monitoring_checks.py

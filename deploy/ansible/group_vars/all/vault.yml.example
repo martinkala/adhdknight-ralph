@@ -1,0 +1,22 @@
+# Template for the secrets file this playbook expects (FR-015/FR-016).
+#
+# This file itself is safe to commit — it contains only placeholder values,
+# same pattern as server/.env.example and web_app/.env.example. The REAL file
+# must live OUTSIDE this repository (e.g. ~/adhknight-secrets/vault.yml on your
+# workstation, or a separate private repo/secrets store), encrypted with
+# `ansible-vault encrypt`, and passed at deploy time — see ../README.md.
+#
+# Copy this file to that external location, fill in real values, then encrypt:
+#   cp deploy/ansible/group_vars/all/vault.yml.example ~/adhknight-secrets/vault.yml
+#   ansible-vault encrypt ~/adhknight-secrets/vault.yml
+
+# server/.env
+vault_database_url: "postgresql+asyncpg://adhd_server:CHANGE_ME@127.0.0.1:5432/adhd_server"
+vault_secret_key: "CHANGE_ME_openssl_rand_hex_32"
+vault_monitoring_api_key: "CHANGE_ME_openssl_rand_hex_32"
+vault_monitoring_account_email: "monitor@adhdknight.internal"
+vault_monitoring_account_password: "CHANGE_ME"
+
+# web_app/.env
+vault_django_secret_key: "CHANGE_ME_django_get_random_secret_key"
+vault_django_database_url: "postgresql://adhd_web:CHANGE_ME@127.0.0.1:5432/adhd_web"

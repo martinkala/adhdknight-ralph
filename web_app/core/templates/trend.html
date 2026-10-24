@@ -8,8 +8,10 @@
 {% endblock %}
 {% block content %}
 <h2 style="margin-bottom:1rem;">Denný trend</h2>
-{% if history.error %}
-    <div class="alert alert-error">{{ history.error }}</div>
+{% if error_message %}
+    <div class="alert alert-error">{{ error_message }}</div>
+{% elif not has_data %}
+    <div class="alert alert-info">Zatiaľ nemáte žiadne dáta.</div>
 {% else %}
     <div class="card">
         <h3 style="margin-bottom:1rem;font-size:1rem;color:#555;">Posledných 60 dní — pohyblivý priemer</h3>
@@ -19,7 +21,7 @@
     </div>
     <script>
     (function() {
-        const days = {{ history.days|default:"[]"|safe }};
+        const days = {{ days_json|safe }};
         const sorted = [...days].reverse();
         const labels = sorted.map(d => d.date);
         const values = sorted.map(d => d.index_value != null ? d.index_value : null);

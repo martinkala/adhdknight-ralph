@@ -1,0 +1,26 @@
+Ciel 1 je opravit web based conxposle, pretoze sa nezobrazuju ziadne data pri prihlaseni uzivatela.
+
+
+
+Ciel 2 
+je neavrhnut monitoring aplikacii
+ web based
+
+ api based
+
+ Spolocnym prvkom bude jeden testovaci uzivatelsky ucet, ktory sa bude v pravidelnych intervaloch prihlasovat
+
+ integrity based
+	- bude sa jednat o detekciu  prieniku
+	- test poctu uzivatelov , kontrola ci nepribudaju moc rychlo
+	- test poctu dat per uzivatela , ci nepribudaju moc rychlo - pocet od poslednej kontroly bude montorvany a bude nastaveny treshhol, kedy sa zobrazi warning
+
+ciel 3 
+Deployment , len api a web based, vsetko ostatne na serveri nebude 
+	- ako to dosiahnut - moznosti, aplikacie , riesenia
+	- ansible
+	- ako storovat .env conf z produkcie, a nemat ho v repository 
+
+ciel 4 
+separate files logging
+- logovanie web console a api do separatneho fajlu , kde ho budem moct monitorovat 

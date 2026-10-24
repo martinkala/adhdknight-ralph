@@ -68,6 +68,42 @@ Copy `.env.example` to `.env` and edit as needed:
 | `ENVIRONMENT` | `development` | `development` or `production` |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | JWT access token TTL |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `30` | JWT refresh token TTL |
+| `MONITORING_API_KEY` | `change-me-in-production` | `X-Monitoring-Key` value required by `GET /internal/monitoring/status` |
+| `MONITORING_ACCOUNT_EMAIL` / `MONITORING_ACCOUNT_PASSWORD` | `monitor@adhdknight.internal` / `change-me-in-production` | Dedicated account the synthetic checks log in as (seeded by the `187ee05ae8ff_...` migration) |
+| `MONITORING_CHECK_INTERVAL_MINUTES` | `15` | How often `adhd-monitoring.timer` runs the checks |
+| `MONITORING_ESCALATION_THRESHOLD` | `2` | Consecutive failures before an escalation warning is logged |
+| `MONITORING_API_BASE_URL` / `MONITORING_WEB_CONSOLE_BASE_URL` | `http://127.0.0.1:8095` / `http://127.0.0.1:8000` | Where the synthetic checks point |
+| `INTEGRITY_USER_COUNT_GROWTH_THRESHOLD` / `INTEGRITY_USER_DATA_GROWTH_THRESHOLD` | `20` / `100` | Growth-between-checks thresholds before an integrity warning is raised |
+
+## Monitoring (feature 020)
+
+`server/app/monitoring/` implements two scheduled checks, run together by
+`scripts/run_monitoring_checks.py` on the `adhd-monitoring.timer` systemd timer
+(see `deploy/systemd/adhd-monitoring.{service,timer}`):
+
+- **Synthetic uptime**: logs into the web console and the API as the
+  dedicated monitoring account, confirming real data is returned (catches a
+  repeat of the dashboard "no data" bug, not just a down login page).
+- **Integrity**: captures a snapshot of total user count and per-user data
+  volume, comparing it against the previous snapshot and raising a warning on
+  excessive growth.
+
+Operators check current status via:
+
+```bash
+curl -H "X-Monitoring-Key: $MONITORING_API_KEY" http://127.0.0.1:8095/internal/monitoring/status
+```
+
+Both check failures and escalations (2+ consecutive failures by default) are
+logged at WARNING/ERROR level into `logs/api.log` (see "Logging" below) —
+consumed by whatever log-watching an operator already has in place.
+
+## Logging
+
+The API writes to `server/logs/api.log` (rotating, 10MB × 5 backups) — see
+`app/logging_config.py`. This is separate from the Django web console's own
+`web_app/logs/web.log`, so each service's log output can be monitored
+independently (feature 020, goal 4).
 
 ## PostgreSQL Setup (optional)
 
@@ -113,6 +149,10 @@ spusti celý (`./deploy/scripts/install.sh`), alebo krok po kroku cez `--step <n
 (pozri hlavičku skriptu pre presné názvy krokov). Skript predpokladá checkout repozitára
 v `/opt/adhknight` a systémového používateľa `adhdmad` (uprav `deploy/systemd/*.service`
 a `APP_ROOT`/`APP_USER` v skripte, ak sa tvoj server líši).
+
+> **Feature 020**: `install.sh` zostáva pre jednorazové nastavenie servera (balíky,
+> PostgreSQL, certbot). Pre opakované, idempotentné nasadenie novej verzie kódu (vrátane
+> `adhd-monitoring` timeru) použi `deploy/ansible/` — pozri `deploy/ansible/README.md`.
 
 ### Predpoklady na serveri
 

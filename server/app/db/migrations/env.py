@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 from app.db.database import Base
 from app.config import get_settings
 import app.models  # noqa: F401 — ensure all models are registered
+import app.monitoring.models  # noqa: F401 — ensure monitoring tables are registered
 
 config = context.config
 if config.config_file_name is not None:

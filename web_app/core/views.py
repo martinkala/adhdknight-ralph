@@ -1,9 +1,16 @@
+import json
+
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse
 from core import api_client
 
 _LOGIN_EXPIRED = "?expired=1"
+
+_ERROR_MESSAGES = {
+    "server_unavailable": "Server nie je dostupný. Skúste neskôr.",
+    "server_error": "Načítanie dát zlyhalo. Skúste to znova.",
+}
 
 
 def _require_login(request):
@@ -12,6 +19,19 @@ def _require_login(request):
 
 def _expired_redirect():
     return redirect(reverse("login") + _LOGIN_EXPIRED)
+
+
+def _history_context(history: dict) -> dict:
+    """Builds the template context for a history-backed page (FR-001/FR-002):
+    distinguishes a load failure from genuinely-empty history, and serializes
+    `days` as real JSON so it can be safely embedded in an inline <script>
+    (Django's `{{ }}` on a Python list/dict emits `repr()`-style output —
+    e.g. `None` instead of `null` — which is not valid JavaScript)."""
+    error = history.get("error")
+    if error:
+        return {"error_message": _ERROR_MESSAGES.get(error, error), "has_data": False, "days_json": "[]"}
+    days = history.get("days", [])
+    return {"error_message": None, "has_data": bool(days), "days_json": json.dumps(days)}
 
 
 def login_view(request):
@@ -64,7 +84,7 @@ def dashboard(request):
     if history.get("error") == "unauthorized":
         request.session.flush()
         return _expired_redirect()
-    return render(request, "dashboard.html", {"history": history})
+    return render(request, "dashboard.html", _history_context(history))
 
 
 def trend(request):
@@ -75,7 +95,7 @@ def trend(request):
     if history.get("error") == "unauthorized":
         request.session.flush()
         return _expired_redirect()
-    return render(request, "trend.html", {"history": history})
+    return render(request, "trend.html", _history_context(history))
 
 
 def account(request):

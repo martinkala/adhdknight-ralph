@@ -58,6 +58,32 @@ INSTALLED_APPS = [
 SERVER_URL = os.environ.get('FASTAPI_URL', 'http://192.168.77.24:8095')
 SESSION_COOKIE_AGE = 86400
 
+# Dedicated web-console log file (FR-017-FR-019), separate from the FastAPI API's
+# logs/api.log so each service can be monitored independently.
+_LOG_DIR = BASE_DIR / 'logs'
+_LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {'format': '{asctime} {levelname} {name} {message}', 'style': '{'},
+    },
+    'handlers': {
+        'web_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': _LOG_DIR / 'web.log',
+            'maxBytes': 10 * 1024 * 1024,
+            'backupCount': 5,
+            'formatter': 'standard',
+        },
+    },
+    'loggers': {
+        'django': {'handlers': ['web_file'], 'level': 'INFO', 'propagate': False},
+        'core': {'handlers': ['web_file'], 'level': 'INFO', 'propagate': False},
+    },
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

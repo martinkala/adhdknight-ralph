@@ -1,0 +1,16 @@
+---
+# Minimal, idempotent deployment of ONLY the adhd-api and adhd-web services
+# (FR-013/FR-014). Packages/PostgreSQL/certbot provisioning is intentionally
+# left to deploy/scripts/install.sh (already idempotent for that one-time
+# system setup, per research.md §4) — this playbook is the repeatable "ship a
+# new build" path, run on every deploy.
+#
+# Usage:
+#   ansible-galaxy collection install -r requirements.yml   # once
+#   ansible-playbook site.yml -e @/path/outside/repo/vault.yml --ask-vault-pass
+- hosts: adhknight
+  vars_files:
+    - group_vars/all/vars.yml
+  roles:
+    - app
+    - nginx

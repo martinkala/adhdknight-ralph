@@ -1,0 +1,10 @@
+[Unit]
+Description=Run ADHD Tracker monitoring checks every 15 minutes (must match MONITORING_CHECK_INTERVAL_MINUTES in server/.env)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+Unit=adhd-monitoring.service
+
+[Install]
+WantedBy=timers.target
