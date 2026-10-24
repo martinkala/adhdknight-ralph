@@ -1,5 +1,7 @@
 # Specification: food-001 — Kostra Food diary a testovacia infraštruktúra
 
+## Status: COMPLETE
+
 ## Feature: Food diary skeleton, prepínač appiek, jednotný test runner a Playwright e2e
 
 ### Overview
@@ -29,11 +31,11 @@ Skript v koreni repa (spustiteľný, bash, `set -euo pipefail`):
 5. Exit code ≠ 0, ak zlyhá ktorýkoľvek krok. Na konci vypíše súhrn `server: OK|FAIL, web: OK|FAIL, e2e: OK|FAIL|SKIPPED`.
 
 **Acceptance Criteria:**
-- [ ] `./scripts/test-food.sh` na čistom checkoute (bez venv) vytvorí venvs a skončí s exit 0
-- [ ] Zámerne rozbitý test v ktorejkoľvek časti → exit ≠ 0 a súhrn ukáže FAIL pri danej časti
-- [ ] `./scripts/test-food.sh --no-e2e` nespúšťa Playwright
-- [ ] `VENV_NAME=.venv-docker ./scripts/test-food.sh` použije a vytvorí `.venv-docker` venvy a hostiteľské `.venv` nechá nedotknuté
-- [ ] Existujúce ADHD testy (server aj web) bežia a prechádzajú
+- [x] `./scripts/test-food.sh` na čistom checkoute (bez venv) vytvorí venvs a skončí s exit 0
+- [x] Zámerne rozbitý test v ktorejkoľvek časti → exit ≠ 0 a súhrn ukáže FAIL pri danej časti
+- [x] `./scripts/test-food.sh --no-e2e` nespúšťa Playwright
+- [x] `VENV_NAME=.venv-docker ./scripts/test-food.sh` použije a vytvorí `.venv-docker` venvy a hostiteľské `.venv` nechá nedotknuté
+- [x] Existujúce ADHD testy (server aj web) bežia a prechádzajú
 
 ### FR-1a: Známy pokazený ADHD test
 `server/tests/api/test_future_date.py::test_sync_batch_tomorrow_returns_422` zlyháva už na `master`
@@ -44,8 +46,8 @@ v `docs/reference/shared-account-sync-platform/contracts/api-contracts.md`.
 over status 200, `summary.records_rejected > 0` a konflikt `rejected_future_date`. Ostatné ADHD testy nemeň.
 
 **Acceptance Criteria:**
-- [ ] `cd server && <venv>/bin/pytest tests/unit tests/api -q` → 0 failed
-- [ ] `app/services/sync_service.py` a `app/routers/sync.py` sú nezmenené
+- [x] `cd server && <venv>/bin/pytest tests/unit tests/api -q` → 0 failed
+- [x] `app/services/sync_service.py` a `app/routers/sync.py` sú nezmenené
 
 ### FR-2: E2E harness (`e2e/`)
 - `e2e/requirements.txt`: `pytest`, `pytest-playwright`, `httpx`. Prehliadač Chromium cez
@@ -66,9 +68,9 @@ over status 200, `summary.records_rejected > 0` a konflikt `rejected_future_date
 - **Selektory v e2e testoch výhradne cez `data-testid`**, nie cez texty (UI bude viacjazyčné).
 
 **Acceptance Criteria:**
-- [ ] `e2e/test_smoke.py::test_login_and_switch_to_food` prejde: login → ADHD dashboard → klik na „Food“ → `/food/`
-- [ ] `e2e/test_smoke.py::test_mobile_nav_no_horizontal_scroll` prejde: na 360 px `document.documentElement.scrollWidth <= 360`
-- [ ] Po skončení testov nebeží žiadny uvicorn ani runserver proces spustený harnessom
+- [x] `e2e/test_smoke.py::test_login_and_switch_to_food` prejde: login → ADHD dashboard → klik na „Food“ → `/food/`
+- [x] `e2e/test_smoke.py::test_mobile_nav_no_horizontal_scroll` prejde: na 360 px `document.documentElement.scrollWidth <= 360`
+- [x] Po skončení testov nebeží žiadny uvicorn ani runserver proces spustený harnessom
 
 ### FR-3: Django app `food`
 - `web_app/food/` (apps, urls, views, templates `web_app/food/templates/food/`), zaregistrovaná
@@ -81,8 +83,8 @@ over status 200, `summary.records_rejected > 0` a konflikt `rejected_future_date
   (preklady sk/cs pridá food-010). `LANGUAGE_CODE` ostáva zatiaľ bez zmeny.
 
 **Acceptance Criteria:**
-- [ ] Django test: neprihlásený GET `/food/` → 302 na login
-- [ ] Django test: prihlásený GET `/food/` → 200 a obsahuje `data-testid="food-home"`
+- [x] Django test: neprihlásený GET `/food/` → 302 na login
+- [x] Django test: prihlásený GET `/food/` → 200 a obsahuje `data-testid="food-home"`
 
 ### FR-4: Prepínač appiek a responzívna navigácia
 - V `core/templates/base.html` prepínač `ADHD | Food` (`data-testid="app-switch-adhd"`, `"app-switch-food"`),
@@ -92,22 +94,22 @@ over status 200, `summary.records_rejected > 0` a konflikt `rejected_future_date
 - Existujúce ADHD stránky fungujú ako doteraz.
 
 **Acceptance Criteria:**
-- [ ] Django testy ADHD (`core`) prechádzajú bez zmeny ich asercií
-- [ ] Na `/food/` je aktívny prepínač Food, na `/` aktívny ADHD (Django test na CSS triedu `active`)
+- [x] Django testy ADHD (`core`) prechádzajú bez zmeny ich asercií
+- [x] Na `/food/` je aktívny prepínač Food, na `/` aktívny ADHD (Django test na CSS triedu `active`)
 
 ### FR-5: HTMX a CSRF
 - `web_app/static/js/htmx.min.js` (htmx 2.x, verzia v komentári na 1. riadku, stiahnuté raz a commitnuté, bez CDN).
 - `base.html` načíta htmx a nastaví `hx-headers` s CSRF tokenom na `<body>`.
 
 **Acceptance Criteria:**
-- [ ] e2e: na `/food/` je `window.htmx` definované a v konzole prehliadača nie sú chyby
+- [x] e2e: na `/food/` je `window.htmx` definované a v konzole prehliadača nie sú chyby
 
 ### FR-6: Dokumentácia
 - `docs/food/README.md`: architektúra (FastAPI = logika, Django = UI), lokálne spustenie,
   `./scripts/test-food.sh`, e2e, predpoklady (Python 3.11+, Chromium závislosti).
 
 **Acceptance Criteria:**
-- [ ] `docs/food/README.md` existuje a príkazy v ňom fungujú
+- [x] `docs/food/README.md` existuje a príkazy v ňom fungujú
 
 ---
 
@@ -125,20 +127,35 @@ over status 200, `summary.records_rejected > 0` a konflikt `rejected_future_date
 
 ---
 
+## Implementation notes
+- Aktívna appka pre prepínač sa určuje context processorom `core.context_processors.active_app`
+  (cesta začína `/food/` → `food`, inak `adhd`). `TEMPLATES.APP_DIRS` je `True`, aby Django našlo
+  `web_app/food/templates/`.
+- ADHD odkazy sú default obsah `{% block app_nav %}` v `base.html`; `food/base_food.html` ho prepisuje.
+  Texty „Účet“ a „Odhlásiť“ v layoute ostávajú zatiaľ slovensky bez `translate` (layout preloží food-010,
+  inak by sa pri `LANGUAGE_CODE=en-us` ADHD stránky prepli do angličtiny).
+- Login formulár dostal `data-testid` (`login-email`, `login-password`, `login-submit`) pre e2e.
+- Mobil (< 600 px): odkazy sú zbalené za `nav-toggle`; v lište ostáva značka, prepínač `ADHD | Food` a toggle.
+- `test-food.sh` overuje Chromium cez `playwright` (existencia `executable_path`) a inštaluje ho iba ak chýba.
+- Logy API/webu sa pri zlyhaní e2e vypíšu cez `pytest_terminal_summary` (výstup teardown fixtures pytest zachytáva).
+- `e2e` fixture `base_url` je prepísaná na URL webu, `mobile_page` nie je prihlásená (test volá `login()`).
+- ADHD dashboard `/` stále načítava Chart.js z CDN (mimo rozsahu food); e2e test bez JS chýb na `/`
+  preto potrebuje sieť. Food časť CDN nepoužíva.
+
 ## Completion Signal
 
 ### Implementation Checklist
-- [ ] `scripts/test-food.sh`
-- [ ] `e2e/` (requirements, conftest, test_smoke.py)
-- [ ] Django app `food` + prepínač appiek + responzívna navigácia
-- [ ] htmx + CSRF
-- [ ] `docs/food/README.md`
+- [x] `scripts/test-food.sh`
+- [x] `e2e/` (requirements, conftest, test_smoke.py)
+- [x] Django app `food` + prepínač appiek + responzívna navigácia
+- [x] htmx + CSRF
+- [x] `docs/food/README.md`
 
 ### Testing Requirements
-- [ ] `./scripts/test-food.sh` → exit 0 (server + web + e2e)
-- [ ] Žiadne JS chyby v konzole na `/food/` a `/`
+- [x] `./scripts/test-food.sh` → exit 0 (server + web + e2e)
+- [x] Žiadne JS chyby v konzole na `/food/` a `/`
 
 ### Iteration Instructions
 Ak niečo zlyhá: oprav, spusti testy znova, over kritériá, commitni a pushni. Až keď je všetko zelené: `<promise>DONE</promise>`.
 
-<!-- NR_OF_TRIES: 0 -->
+<!-- NR_OF_TRIES: 1 -->
