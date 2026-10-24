@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 30
     environment: str = "development"
 
+    # Accounts (food-002): "invite" = registration requires a one-time invitation token,
+    # "open" = anyone can register (old behaviour, for dev). web_base_url builds the invite link.
+    registration_mode: str = "invite"
+    web_base_url: str = "http://127.0.0.1:8000"
+
     # Monitoring (FR-004–FR-012a) — see app/monitoring/
     monitoring_api_key: str = "change-me-in-production"
     monitoring_account_email: str = "monitor@adhdknight.internal"

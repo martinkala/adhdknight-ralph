@@ -3,6 +3,7 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from app.main import app
+from app.config import get_settings
 from app.db.database import Base, get_db
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
@@ -18,6 +19,12 @@ async def setup_test_db():
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest.fixture(autouse=True)
+def open_registration(monkeypatch):
+    """Existing tests register without an invitation; invitation tests switch to "invite" themselves."""
+    monkeypatch.setattr(get_settings(), "registration_mode", "open")
 
 
 @pytest_asyncio.fixture

@@ -17,6 +17,11 @@ class User(Base):
     # Reserved account used by the scheduled synthetic checks in app/monitoring/ (FR-004).
     # Excluded from IntegritySnapshot user/data counts so its own activity never skews them.
     is_monitoring_account: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    # UI language (sk | cs | en) and timezone used for "today" on the server (constitution B4).
+    language: Mapped[str] = mapped_column(String(5), nullable=False, default="sk", server_default="sk")
+    timezone: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="Europe/Bratislava", server_default="Europe/Bratislava"
+    )
 
     tracking_days: Mapped[list["TrackingDay"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     weight_configs: Mapped[list["WeightConfig"]] = relationship(back_populates="user", cascade="all, delete-orphan")

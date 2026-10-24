@@ -4,7 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse, RefreshRequest
+from app.dependencies import get_current_user
+from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse, RefreshRequest, ChangePasswordRequest
+from app.services import account_service
+from app.services.invitation_service import InvitationError, consume_invitation
 from app.services.auth_service import (
     hash_password, verify_password,
     create_access_token, create_refresh_token, decode_token,
@@ -14,8 +17,16 @@ from app.config import get_settings
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={403: {"description": "`invite_required` or `invite_invalid` (REGISTRATION_MODE=invite)"}},
+)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    settings = get_settings()
+    if settings.registration_mode == "invite" and not body.invite_token:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="invite_required")
     result = await db.execute(select(User).where(User.email == body.email))
     if result.scalar_one_or_none() is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
@@ -26,8 +37,14 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         is_active=True,
     )
     db.add(user)
+    if settings.registration_mode == "invite":
+        await db.flush()
+        try:
+            await consume_invitation(db, body.invite_token, user.id)
+        except InvitationError as exc:
+            await db.rollback()
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=exc.code)
     await db.commit()
-    settings = get_settings()
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
@@ -65,3 +82,19 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
         refresh_token=create_refresh_token(user.id),
         expires_in=settings.access_token_expire_minutes * 60,
     )
+
+
+@router.post(
+    "/change-password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={400: {"description": "`wrong_password`"}},
+)
+async def change_password(
+    body: ChangePasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        await account_service.change_password(db, current_user, body.old_password, body.new_password)
+    except account_service.WrongPasswordError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="wrong_password")

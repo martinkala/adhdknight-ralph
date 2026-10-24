@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -10,6 +10,8 @@ from app.db.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.tracking import TrackingDay, DailyIndex
+from app.schemas.user import DeleteAccountRequest, UserSettingsResponse, UserSettingsUpdate
+from app.services import account_service
 
 router = APIRouter(prefix="/api/v1/user", tags=["user"])
 
@@ -154,3 +156,35 @@ async def get_debug(
         days_with_index=days_with_index,
         days=day_items,
     )
+
+
+@router.delete(
+    "/me",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={400: {"description": "`wrong_password`"}},
+)
+async def delete_me(
+    body: DeleteAccountRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Deletes the shared account with the data of every app (ADHD and Food)."""
+    try:
+        await account_service.delete_account(db, current_user, body.password)
+    except account_service.WrongPasswordError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="wrong_password")
+
+
+@router.get("/settings", response_model=UserSettingsResponse)
+async def get_user_settings(current_user: User = Depends(get_current_user)):
+    return UserSettingsResponse(language=current_user.language, timezone=current_user.timezone)
+
+
+@router.patch("/settings", response_model=UserSettingsResponse)
+async def patch_user_settings(
+    body: UserSettingsUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    user = await account_service.update_language(db, current_user, body.language)
+    return UserSettingsResponse(language=user.language, timezone=user.timezone)

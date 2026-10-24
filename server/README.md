@@ -136,6 +136,19 @@ Appka nemá "forgot password" flow — ak si niekto zabudne heslo, resetuje sa p
 
 Funguje proti aktuálne nakonfigurovanej `DATABASE_URL` (SQLite lokálne, PostgreSQL na produkcii).
 
+### Pozvánky (registrácia iba na pozvánku)
+
+Pri `REGISTRATION_MODE=invite` (default) sa dá zaregistrovať iba cez jednorazový link. SMTP neexistuje,
+link pošli pozvanému ručne:
+
+```bash
+.venv/bin/python scripts/create_invitation.py                       # platnosť 7 dní
+.venv/bin/python scripts/create_invitation.py --days 3 --note "Jana"
+```
+
+Vypíše `{WEB_BASE_URL}/register/?invite=<token>` a dátum expirácie. V DB je uložený iba SHA-256 hash tokenu.
+`REGISTRATION_MODE=open` vráti staré správanie (registrácia bez pozvánky, iba pre dev).
+
 ## Produkčné nasadenie (feature 018)
 
 Cieľ: `https://api.adhdknight.com` (tento FastAPI server) a `https://console.adhdknight.com`
