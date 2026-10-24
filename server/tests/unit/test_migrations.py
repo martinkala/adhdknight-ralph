@@ -1,5 +1,5 @@
 """Alembic migrations run on SQLite (upgrade head, downgrade -1) — food-002 adds invitations
-and users.language / users.timezone."""
+and users.language / users.timezone, food-003 adds the food tables."""
 import os
 import sqlite3
 import subprocess
@@ -27,7 +27,26 @@ def _tables(db_path: Path) -> set[str]:
         return {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
 
 
-def test_upgrade_head_and_downgrade_one(tmp_path):
+FOOD_TABLES = {"food_days", "food_entries", "food_weights", "food_blood_pressures", "food_med_dictionary"}
+
+
+def test_food_tables_upgrade_head_and_downgrade_one(tmp_path):
+    db = tmp_path / "food.db"
+    _alembic(db, "upgrade", "head")
+    assert FOOD_TABLES <= _tables(db)
+    with sqlite3.connect(db) as conn:
+        indexes = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='index'")}
+    assert {"ix_food_entries_user_category_text_norm", "ix_food_entries_day_id"} <= indexes
+
+    _alembic(db, "downgrade", "-1")
+    assert not FOOD_TABLES & _tables(db)
+    assert "invitations" in _tables(db)
+
+    _alembic(db, "upgrade", "head")
+    assert FOOD_TABLES <= _tables(db)
+
+
+def test_invitations_upgrade_and_downgrade(tmp_path):
     db = tmp_path / "migrate.db"
     # The previous head seeds the monitoring user, i.e. an "existing" user before food-002.
     _alembic(db, "upgrade", "187ee05ae8ff")
@@ -39,7 +58,7 @@ def test_upgrade_head_and_downgrade_one(tmp_path):
         rows = conn.execute("SELECT language, timezone FROM users").fetchall()
     assert rows and all(row == ("sk", "Europe/Bratislava") for row in rows)
 
-    _alembic(db, "downgrade", "-1")
+    _alembic(db, "downgrade", "187ee05ae8ff")
     assert "invitations" not in _tables(db)
     assert not {"language", "timezone"} & _columns(db, "users")
 

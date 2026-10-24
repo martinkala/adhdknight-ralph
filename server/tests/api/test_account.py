@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from sqlalchemy import func, select
 
+from app.models.food import FoodBloodPressure, FoodDay, FoodEntry, FoodMedDictionary, FoodWeight
 from app.models.sync import SyncRecord, SyncType
 from app.models.tracking import DailyIndex, ElementValue, TrackingDay
 from app.models.user import User
@@ -62,6 +63,31 @@ async def _seed_extra_adhd_rows(db, user_id: str) -> None:
     db.add(SyncRecord(user_id=user_id, sync_type=SyncType.batch, records_sent=2, records_accepted=2))
     db.add(WeightConfig(user_id=user_id, element_key="sleep", weight_default=1.0))
     await db.commit()
+
+
+FOOD_MODELS = (FoodDay, FoodEntry, FoodWeight, FoodBloodPressure, FoodMedDictionary)
+
+
+async def _seed_food_rows(db, user_id: str) -> None:
+    day = FoodDay(user_id=user_id, date="2026-10-01", stool=2)
+    db.add(day)
+    await db.flush()
+    db.add_all([
+        FoodEntry(day_id=day.id, user_id=user_id, category="lunch", text="ryza", text_norm="ryza", position=0),
+        FoodWeight(day_id=day.id, user_id=user_id, kg=80),
+        FoodBloodPressure(day_id=day.id, user_id=user_id, systolic=130, diastolic=85),
+        FoodMedDictionary(user_id=user_id, text_norm="emanera", display_text="Emanera", kind="medication"),
+    ])
+    await db.commit()
+
+
+async def _food_row_counts(db, user_id: str) -> dict:
+    return {
+        model.__tablename__: (
+            await db.execute(select(func.count()).select_from(model).where(model.user_id == user_id))
+        ).scalar_one()
+        for model in FOOD_MODELS
+    }
 
 
 # --- change password -------------------------------------------------------
@@ -189,3 +215,22 @@ async def test_settings_are_per_user(async_client):
 @pytest.mark.asyncio
 async def test_settings_require_auth(async_client):
     assert (await async_client.get("/api/v1/user/settings")).status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_delete_account_removes_food_data_and_keeps_others(async_client, db_session):
+    victim = await _register(async_client, "del-food-me@example.com")
+    await _register(async_client, "del-food-other@example.com")
+    victim_id = await _user_id(db_session, "del-food-me@example.com")
+    other_id = await _user_id(db_session, "del-food-other@example.com")
+    await _seed_food_rows(db_session, victim_id)
+    await _seed_food_rows(db_session, other_id)
+    assert all(count == 1 for count in (await _food_row_counts(db_session, victim_id)).values())
+
+    r = await async_client.request(
+        "DELETE", "/api/v1/user/me", json={"password": PASSWORD, "confirm": "DELETE"}, headers=victim
+    )
+    assert r.status_code == 204
+
+    assert all(count == 0 for count in (await _food_row_counts(db_session, victim_id)).values())
+    assert all(count == 1 for count in (await _food_row_counts(db_session, other_id)).values())
