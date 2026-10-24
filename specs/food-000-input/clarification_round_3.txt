@@ -1,0 +1,178 @@
+CLARIFICATION ROUND 3
+=====================
+Odpovedaj pod otázku za "->". Kde je [NÁVRH], stačí "ok" alebo oprava.
+
+
+A. ČO SOM ZISTIL V ADHD REPE (../adhdmad)
+------------------------------------------
+- FastAPI server (server/): auth (JWT HS256, access 15 min / refresh 30 dní), tabuľka users,
+  Postgres v produkcii, SQLite lokálne. Testy: pytest nad SQLite in-memory (make test).
+  Migrácia app_id je hotová, takže zdieľaný účet naprieč appkami už funguje.
+- Django web (web_app/): tenký klient bez vlastných dát. Prihlásenie ide cez FastAPI /auth/login,
+  do Django session sa uloží LEN access_token (nie refresh). Šablóny + inline JS, bez HTMX/Reactu.
+  Texty sú natvrdo po slovensky. Testy: python manage.py test core (Django test client, bez prehliadača).
+- Nasadenie: api.adhdknight.com (FastAPI :8095), console.adhdknight.com (Django :8000), nginx + systemd + ansible.
+- Reset hesla dnes = CLI skript server/scripts/reset_user_password.py. Self-service reset neexistuje.
+- /auth/register je otvorený. Volá ho Django register stránka aj ADHD Android app.
+- Ralph v repe NIE JE nainštalovaný (žiadny ralph-loop.sh, RALPH_PROMPT.md). Repo používa spec-kit.
+- Constitution (.specify/memory/constitution.md) je čisto ADHD Android (MVVM/Room/ASRS/index).
+- V specs/ sú nedokončené ADHD specs: 002, 019, 024, 025 (iba spec.txt), 018 (4 otvorené tasky),
+  001/007/014/017/... (1-3 otvorené tasky).
+- Na master je veľa NECOMMITNUTÝCH zmien (020 monitoring: server/app/*, web_app/*, .pre-commit, .secrets.baseline,
+  a 1 staged súbor v specs/024).
+
+DÔSLEDKY:
+- B2 "možnosť a" (Django UI + FastAPI API) je presne vzor ADHD. Celá food logika bude vo FastAPI,
+  Django len zobrazuje a volá API. Logika na 2 miestach teda nebude.
+- Spojenie prihlásenia je tým vyriešené: jedna tabuľka users, jeden FastAPI auth, jedna Django session.
+  Môj skorší návrh RS256/JWKS netreba. Ďalšia appka = nový Django app + nový FastAPI router + app_id.
+- Access token v session vyprší po 15 min. Teraz to znamená odhlásenie po 15 min, čo je pre appku,
+  do ktorej sa zapisuje celý deň, nepoužiteľné. -> otázka C1.
+
+
+B. ROZHODNUTIA Z ROUND 2 (kontrola)
+-------------------------------------
+- Architektúra: FastAPI = food doména + API (nový router /api/v1/food/..., vlastné tabuľky food_*, FK na users),
+  Django = UI (nový Django app "food" vo web_app).
+- Ralph pracuje na novej branch food-diary v ADHD repe, push na origin (github martinkala/adhdknight).
+- Pozvánky cez CLI, bez admin role a bez admin UI. SMTP zatiaľ nie je.
+- Všetci používatelia majú prístup ku všetkým appkám. Zapínanie/vypínanie appiek je budúca požiadavka (teraz sa neimplementuje).
+- Jazyky sk/cz/en. Časová zóna Europe/Bratislava (od nej sa odvodzuje "dnes" a zákaz budúcich dní).
+- Mazanie: deň = 2 potvrdenia, záznam = bez potvrdenia (jednoduché).
+- Kalendár: bodka = deň existuje, farba podľa stolica/vetry, klik = detail.
+- Detail dňa: jedna obrazovka po sekciách, Enter = pridať, autosave.
+- Množstvo: samostatné pole; ťuk = edit s ponukou najčastejších množstiev pre daný záznam.
+- Tlak: sys/dia povinné, pulz/čas/poznámka voliteľné, rýchly input "130/85 72 7:30".
+- Váha 20-300 kg, 1 desatinné miesto, čas voliteľný. Viac meraní za deň.
+- Šport: text + voliteľná intenzita 1-5 + autocomplete.
+- Lieky/doplnky: slovník spravuje používateľ; pri neznámej položke sa appka spýta "liek alebo doplnok?".
+- Autocomplete: každá skupina (jedlo / lieky+doplnky / šport) ponúka len zo seba, podľa početnosti,
+  bez ohľadu na diakritiku.
+- Import merge: zoznamy = zjednotenie bez duplicít; konflikt len pri spánku a stolica/vetry; náhľad; 1 transakcia.
+  Prázdne dni pri importe preskočiť.
+- Staré roky: wlk=chôdza, d=km chôdze, pos=posilňovanie, str=strečing (všetko -> šport);
+  čas prvého jedla a "end" sa neuchovávajú; spokojnosť ignorovať; fat -> poznámka "fat: x".
+- Export CSV/JSON + tlačidlo v UI. Nasadenie na existujúcu infraštruktúru.
+- Zmazanie účtu = celý zdieľaný účet. POZOR: zmaže aj všetky ADHD dáta.
+- spec 001-shared-account-sync-platform -> docs/reference (popisuje tento server, netreba ju implementovať).
+
+
+C. NOVÉ OTÁZKY Z ADHD REPA
+---------------------------
+C1. Web session a 15-min token. [NÁVRH]: Django bude ukladať do session aj refresh_token a pri 401
+    access token transparentne obnoví. Session (cookie) platí 30 dní, takže sa nebudeš musieť stále prihlasovať.
+    Zmení sa tým správanie aj pre ADHD konzolu (je to tá istá session). OK?
+    -> ano 
+
+C2. Food v rovnakej konzole, alebo samostatne?
+    a) console.adhdknight.com/food/... - spoločný login a navigácia, prepínač ADHD | Food    [NÁVRH]
+    b) samostatná doména (napr. food.adhdknight.com) = samostatná Django inštancia
+    ->ano
+
+C3. Registrácia na pozvánku vs. ADHD app. Účty sú spoločné, takže zatvorenie /auth/register sa dotkne aj ADHD:
+    [NÁVRH]: server flag REGISTRATION_MODE=invite. CLI vytvorí pozvánku a VYPÍŠE link (SMTP nie je),
+    link vedie na Django registráciu s tokenom (platnosť 7 dní). Register bez platného tokenu -> 403.
+    Dôsledok: ADHD Android "Registrovať" prestane fungovať (prihlásenie ostane). Je to OK?
+    -> ano
+
+C4. Reset hesla bez SMTP. Self-service "zabudol som heslo" bez emailu urobiť nejde. [NÁVRH]:
+    - prihlásený používateľ si heslo zmení na stránke Účet (staré + nové heslo)
+    - zabudnuté heslo = existujúci CLI skript reset_user_password.py
+    - emailový reset až keď bude SMTP (budúca požiadavka)
+    -> ano
+
+C5. i18n sk/cz/en: len food časť, alebo celá konzola (aj ADHD stránky, ktoré majú slovenčinu natvrdo)?
+    Kde uložiť voľbu jazyka? [NÁVRH]: Django i18n (gettext); jazyk a časová zóna v tabuľke users
+    (stĺpce language, timezone), aby ich neskôr videla aj Android app. Preložiť len food časť + spoločný layout/login.
+    ->a ano
+
+C6. Autocomplete bez diakritiky vs. testy. Server testy bežia na SQLite, kde Postgres unaccent/pg_trgm nefunguje.
+    [NÁVRH]: pri uložení záznamu sa vypočíta stĺpec text_norm (malé písmená, bez diakritiky, v Pythone).
+    Autocomplete hľadá "text_norm LIKE 'vstup%'" (aj od začiatku slov) a zoraďuje podľa počtu výskytov.
+    Funguje rovnako na SQLite aj Postgres, bez DB extensions.
+    -> ano
+
+C7. Android fáza 2: bude offline-first (ako ADHD app, so sync), alebo online-only klient API?
+    Ovplyvňuje to API už teraz. [NÁVRH]: pripraviť API na budúci sync:
+    UUID id (môže ich generovať klient), updated_at pri každom zázname, soft-delete (deleted_at),
+    endpoint "zmeny od času X". Web to nijako nespomalí.
+    ->ano
+
+C8. JS na webe. Autocomplete, autosave, −/+ a kalendár potrebujú JS. ADHD konzola má len inline JS.
+    [NÁVRH]: HTMX (1 statický súbor vo web_app/static, žiadny build krok, žiadny CDN) + trocha vanilla JS.
+    -> ano
+
+C9. Testy UI. Django test client neoverí JS (autocomplete, autosave). Ralph potrebuje automatické overenie.
+    a) len Django test client + pytest API testy (JS sa netestuje automaticky)
+    b) + Playwright e2e smoke testy (pridá závislosť a stiahnutie prehliadača)    [NÁVRH]
+    -> b
+
+
+D. RALPH V ADHD REPE
+---------------------
+D1. Pred štartom Ralpha treba commitnúť alebo odložiť necommitnuté zmeny na master (020 monitoring atď.),
+    inak sa branch food-diary založí bez nich, alebo ich Ralph pridá do vlastných commitov.
+    Commitneš ich sám pred štartom?
+    ->ano - hotovo commitnute 
+
+D2. Constitution. Ralph má jednu constitution pre celé repo a súčasná je čisto ADHD Android.
+    [NÁVRH]: v ADHD repe ju rozdeliť na:
+      - Spoločné princípy (repo, git, testy, bezpečnosť, izolácia používateľov, jazyk kódu)
+      - Modul ADHD Android (súčasný obsah bez zmeny)
+      - Modul Server (FastAPI) + Web (Django), čo dnes chýba úplne
+      - Modul Food diary (doména, kategórie, pravidlá)
+    Verzia 2.0.0. V round 2 si pri B4 odpovedal len "a" - beriem to ako "repo používa spec-kit, návrh b je ok"?
+    -> b) [NÁVRH]: constitution rozdeliť na spoločnú časť + sekciu "Modul food_diary";
+
+D3. Ako zabrániť, aby Ralph robil nedokončené ADHD specs (002, 019, 024, 025, 018...)?
+    [NÁVRH]: food specs pomenovať specs/food-001-... až food-0NN-... a v RALPH_PROMPT.md napísať:
+    "pracuj LEN na specs/food-*". ADHD specs sa nemenia.
+    -> ano
+
+D4. Inštalácia Ralpha (ralph-loop.sh, RALPH_PROMPT.md, .claude/commands) je súčasťou prvého kroku, ktorý urobím ja
+    (nie Ralph)? Ktorý agent/CLI bude loop spúšťať (Claude Code / Codex / Cursor)?
+    -> calude code
+
+D5. Kde bude Ralph spúšťať testy? Potrebuje lokálne Python 3.11+ venv pre server aj web_app.
+    Postgres na lokálne testy netreba (C6). Je to OK, alebo chceš aj Postgres test run (docker)?
+    -> lokalne python 3.11+
+
+D6. Súbory z food_diary (spec.txt, clarification_round_1-3, *.csv, data_sample.txt) presuniem do ADHD repa
+    ako specs/food-000-input/ (len referencia, Ralph ich neimplementuje)? Repo food_diary potom zanikne?
+    ->ano
+
+
+E. DORIEŠENIE ODPOVEDÍ Z ROUND 2
+----------------------------------
+E1. F1 (UC5 import v aplikácii áno/nie) - odpoveď sa prekopírovala zle ("autocomplete hľadá bez ohľadu
+    na diakritiku"). Z F2/F3 usudzujem, že import v appke chceš. [NÁVRH]: áno, ako posledné food spec
+    s najnižšou prioritou (parser TSV/CSV + merge + náhľad).
+    -> ano
+
+E2. Množstvo: ťuk na množstvo otvorí výber z najčastejších množstiev pre daný záznam (napr. "toasty": 2, 3, 1)
+    + ručné zadanie. Tlačidlá −/+ teda NIE sú. Správne?
+    -> ťuk na množstvo otvorí výber z najčastejších množstiev pre daný záznam
+
+E3. "emanera, prestarium, emanera" -> 1 záznam emanera s množstvom 2 (nie 2 rovnaké záznamy)? [NÁVRH]: áno
+    -> ťuk na množstvo otvorí výber z najčastejších množstiev pre daný záznam
+
+E4. Autocomplete: aj bez ohľadu na veľkosť písmen ("Melon" = "melon")? A ktorý tvar sa ponúkne, keď existujú oba?
+    [NÁVRH]: áno; ponúkne sa najčastejší tvar.
+    -> ano
+
+E5. Kalendár: farba podľa HORŠEJ z hodnôt stolica/vetry (max)? Deň bez stolica/vetry = sivá bodka.
+    Pri E2 v round 2 si napísal "návrh dobrý, áno" - znamená "áno" aj to, že chceš okrem kalendára
+    aj zoznamový pohľad?
+    -> aj zoznamovy pohlad
+
+E6. Stĺpce zo starých rokov, ktoré nemajú termín jedla (sweet, zelemina/ovocie, kafe, random):
+    a) nová kategória jedla "Nezaradené / počas dňa" - ostanú jedlom, budú v autocomplete a v exporte   [NÁVRH]
+    b) poznámka s prefixom "sladkosti: ...", "zelenina: ..." (tvoj návrh)
+    Pri a): kafe N -> "káva" s množstvom N (0 a "--" preskočiť), random -> nezaradené.
+    Má byť kategória "Nezaradené" dostupná aj pri ručnom zadávaní, alebo len pre import?
+    -> a
+
+E7. 2022 stĺpec sweet obsahuje "probiio, lieky" (posunutý stĺpec) -> lieky/doplnky.
+    "lieky" (bez názvu) uložiť ako liek "lieky"? [NÁVRH]: áno, LLM import to nahlási ako podozrivé.
+    ->  áno, LLM import to nahlási ako podozrivé.
+

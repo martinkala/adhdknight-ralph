@@ -1,0 +1,243 @@
+CLARIFICATION ROUND 2
+=====================
+Odpovedaj priamo pod otázku za "->". Kde je uvedený [NÁVRH], stačí napísať "ok" alebo opraviť.
+
+
+A. ROZHODNUTÉ V ROUND 1 (len kontrola, či som pochopil správne)
+-----------------------------------------------------------------
+- Web first, Android = fáza 2 (cez API, OpenAPI kontrakt od začiatku). Constitution sa prepíše.
+- Stack a umiestnenie: ako ADHD web, modul v ADHD repe.
+- UC1 prehľad = kalendár.
+- UC2 nový deň: predvolený je dnešok, duplicitný deň -> hláška "Deň už existuje", budúce dátumy zakázané.
+- UC3 autocomplete: len pre jedlo, zoradené podľa početnosti, len dáta prihláseného používateľa.
+- UC4 edit + mazanie jednotlivého záznamu. Mazanie dňa = 2 potvrdenia.
+- Registrácia len na pozvánku, reset hesla áno.
+- Izolácia používateľov: povinné testy (dáta, autocomplete, API).
+- Responzívny web (mobil je hlavné zariadenie na zadávanie).
+- UI viacjazyčné, časová zóna default CET (zmena je budúca požiadavka).
+- Import (UC5) robí LLM neskôr; aplikácia zatiaľ neopravuje preklepy. TSV aj CSV.
+- Spánok 1-3 (1 zlý, 2 priemer, 3 ok). Pohyb sa ignoruje.
+- Tráviace problémy: pevne 2 hodnoty stolica/vetry, 1-10 (1 = OK, 10 = najhoršie).
+- Tlak + váha: viac meraní za deň, voliteľná poznámka.
+- Lieky vs. doplnky: rozdeliť podľa slovníka.
+- Symptómy + medical note + note -> jeden zoznam poznámok.
+- Ralph štruktúra: rozdelenie na spec 002-011 podľa návrhu.
+
+
+B. ARCHITEKTÚRA (najdôležitejšie, blokuje všetko ostatné)
+-----------------------------------------------------------
+B1. Kde je ADHD repo lokálne (cesta)? Potrebujem si pozrieť skutočný stack
+    (spec 001 spomína FastAPI server + "Django web app mimo scope" -> nie je jasné,
+    čo presne znamená "ako ADHD web").
+    -> ../adhdmad/
+
+B2. Kto obsluhuje food dáta?
+    a) Django web (UI) + FastAPI (API pre Android) -> logika na 2 miestach
+    b) Všetko vo FastAPI (API + server-rendered šablóny/HTMX)
+    c) Django robí UI aj API (DRF), FastAPI ostáva len auth/sync pre ADHD
+    [NÁVRH]: rozhodnem po pohľade do repa; preferujem jeden backend pre food doménu.
+    -> preferujem moznost a, ale pozri sa to adhd repa
+
+B3. Ako sa dnes prihlasuje ADHD web (Django)? Proti tej istej tabuľke users ako
+    FastAPI (JWT), alebo má vlastné Django auth? Toto určuje, ako spojiť prihlásenie.
+    -> pozri adhd repo
+
+B4. Ralph v ADHD repe: Ralph má JEDNU constitution (.specify/memory/constitution.md)
+    a JEDEN priečinok specs/. ADHD repo už má specs 016/017/018...
+    a) Používa ADHD repo už Ralph/spec-kit? Ktoré specs sú hotové?
+    b) [NÁVRH]: constitution rozdeliť na spoločnú časť + sekciu "Modul food_diary";
+       food specs číslovať od nasledujúceho voľného čísla s prefixom food (napr. 030-food-skeleton),
+       staré ADHD specs označiť ako hotové, aby ich loop nebral.
+    -> a
+
+B5. Git remote: kam bude Ralph pushovať (branch, remote)? Má pracovať na samostatnej
+    feature branch (napr. food-diary), alebo priamo na main?
+    -> nova branch food diary
+
+
+C. POZVÁNKY, RESET HESLA, ÚČTY
+--------------------------------
+C1. Kto posiela pozvánky? Existuje rola admin (ty)? Admin UI alebo stačí CLI príkaz?
+    [NÁVRH]: rola admin + jednoduchá stránka "Pozvať" (email -> link s tokenom, platnosť 7 dní).
+    ->rola admin neexistuje, staci cli prikaz
+
+
+C2. Reset hesla a pozvánky potrebujú posielať emaily. Aký SMTP / služba?
+    Ak zatiaľ nie je: [NÁVRH] v dev móde sa email vypíše do logu, SMTP cez .env.
+    -> zatial nemam smtp 
+
+C3. Účty sú zdieľané s ADHD trackerom. Platí "len na pozvánku" aj pre ADHD app?
+    ADHD Android app dnes volá otvorené POST /auth/register, takže zatvorenie by ho rozbilo.
+    [NÁVRH]: pozvánka obsahuje app_id; nový používateľ dostane prístup len k pozvanej appke
+    (tabuľka user_apps). Existujúci ADHD register ostáva, kým sa neupraví ADHD app.
+    ->pozri repo 
+
+C4. Má používateľ prihlásený do ADHD automaticky prístup aj do food diary (a naopak),
+    alebo sa prístup ku každej appke povoľuje zvlášť?
+    -> aplikacie budu zapinatelne, vypinatelne, zatial ale vsetci maju pristup vsade
+
+
+D. JAZYK A ČAS
+---------------
+D1. Ktoré jazyky? [NÁVRH]: SK (default) + EN, voľba v profile, uložená per používateľ.
+    -> sk/cz/en
+
+D2. [NÁVRH]: časovú zónu uložiť ako "Europe/Bratislava" (CET/CEST vrátane letného času),
+    nie pevné CET. Od nej sa odvodzuje "dnes" a zákaz budúcich dátumov.
+    -> ano
+
+
+E. UX
+------
+E1. "Mazania záznamu omylom má byť sťažené" - týka sa to aj jednotlivého záznamu
+    (napr. "banan" v raňajkách), alebo len dňa?
+    [NÁVRH]: záznam = 1 potvrdenie + "Späť" 5 s; deň = 2 potvrdenia (2. je prepísanie dátumu).
+    -> nie, iba dna, jeden zanam zmaz lahko
+
+E2. Kalendár: čo má ukazovať bunka dňa?
+    [NÁVRH]: bodka = deň existuje; farba podľa stolica/vetry (zelená 1-3 / oranžová 4-6 / červená 7-10);
+    klik -> detail dňa. Na mobile mesačný pohľad + šípky. Treba aj zoznamový pohľad?
+    -> navrh dobry ano 
+
+E3. Detail dňa / zadávanie. [NÁVRH]: jedna obrazovka, sekcie podľa kategórií
+    (raňajky ... po večeri, lieky, doplnky, tlak, váha, stolica/vetry, spánok, šport, poznámky),
+    v každej sekcii input s autocomplete + Enter = pridať záznam. Bez ukladacieho tlačidla (autosave).
+    -> ano
+
+E4. Množstvo (v round 1 si žiadal návrh):
+    [NÁVRH]: záznam = množstvo (voliteľné číslo, aj 0.5) + jednotka (voliteľná: ks/l/g/ml) + text.
+      - Pri zadaní sa zo začiatku textu rozpozná "2 toasty", "2x jablko", "1/2 rohlika", ".5 l kofoly",
+        "0.7 l kompot" -> množstvo 2 / 2 / 0.5 / 0.5 l / 0.7 l + text.
+      - Zobrazenie: "2× toasty", "0,5 l kofola". Úprava: tlačidlá −/+ vedľa záznamu, ťuk na text = edit.
+      - Autocomplete a početnosť sa počítajú iba z textu ("toasty"), množstvo sa ignoruje.
+      - Číslo na konci textu ("slane oplatky 20", "20 mandli") aplikácia NEROZPOZNÁVA, to rieši LLM import.
+    -> tuk na edit , kde si moze vybrat znajcastejsich hodnot za dany zaznam
+
+E5. Tlak (pýtal si sa, či môže ísť pulz a čas do poznámky):
+    [NÁVRH]: nie do poznámky, ale ako voliteľné polia, lebo inak sa nedajú analyzovať:
+      systolický*, diastolický*, pulz (voliteľný), čas (voliteľný, predvolený je aktuálny pri zadaní dnešného dňa), poznámka.
+      Rýchle zadanie jedným inputom: "130/85", "130/85 72", "130/85 72 7:30".
+      Validácia: sys 60-260, dia 30-160, sys > dia (zachytí preklepy ako "145/02").
+    -> Rýchle zadanie jedným inputom: "130/85", "130/85 72", "130/85 72 7:30".
+
+E6. Váha: rozsah validácie? [NÁVRH]: 20-300 kg, 1 desatinné miesto, čas voliteľný.
+    -> ano
+
+E7. Šport: ostáva voľný text ("eBike 60 km")? Constitution spomínala intenzitu 1-5 ku každému záznamu.
+    [NÁVRH]: text + voliteľná intenzita 1-5, autocomplete aj pre šport (podľa početnosti).
+    -> ano
+
+E8. Lieky / doplnky - slovník:
+    a) Kto ho spravuje? [NÁVRH]: používateľ; pri prvom zadaní neznámeho lieku sa appka spýta "liek alebo doplnok?" a zapamätá si to.
+    b) "emanera , prestarium, emanera" - emanera 2x denne. [NÁVRH]: uložiť ako 1 záznam s množstvom 2.
+    c) Treba aj pre lieky autocomplete? (round 1: autocomplete len pre jedlo)
+    -> a
+
+E9. Pre ktoré polia platí autocomplete? Round 1 hovorí "len z jedla". Znamená to:
+    a) autocomplete existuje LEN v jedlových poliach (v liekoch a športe nie), alebo
+    b) návrhy v jedlových poliach sa berú len z jedál (nie z poznámok), ale aj iné polia majú vlastný autocomplete?
+    [NÁVRH]: b) - každá textová kategória ponúka návrhy len zo svojej skupiny (jedlo / lieky / šport).
+    Ponúkať jedlá zo všetkých 6 termínov spolu (raňajky ponúkne aj "pizza" z obeda)? [NÁVRH]: áno.
+    -> b
+
+E10. Diakritika: v round 1 "vyrieši import". Pri ručnom zadávaní ale niekto napíše "zemiaky"
+     a inokedy "zemiaky" s diakritikou. [NÁVRH]: autocomplete hľadá bez ohľadu na diakritiku
+     a veľkosť písmen (Postgres unaccent), uložený text sa nemení.
+    -> autocomplete hľadá bez ohľadu na diakritiku
+
+
+F. IMPORT (UC5, neskorší krok)
+--------------------------------
+F1. Má Ralph v tejto dávke implementovať UC5 (paste import + merge) ako posledné spec s najnižšou prioritou,
+    alebo UC5 úplne vynechať a dodať len dokument docs/import-mapping.md pre LLM import?
+    -> autocomplete hľadá bez ohľadu na diakritiku
+
+F2. Merge pri importe - "spýtaj sa, ktorý záznam má prioritu".
+    Väčšina polí sú teraz zoznamy (jedlo, lieky, tlak, ...). [NÁVRH]:
+      - zoznamy: zjednotenie, presná duplicita (rovnaký text po trim + bez rozdielu veľkosti písmen) sa preskočí, nie je to konflikt
+      - konflikt = len pri hodnotách s 1 hodnotou za deň (spánok, stolica/vetry) s rozdielnou hodnotou
+      - pri konflikte voľba: "ponechať existujúce" / "prepísať importom" + tlačidlo "použiť pre všetky"
+      - pred uložením náhľad zmien, uloženie ako 1 transakcia
+    -> ano
+
+F3. Prázdne dni v exporte (napr. 2026-09-21, 2026-01-02 - iba dátum): vytvoriť prázdny deň, alebo preskočiť?
+    -> preskocit
+
+
+G. MAPPING STARÝCH ROKOV (pre LLM import a pre parser)
+---------------------------------------------------------
+Zistil som 3 rôzne formáty hlavičiek. Mapovanie musí ísť podľa názvu stĺpca, nie podľa pozície
+(aj v 2026 sa medzi data_sample.txt a 2026.csv vymenilo poradie "pils" a "medical note").
+
+Formát A - 2022, 2023, 2024 (26 / 26 / 21 stĺpcov)
+  stĺpec              príklad                    [NÁVRH mapovania]                ? otázka
+  wlk                 1                          šport "chôdza"                    čo znamená? walk áno/nie?  : ANO
+  d                   10.5, 4.2                  vzdialenosť km k chôdzi?          :ANO
+  pos                 1                          šport "posilňovanie"?             :ANO
+  str                 1                          šport "strečing"?                 :ANO
+  (bez názvu, 6.)     8:30, 11:20                čas prvého jedla?                 vstávanie / prvé jedlo? uchovať?: cas prveho jedla , neuchovata
+  ranajky..vecera     text                       jedlo (5 termínov, bez "po večeri") 
+  (bez názvu, 12.)    (prázdne)                  ignorovať
+  end                 19:00, 23:30, "2200"       čas posledného jedla?             uchovať ako pole dňa? :nie
+  problemy s/v        "2,4"  "6,10"              stolica/vetry                    POZOR: oddeľovač je ČIARKA, nie "/"
+  w                   90.1                       váha
+  sweet               "zakusky", "--"            jedlo -> ktorý termín?            alebo samostatná kategória "sladkosti"? : nemam jasno , navrhni ako to riesit, ci dame priznak pri jedle sladkost, alebo to nechame na analyzu llm, je mozmne mergnut do poznamky? mozno by som urobil poznamku zlenina: ----    a sladkosti:  ----- 
+                      "probiio, lieky" (2022!)   -> lieky/doplnky                  2022 má v "sweet" lieky - posunutý stĺpec? : ano vypada to tak
+  kafe                0, 2, 3                    počet káv                         uchovať? ako jedlo "káva" s množstvom?
+  #REF! / #DIV/0! /   6                          ignorovať (chybný vzorec)         ok?
+    8.983050847
+  zelemina/ovocie     banan, redkovka            jedlo -> ktorý termín?            "desiata"? alebo kategória "ovocie/zelenina"?
+  clanky, videa       (prázdne)                  ignorovať
+  spokojnost          (prázdne)                  ignorovať                         ? ignoruj
+  poznamka            "zachod poobede"           poznámky
+  random              "vinea", "oplatky, 5 ..."  jedlo / poznámky?                 ? 
+
+Formát B - 2025 (17 stĺpcov)
+  wlk, d, pos, str    ako formát A
+  Ranajky..vecera     jedlo
+  (bez názvu, 11.-13.) "137/79", "140/80"        tlak (stĺpec nemá názov!)
+  problemy s/v        "5/3"                      stolica/vetry ("/")
+  w                   92.1                       váha
+  fat                 (prázdne)                  ignorovať?                        % tuku? uchovať? asi zatial do poznamky fat:
+  sport               (prázdne)                  šport
+
+Formát C - 2026 (aktuálny, ako v spec.txt)
+
+Ďalšie zistenia z dát - LLM import s nimi musí počítať:
+  - Počet riadkov na deň je 1 až 4, nie vždy 2 (2022: deň končí až pri ďalšom dátume).
+  - Bunky s novým riadkom vo vnútri (2022-12-24: "polievka hrachova, polievka hribikova\nlosos ...").
+    [NÁVRH]: nový riadok = oddeľovač ako čiarka.
+  - 2023: "7:10" v stĺpci stolica/vetry - pravdepodobne "7/10", ktoré Sheets prekonvertoval na čas.
+  - Ďalšie oddeľovače: "kacica, kura/ kendlik" ("/"), "dzigvaizy = slane cipsy" (alias), "Ryba - prazma".
+  - Tlak "145/02" (preklep), "139/102" (ok).
+  - 2025.csv obsahuje deň 2026-01-02 -> súbory sa prekrývajú, rovnaký deň môže prísť 2x.
+  - Medzery v dátumoch (2026-10-10 -> 2026-10-18) sú normálne, nie chyba.
+  - 2022 poznámka "s/v - rano, poobede 6,5" = viac hodnôt stolica/vetry za deň v poznámke.
+  - Duplicitný liek v bunke ("emanera, ..., emanera") = dávka, nie preklep.
+  - Rôzne zápisy množstva: "2x", "2 ", "1/2", ".5 l", "0.7 l", "20 mandli", "slane oplatky 20", "4x after eight".
+
+G1. Potvrď / oprav [NÁVRHY] v tabuľkách vyššie (najmä wlk, d, pos, str, čas začiatku/end, sweet, kafe,
+    zelenina/ovocie, random, fat).
+    ->done 
+
+G2. Majú sa v aplikácii objaviť nové polia, ktoré sú len v starých rokoch (čas prvého/posledného jedla,
+    počet káv, % tuku), alebo sa pri importe zložia do poznámky?
+    [NÁVRH]: čas prvého a posledného jedla ako voliteľné polia dňa (užitočné pre analýzu),
+    ostatné do poznámky.
+    ->zatial nie
+
+
+H. OSTATNÉ (v round 1 bez odpovede)
+-------------------------------------
+H1. Export pre analýzu (dáta sa analyzujú mimo appky): CSV / JSON / API endpoint? Patrí do MVP?
+    [NÁVRH]: GET /api/.../export?from=&to=&format=csv|json + tlačidlo v UI.
+    -> ano 
+
+H2. Nasadenie: rovnaký server/docker ako ADHD? HTTPS a zálohy rieši existujúca infraštruktúra?
+    -> ano
+
+H3. Zmazanie účtu používateľom (GDPR): v MVP? Zmaže iba food dáta, alebo celý zdieľaný účet?
+    -> cely ucet
+
+H4. spec 001-shared-account-sync-platform: presunúť do docs/reference/, aby ju Ralph neimplementoval? [NÁVRH]: áno
+    -> ano

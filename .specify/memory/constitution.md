@@ -1,264 +1,251 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 -> 1.1.0
-- Modified principles: None (content preserved; formatting/structure only)
-- Added sections: Rozsah projektu (explicit section heading), Vyvojove pravidla
-- Removed sections: None
-- Templates requiring updates:
-  - OK /home/martin/projects/ai/agent_try/.specify/templates/plan-template.md
-  - OK /home/martin/projects/ai/agent_try/.specify/templates/spec-template.md
-  - OK /home/martin/projects/ai/agent_try/.specify/templates/tasks-template.md
-  - OK /home/martin/projects/ai/agent_try/.specify/templates/commands/*.md (checked; no changes needed)
-- Follow-up TODOs: None
+- Version change: 1.1.0 -> 2.0.0 (MAJOR: constitution sa mení z jednej Android appky na monorepo s modulmi)
+- Modified: pôvodný obsah 1.1.0 (ADHD Android) presunutý bez zmeny do
+  .specify/memory/constitution-adhd-android.md a platí ako modul pre android_app/
+- Added sections: Kontext a režimy, Spoločné princípy, Modul Server + Web, Modul Food diary,
+  Ralph Wiggum workflow
+- Removed sections: none (nič z 1.1.0 sa nestratilo)
+- Impact on existing specs: ADHD specs 001-025 (podpriečinky specs/NNN-*) sa nemenia a Ralph loop ich NEspracúva
+- Follow-up TODOs: none
 -->
-# ADHD Tracker Constitution
+# AdhdKnight Constitution
 
-Toto je Android aplikacia na denne sledovanie behavioralnych elementov
-ovplyvnujucich ADHD stav. Aplikacia vypocitava "ADHD vektor" (behavioralny
-index 0-100) z denne zadanych aktivit, prisposobuje vahy jednotlivych
-elementov na zaklade korelacie s celkovym pocitom a upozornuje pouzivatela na
-zanedbane oblasti - bez farmakologickej podpory.
+Monorepo osobných zdravotných trackerov so **spoločným účtom**:
 
-Tieto principy su zavazne pre vsetky zmeny, specifikacie, plany aj tasky.
+- **ADHD tracker** — Android appka (`android_app/`) + výpočet indexu na serveri.
+- **Food diary** — denník stravy, liekov, pohybu a zdravotných problémov. Fáza 1 = web,
+  fáza 2 = Android appka nad rovnakým API. Zozbierané dáta sa analyzujú mimo aplikácie,
+  preto je hlavným cieľom **rýchle a jednoduché zadávanie a editácia záznamov**.
 
----
-
-## Core Principles
-
-### I. Architektura a kodova disciplina
-
-Aplikacia striktne dodrziava MVVM + Repository pattern. Kazda zmena MUST
-zachovavat tuto vrstvenu architekturu.
-
-- **Vrstvova separacia je povinna.** UI (Composables) nesmie priamo volat Room
-  DAO ani vykonavat vypoctovu logiku. Kazda vrstva komunikuje vyhradne cez svoju
-  susednu vrstvu: `Composable -> ViewModel -> Repository -> DAO`.
-- **ViewModel neobsahuje databazovu logiku.** ViewModel drzi
-  `StateFlow`/`LiveData` a vola metody Repository. Transformacie a vypocty patria
-  do domenovej vrstvy (use-case triedy alebo metody Repository).
-- **Repository je jediny pristupovy bod k datam.** Vsetky CRUD operacie a
-  vypocty indexov su za Repository interfejsom. ViewModel nikdy nevola DAO
-  priamo.
-- **Offline-first je zakladny predpoklad.** Aplikacia MUST fungovat
-  plnohodnotne bez sietoveho pripojenia. Server/sync je len volitelny doplnok
-  (stub v MVP).
-- **Kotlin + Compose su jedine povolene UI technologie.** Ziadny XML layout,
-  ziadny View system v novych obrazovkach.
-- **Room pre perzistenciu, WorkManager pre background tasky.** Notifikacna
-  logika bezi vyhradne cez WorkManager - nie cez Service ani AlarmManager
-  priamo.
-
-**Dovod:** ADHD tracker musi byt spolahlivy offline nastroj s predvidatelnou
-architekturou, ktoru moze AI agent rozsirit bez regresu inych vrstiev.
+Komponenty: `server/` (FastAPI, auth + API všetkých appiek), `web_app/` (Django web konzola,
+tenký klient nad API), `android_app/` (ADHD Android), `deploy/` (nginx, systemd, ansible).
 
 ---
 
-### II. Domenova logika indexu - NON-NEGOTIABLE
+## Kontext a režimy
 
-Vypoctova logika indexu a adaptacia vah su jadrom produktu. Akakolvek zmena
-MUST byt kryta unit testami.
+**Ralph Loop režim** (spustený cez `scripts/ralph-loop.sh`):
+- Pracuj **výhradne** na súboroch `specs/food-NNN-*.md` (pozri sekciu Ralph Wiggum workflow).
+- Implementuj, otestuj, commitni a pushni na branch `food-diary`.
+- `<promise>DONE</promise>` vypíš až keď je spec na 100 % hotová.
+- `<promise>ALL_DONE</promise>` vypíš, keď už žiadna `specs/food-*.md` nie je nedokončená.
 
-#### Vypocet denneho indexu
-```
-Index_d = 100 x Sum(w_i x e_i) / Sum(w_i)
-```
-- `e_i` = `value_effective` (0-1): ak `value_scale != null` ->
-  ``(value_scale - scale_min) / (scale_max  - scale_min); inak -> `value_binary`
-- `w_i` = aktualna vaha elementu (personalna ak existuje, inak default)
-- Vysledok sa uklada do `index_daily`
-
-#### Default vahy (suma = 100)
-| Element | Vaha |
-|---|---|
-| celkovy pocit | 13 |
-| spanok | 15 |
-| fyzicka aktivita | 11 |
-| stres v praci | 13 |
-| stres v osobnom zivote | 13 |
-| strava proteiny | 8 |
-| caj/kava | 6 |
-| alkohol | 10 |
-| mindfulness/relax | 11 |
-
-#### Adaptacia vah (1x tyzdenne, po 15 dnoch dat)
-```
-w_i_new = clamp(w_i_old x (1 + 0.2 x corr_i), 0.5xw_default, 2.0xw_default)
-```
-- `corr_i` = Pearsonova korelacia `e_i` vs `celkovy_pocit` za poslednych 15 dni
-- Ak pocet vyplneni < 5, `corr_i` sa ignoruje
-- Ak `|corr_i| < 0.1`, vaha sa nemeni
-- Po update: normalizovat vsetky vahy tak, aby `Sum(w) = Sum(w_default)`
-
-#### ASRS re-kalibracia (1x tyzdenne)
-- ASRS skore normalizovane na 0-100
-- Ak `|ASRS - priemer_indexu_14d| > 10` pri 2 po sebe iducich meraniach ->
-  re-kalibracia
-- Re-kalibracia: zvysit `alpha` na 0.3 na 1 cyklus, vahy elementov
-  korelujucich so zhrosenim ASRS sa zvysia
-
-**Dovod:** Algoritmus je vysledkom vyskumu a rozhodnuti timu. Zmena parametrov
-(alpha, clamp rozsah, prahova hodnota ASRS) vyzaduje explicitne zdovodnenie v PR.
+**Interaktívny režim** (bežná konverzácia): pomáhaj, navrhuj, píš specs. Nič neimplementuj bez požiadavky.
 
 ---
 
-### III. Datovy model - zachovaj schemu
+## Časť A — Spoločné princípy (záväzné pre celé repo)
 
-Room entity MUST zodpovedat nasledujucej scheme. Nova entita alebo stlpec
-vyzaduje migraciu.
+### A1. Izolácia používateľov — NON-NEGOTIABLE
+Každý dotaz na dáta je filtrovaný podľa prihláseného používateľa (`user_id` z JWT). Používateľ
+nikdy nevidí, nenájde (ani v autocomplete, exporte, štatistikách) a nezmení dáta iného
+používateľa. Prístup k cudziemu záznamu cez ID vracia **404** (nie 403, aby sa neprezradila existencia).
+Každý nový endpoint MUSÍ mať test izolácie (používateľ B nevidí/nezmení dáta A).
 
-| Entita | Klucove vazby |
-|---|---|
-| `EventDayEntity` | PK: `id`, unique index na `date` |
-| `EventValueEntity` | FK: `eventDayId`, index na `element_key` |
-| `SatisfactionEntity` | FK: `eventDayId` |
-| `WeightEntity` | `element_key`, `weight_default`, `weight_personal` |
-| `IndexDailyEntity` | FK: `eventDayId` |
-| `IndexWeeklyEntity` | `week_start`, `week_end` |
-| `NotificationLogEntity` | FK: `eventDayId` (nullable), `type`, `sent_at` |
-| `AsrsCheckinEntity` | `date`, `score_raw`, `score_normalized` |
+### A2. Spoločný účet a appky
+- Jedna tabuľka `users`, jeden auth (FastAPI `/api/v1/auth/*`, JWT HS256: access 15 min, refresh 30 dní).
+- Dáta appiek sa oddeľujú cez `app_id` (`adhd_tracker`, `food_diary`) alebo vlastné tabuľky s prefixom appky.
+- Všetci používatelia majú prístup ku všetkým appkám. Zapínanie a vypínanie appiek per používateľ
+  je **budúca požiadavka**: neimplementovať, ale nič nesmie brániť jej neskoršiemu pridaniu.
+- Nová appka = nový FastAPI router + vlastné tabuľky + nový Django app + položka v prepínači appiek.
+  Auth sa nemení.
 
-- `value_effective` sa MUST ukladat priamo v `EventValueEntity` pre vykon.
-- DB verzia zacina od `1`. MVP neobsahuje migracie, ale scaffolding MUST byt
-  pripraveny.
-- `element_key` pouziva snake_case anglicke nazvy: `sleep`, `physical_activity`,
-  `stress_work`, `stress_personal`, `nutrition_protein`, `caffeine`, `alcohol`,
-  `mindfulness`, `overall_feeling`.
+### A3. Testy sú backpressure
+- Žiadna spec nie je hotová bez zelených testov: `./scripts/test-food.sh` (od food-001) +
+  existujúce testy (`cd server && make test`, `cd web_app && .venv/bin/python manage.py test`).
+- Existujúce ADHD testy sa NESMÚ rozbiť ani vypnúť.
+- Testy sú deterministické, offline a bez reálnych externých služieb. Server testy bežia nad SQLite
+  in-memory, preto **žiadne Postgres-only funkcie** (unaccent, pg_trgm, JSONB operátory, ARRAY)
+  v doménovej logike. Kód musí fungovať na SQLite aj PostgreSQL.
+- E2E testy (Playwright) spúšťajú skutočný FastAPI + Django proti dočasnej SQLite DB.
 
----
+### A4. Bezpečnosť
+- Heslá: bcrypt (existujúci `auth_service`), min. 8 znakov na serveri aj v UI.
+- Tajomstvá iba v `.env` (nikdy v gite); `.env.example` aktualizovať pri každej novej premennej.
+- Zdravotné dáta sa nelogujú (ani text záznamov v request logoch na úrovni INFO).
+- Formuláre v Django majú CSRF. HTMX požiadavky posielajú CSRF token.
 
-### IV. UX a pouzivatelska skusenost
+### A5. Databáza a migrácie
+- Server: SQLAlchemy 2 async + Alembic. Každá zmena schémy = nová Alembic migrácia s funkčným
+  `upgrade` aj `downgrade`, kompatibilná so SQLite (batch mode) aj PostgreSQL.
+- Nové modely sa registrujú v `server/app/models/__init__.py` (inak ich nenájde Alembic ani testy).
+- Django web nemá doménové dáta, iba sessions.
 
-Aplikacia sluzi ludom s ADHD - nizke trenie, predvidatelne vzory, ziadny
-kognitivny overhead.
+### A6. Jazyk a štýl
+- Identifikátory, komentáre a commit správy po anglicky. Specs a dokumentácia môžu byť po slovensky.
+- UI texty cez i18n (pozri B4). Píš kód ako okolitý kód (rovnaké vzory, pomenovanie, hustota komentárov).
 
-- **Minimalne kliknutia na denny log.** Hlavna cesta: otvorit app -> vidiet
-  zoznam elementov -> prepnut 0/1 -> ulozit. Maximalne 2 obrazovky.
-- **Detail 1-5 je volitelny, nie default.** Binarne hodnoty su viditelne ako
-  primarny vstup. Skala 1-5 sa zobrazi len po rozbaleni alebo v detailnom
-  rezime.
-- **"Celkovy pocit" je vzdy povinny a vzdy skala 1-5.** Nesmie byt binarny ani
-  volitelny.
-- **Home obrazovka zobrazuje okamzitu hodnotu.** Denny index (0-100) a uroven
-  spokojnosti su viditelne bez scrolla ihned po otvoreni.
-- **Notifikacie su jemne, nie rusive.** Max 1 notifikacia za den. Tiche okno
-  22:00-08:00 MUST byt respektovane aj pri oneskorenom workerovi.
-- **Chybove stavy su pouzivatelsky priatelske.** Ziadne technicke stacktrace v
-  UI. Ak vypocet zlyha, zobrazit prazdny stav s CTA na vyplnenie trackera.
-- **Obrazovky MVP (v poradi priority):**
-  1. Home / Dnesny prehlad
-  2. Denny tracker (0/1 + detail 1-5)
-  3. Tyzdenny trend (line chart)
-  4. Advanced vektor (radar chart)
-  5. Notifikacie nastavenia
-  6. Nastavenia (detailny rezim, export, sync toggle)
+### A7. Závislosti
+Nová závislosť vyžaduje zdôvodnenie v commite. Schválené pre Food diary: `htmx` (statický súbor,
+bez CDN), `playwright` + `pytest-playwright` (iba dev/test), `babel` (iba dev, kompilácia .po bez gettextu).
+
+### A8. Git
+- Ralph pracuje iba na branch `food-diary` a pushuje iba ju. **Nikdy** nepushuje na `master` ani neprepisuje históriu (no force push).
+- Jeden commit = jedna logická zmena, správa po anglicky v imperatíve.
 
 ---
 
-### V. Notifikacie - bezpecnostne pravidla
+## Časť B — Modul Server (FastAPI) + Web (Django)
 
-Notifikacna logika je citliva na UX. Tieto pravidla su zavazne bez vynimky.
+### B1. Architektúra
+- **Všetka doménová logika je vo FastAPI** (validácia, parsovanie, merge, autocomplete, export).
+  Django iba zobrazuje a volá API. Android vo fáze 2 musí vedieť robiť všetko cez to isté API.
+- Vrstvy servera: `routers/` (HTTP) → `services/` (logika) → `models/` (SQLAlchemy). Router neobsahuje
+  doménovú logiku. Pydantic schémy v `schemas/`.
+- Food API: prefix `/api/v1/food`, tag `food`, súbory `routers/food*.py`, `services/food_*.py`,
+  `models/food.py`, `schemas/food.py`.
+- API-first: každý endpoint má Pydantic request/response model (je v OpenAPI `/openapi.json`)
+  s príkladom. Odpovede majú `schema_version: "1.0"`, ako existujúce endpointy.
 
-| Typ | Trigger | Max frekvencia |
-|---|---|---|
-| Denne pripomenutie | Den nie je vyplneny do 20:00 | 1x denne |
-| Zanedbana oblast | Element = 0 posledne 3 dni | 2x tyzdenne |
-| Stres-recovery | Stres >= 4 x 3 dni AND mindfulness = 0 | 1x za 3 dni |
+### B2. Pripravenosť na sync (Android fáza 2)
+Každá food entita má `id` (UUID string, môže ho poslať klient), `created_at`, `updated_at` (UTC)
+a `deleted_at` (soft delete). Mazanie cez API = nastavenie `deleted_at`. Bežné čítanie vracia iba
+nezmazané. Endpoint „zmeny od“ vracia aj zmazané (tombstones).
 
-- **Globalny limit: max 1 notifikacia za den.** Pred odoslanim vzdy overit
-  `notification_log` za dany den.
-- **Ak pouzivatel vypne notifikacie, WorkManager worker NESMIE byt spusteny.**
-  Ziadne background eventy.
-- **Notifikacie sa nesmu odosielat spatne** - ak worker s oneskorenim zisti, ze
-  podmienka platila vcera, notifikaciu nevysle.
+### B3. Web konzola (Django)
+- Jedna konzola `console.adhdknight.com`, food pod `/food/`, ADHD na súčasných URL.
+  Spoločný login, layout a prepínač appiek `ADHD | Food` v navigácii.
+- Session obsahuje `token`, `refresh_token` a `user_email`. Pri 401 z API klient raz zavolá
+  `/auth/refresh`, uloží nové tokeny a zopakuje request. Až keď zlyhá refresh, nasleduje odhlásenie
+  s `?expired=1`. Session cookie platí 30 dní.
+- Interaktivita: HTMX + minimum vanilla JS, bez build kroku a bez CDN (súbory vo `web_app/static/`).
+- Responzívny dizajn, **mobil je primárne zariadenie**: ovládacie prvky min. 44 px, bez horizontálneho
+  scrollu pri šírke 360 px.
+
+### B4. Jazyk a čas
+- UI jazyky: `sk` (default), `cs`, `en` (Django i18n, `gettext`). Voľba sa uloží v `users.language`
+  a po prihlásení sa prenesie do session. Prekladá sa food časť a spoločný layout (navigácia, login,
+  registrácia, účet). Ostatné ADHD stránky môžu ostať po slovensky.
+- Časová zóna: `users.timezone`, default `Europe/Bratislava` (CET/CEST). Zmenu cez UI zatiaľ neimplementovať.
+  „Dnes“ a zákaz budúcich dátumov sa počítajú v časovej zóne používateľa, **na serveri**.
+- Dátum dňa = `YYYY-MM-DD` string. Časy merania = lokálny čas `HH:MM` bez zóny.
+
+### B5. Účty
+- Registrácia **iba na pozvánku** (`REGISTRATION_MODE=invite`, default). Pozvánku vytvorí CLI
+  `server/scripts/create_invitation.py` a vypíše registračný link (SMTP neexistuje). Platnosť 7 dní,
+  jednorazová. `REGISTRATION_MODE=open` zachová staré správanie (pre dev).
+- Zmena hesla prihláseným používateľom (staré + nové heslo). Zabudnuté heslo rieši
+  `server/scripts/reset_user_password.py`. Emailový reset je budúca požiadavka.
+- Zmazanie účtu používateľom zmaže **celý zdieľaný účet vrátane ADHD dát** (cascade). Vyžaduje heslo
+  a výslovné potvrdenie, že sa zmažú dáta všetkých appiek.
 
 ---
 
-### VI. Testovanie - zavazne kategorie
+## Časť C — Modul ADHD Android
 
-Kazda zmena domenovej logiky MUST byt kryta testami.
-
-- **Unit testy (JVM):**
-  - Vypocet `value_effective` (binary vs scale)
-  - Vypocet denneho indexu `Index_d`
-  - Adaptacia vah (vratane clamp a normalizacie)
-  - Re-kalibracia ASRS (prahova podmienka)
-  - Notifikacna logika (deduplication, tiche okno)
-
-- **Integracne testy (Room in-memory DB):**
-  - CRUD pre vsetky entity
-  - Vypocet indexu z realnych DB dat
-
-- **Zakazane:** Realne sietove volania v testoch. Testy MUST byt deterministicke
-  a offline-spustitelne.
-
-- **Pokrytie domenovych tried je povinne.** Nova trieda vypoctovej logiky bez
-  testu blokuje merge.
+Pre `android_app/` platí bez zmeny `.specify/memory/constitution-adhd-android.md`.
+Food diary specs NESMÚ meniť `android_app/`.
 
 ---
 
-### VII. Technicky stack - povolene zavislosti (MVP)
+## Časť D — Modul Food diary (doména)
 
-Akakolvek nova zavislost vyzaduje zdovodnenie, preco existujuca nestaci.
+### D1. Deň
+- Jeden deň na používateľa a dátum (`food_days`, unique `user_id + date`). Budúce dátumy sú zakázané.
+- Vytvorenie existujúceho dňa → chyba „Deň už existuje“ (API 409 `day_exists`). Ak bol deň zmazaný
+  (soft delete), vytvorenie ho obnoví prázdny.
+- Deň sa vytvorí aj prázdny. Predvolený dátum je „dnes“.
+- Mazanie dňa: **2 potvrdenia** v UI (druhé = prepísanie dátumu dňa). Mazanie jednotlivého záznamu: jedno ťuknutie, bez potvrdenia.
 
-| Kategoria | Kniznica | Verzia |
-|---|---|---|
-| UI | Jetpack Compose BOM | 2024.06.00 |
-| UI | Material 3 | via BOM |
-| Navigation | Navigation Compose | 2.7.7 |
-| DI | - | bez DI frameworku v MVP |
-| DB | Room | 2.6.1 |
-| DB codegen | KSP | aktualna |
-| Async | Kotlinx Coroutines Android | 1.8.1 |
-| Background | WorkManager | 2.9.0 |
-| Lifecycle | ViewModel Compose | 2.8.2 |
-| Charts | Zatial nespecifikovana | TBD pred implementaciou UI |
+### D2. Kategórie záznamov (zoznamy, ľubovoľný počet záznamov)
+| Kód | UI (sk) | Skupina autocomplete | Poznámka |
+|---|---|---|---|
+| `breakfast` | Raňajky | food | |
+| `morning_snack` | Desiata | food | |
+| `lunch` | Obed | food | |
+| `afternoon_snack` | Olovrant | food | |
+| `dinner` | Večera | food | |
+| `after_dinner` | Po večeri | food | |
+| `unassigned` | Nezaradené / počas dňa | food | aj pre ručné zadávanie |
+| `medication` | Lieky | meds | |
+| `supplement` | Doplnky | meds | |
+| `sport` | Šport | sport | voliteľná intenzita 1–5 |
+| `note` | Poznámky | — (bez autocomplete) | symptómy + zdravotná poznámka + poznámka |
 
-- **Min SDK: 26, Target SDK: 34, Kotlin JVM target: 17.**
-- **KSP je povinne** pre Room - kapt je zakazane.
-- **Dependency Injection framework (Hilt, Koin) je mimo MVP scope.** Manual
-  injection cez Composable `remember` alebo Application-level singleton je
-  postacujuce.
+Záznam: `text` (povinný, trim, max. 200 znakov), voliteľné `quantity` (desatinné > 0) a `unit`
+(`ks`, `l`, `ml`, `g`, `kg`; žiadna jednotka = kusy), poradie `position`, `text_norm` (D5).
 
-## Rozsah projektu
+### D3. Hodnoty dňa (jedna hodnota za deň, všetky voliteľné)
+- `sleep_quality`: 1 = zlý, 2 = priemer, 3 = ok.
+- `stool`, `gas` (tráviace problémy stolica/vetry): 1–10, 1 = všetko OK, 10 = najhoršie.
 
-### MVP (v scope)
-- Denny tracker (9 elementov, binarny + volitelna skala 1-5)
-- Vypocet denneho a tyzdenneho indexu
-- Adaptacia vah (lokalne, po 15 dnoch)
-- ASRS re-kalibracia (weekly)
-- Notifikacie (3 typy)
-- Radar chart / line chart
-- Export dat (CSV/JSON)
-- Sync toggle (stub bez implementacie)
+### D4. Merania (viac za deň)
+- Váha: `kg` 20–300 (1 desatinné miesto), voliteľný čas `HH:MM` a poznámka.
+- Tlak: `systolic` 60–260, `diastolic` 30–160, `systolic > diastolic`, voliteľný `pulse` 30–220,
+  čas `HH:MM` a poznámka. Rýchly zápis jedným reťazcom: `130/85`, `130/85 72`, `130/85 72 7:30`
+  (parsovanie na serveri).
 
-### Post-MVP (mimo scope - nerealizovat bez explicitneho rozhodnutia)
-- Predikcia ADHD vektora (casove rady)
-- Body doubling agent
-- Integracie: Todoist, kalendar, pomodoro
-- Serverova logika vah (centralizovany vypocet)
-- Wearables / pasivne meranie
+### D5. Normalizácia a autocomplete
+- `text_norm` = text → trim → zlúčené medzery → malé písmená → bez diakritiky (Unicode NFKD,
+  odstránené kombinujúce znaky), vypočítané v Pythone pri každom uložení.
+- Autocomplete hľadá `text_norm` od začiatku textu alebo od začiatku ktoréhokoľvek slova, iba
+  v skupine kategórie (food / meds / sport), iba nezmazané záznamy prihláseného používateľa.
+  Zoraďuje podľa počtu výskytov (zostupne), pri zhode podľa posledného použitia. Zobrazí
+  najčastejší pôvodný tvar textu pre daný `text_norm`. Max. 10 návrhov.
+- Množstvo: ťuk na množstvo ponúkne najčastejšie množstvá (quantity + unit) použité pre daný
+  `text_norm` + ručné zadanie.
 
-**Ak feature patri do Post-MVP, nesmie ovplyvnit MVP architekturu** - maximalne
-pripravit stub interface s TODO komentarom.
+### D6. Parsovanie množstva pri zadaní (iba zo začiatku textu)
+`2 toasty` → 2 ks · `2x jablko` / `2× jablko` → 2 ks · `1/2 rohlika` → 0,5 ks · `.5 l kofoly` / `0,5 l kofoly` → 0,5 l ·
+`0.7 l kompot` → 0,7 l · `200 g ryža` / `200g ryža` → 200 g. Číslo kdekoľvek inde v texte (`slane oplatky 20`)
+ostáva súčasťou textu. Parser je čistá funkcia na serveri s unit testami.
 
-## Vyvojove pravidla
+### D7. Lieky a doplnky
+Slovník `liek / doplnok` patrí používateľovi (podľa `text_norm`). Pri zadaní položky, ktorá nie je
+v slovníku, sa UI spýta „liek alebo doplnok?“ a odpoveď uloží. Neskôr ju pozná a zaradí ju sama.
+Opakovaná položka v jednom vstupe (`emanera, prestarium, emanera`) = 1 záznam s množstvom 2.
 
-- **Principy I-VII su zavazne gates.** Pri konflikte medzi spec/planom a
-  constitution sa upravuje spec/plan - nie constitution.
-- **Kazdy task, ktory meni domenovu logiku** (index, vahy, ASRS), MUST obsahovat
-  odkaz na prislusny princip tejto constitution.
-- **Jazyk kodu:** Kotlin identifikatory a komentare v anglictine. UI texty,
-  dokumentacia a specs mozu byt v slovencine.
+### D8. Import (najnižšia priorita)
+Prvotný import histórie robí LLM mimo aplikácie podľa `docs/food/import-mapping.md`. Aplikácia
+NEOPRAVUJE preklepy. Import v appke: vložený text TSV alebo CSV, merge s náhľadom
+(pravidlá v spec food-011).
+
+### D9. Export
+CSV a JSON za zvolené obdobie, všetky kategórie a merania, iba vlastné dáta. Slúži na analýzu mimo appky.
+
+---
+
+## Ralph Wiggum workflow
+
+### Zdroj práce
+- Ralph spracúva **iba** súbory `specs/food-NNN-*.md` priamo v `specs/`.
+  Podpriečinky `specs/NNN-*/` (ADHD) a `specs/food-000-input/` sú len referencia: **nikdy ich neimplementuj ani nemeň.**
+- Vyber nedokončenú spec s najnižším číslom. Spec je dokončená, ak obsahuje riadok `## Status: COMPLETE`.
+- Pred začatím si prečítaj `history.md` a relevantné `history/*.md`.
+- Ak spec závisí od nedokončenej spec, najprv dokonči tú.
+
+### Postup jednej iterácie
+1. Prečítaj spec, súvisiaci kód a túto constitution.
+2. Implementuj všetky funkčné požiadavky.
+3. Napíš testy (unit / API / Django / e2e podľa spec) a spusti `./scripts/test-food.sh`, kým nie je zelený.
+4. Over každé acceptance kritérium a zaškrtni ho v spec (`- [x]`).
+5. Pridaj `## Status: COMPLETE` pod nadpis spec, pridaj 1 riadok do `history.md` a vytvor
+   `history/YYYY-MM-DD--food-NNN-nazov.md` (rozhodnutia, problémy, poučenia).
+6. Commitni a pushni na `food-diary`.
+7. Vypíš `<promise>DONE</promise>`.
+
+Ak nie si istý zadaním, vyber riešenie najbližšie tejto constitution, zapíš ho do sekcie
+`## Implementation notes` v spec a pokračuj. Nezastavuj sa kvôli otázkam.
+
+### NR_OF_TRIES
+Na konci spec udržuj `<!-- NR_OF_TRIES: N -->`, pri každom pokuse ho zvýš o 1. Od 10 je spec príliš
+veľká: rozdeľ ju na menšie `food-NNNa-*.md`, `food-NNNb-*.md` a do pôvodnej pridaj
+`## Status: COMPLETE (rozdelená na food-NNNa, food-NNNb)`.
+
+### Autonómia
+YOLO Mode: ENABLED
+Git Autonomy: ENABLED (iba branch `food-diary`)
+
+### Completion signal
+Všetky acceptance kritériá overené, všetky testy zelené, zmeny commitnuté a pushnuté →
+`<promise>DONE</promise>`. Nikdy skôr.
+
+---
 
 ## Governance
+- Pri konflikte spec vs. constitution sa upravuje spec. Zmena constitution vyžaduje zdôvodnenie,
+  dopad na specs a novú verziu podľa SemVer.
+- Ralph constitution NEMENÍ.
 
-- **Amendment proces MUST obsahovat:** pisomny navrh zmeny, zdovodnenie,
-  zhodnotenie dopadu na existujuce specs/plany/tasky, a aktualizaciu verzie
-  podla SemVer.
-- **Versioning politika:** MAJOR pre nekompatibilne zmeny principov, MINOR pre
-  nove alebo materialne rozsirene pravidla, PATCH pre upresnenia bez zmeny
-  intentu.
-- **Compliance review:** Kazdy spec, plan a tasks dokument MUST obsahovat
-  "Constitution Check" a prekazky MUSIA byt explicitne zdovodnene.
-
-**Version**: 1.1.0 | **Ratified**: 2026-06-26 | **Last Amended**: 2026-06-26
+**Version**: 2.0.0 | **Ratified**: 2026-06-26 | **Last Amended**: 2026-10-24

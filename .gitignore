@@ -36,3 +36,12 @@ Thumbs.db
 
 # python
 *.pyc
+
+# Ralph Wiggum loop (regenerated on every run)
+PROMPT_build.md
+PROMPT_plan.md
+logs/
+
+# Playwright
+test-results/
+playwright-report/

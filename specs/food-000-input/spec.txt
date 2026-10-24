@@ -1,0 +1,67 @@
+Cielom je urobit personalizovanu aplikaciu na trackovanie denej stravy , liekov, pohybu, a zdravotnych problemov .
+
+Aplikacia bude per uzovatel, takze bude mozne trackovat viac uivatelov , ale kazdy pod svojim accountom.
+
+Zatial uvazujem len o web aplikacii, ale v druhom kroku sa bude jednat aj android apku, ktora sa bude napajat na api web aplikacie.
+
+Zakladny usecase bude collectovanie informacii uzivatela ohladne stravy. Tieto data sa nasledne pouziju na analyzu ale mimo skopu aplikacie.
+
+Doraz by mal byt na jednudochost zadaania a editacie zaznamov
+
+usecase 1 
+	- prehlad zaznamov
+
+usecase 2
+	- pridaj den - prida sa novy zaznam , aj ked prazdny 
+
+use case 3 
+	- pridaj do dna jednotlive recordy , skus fulltext vyhladavanie v textoch, ktore u adal dany uzivatel, neprehaldavaj data inych uzivatlov
+
+use case 4
+	- edituj recor
+
+use case 4 
+	- zmaz den - po 3 otakych ci skutocne chce zmazat den velmi raritny case
+
+use case 5
+	- pridaj import dat z csv , moze sa jednet ao 1 alebo viac dni, niektore z nich uz mozu byt v database, bude nuthe urobit merge medzi recordmi , oznamit konflikty a navrhnut reisenie, ptipadne sa spytat uzivatela , bude sa jednat o textove pole, kam uzivatel pastne export z google docu
+
+--------------------------
+pohyb	  - kvalita pohybu , 1- ekvivalent 100 klikov
+spanok	  - kvalita spanku
+Ranajky	  - co bolo na ranajky
+desiata	  - co bolo na desiatu
+obed	  - co bolo na obed
+olovran   - co bolo na olovrant
+vecera	  - co bolo na veceru
+post vecera - co bolo po veceri
+oills	  - pills - lieky
+medical note - zdravotna poznamka
+presure	 - tlak - ten nedavaj fultextovo
+dig problemy (1-10) s/v	- traviace problem stolica/vetry
+symptoms 1  - symptomy problemov
+symptoms 2  - symptomy problemov
+w	    - vaha 
+sport 	    - sport v dany den , mergni z prvym sportom
+note        - vseobecna poznamka
+
+Momentalne trackujem data v google doce, ktor je exportovany do csv subory, sample.csv
+Kazdy den ma 2 riadky - prvy z datum a ten nasledujuci bez datumu este patri ku dnu.
+Pri importe sa snaz opravit preklepy v strave.
+Kazda bunka moze mat viac rekordov, zanammov  oddelenych ciarkou. Oddel ich a uloz separatne.
+
+Prvotny import do aplikacie bude urobeny pomocou llm, nie pomocou aplikacie.
+
+Import bude separatny krok potom co bude aplikcacia hotova.
+Data ti davam len preto aby si si overil compatibilitu z datami za jednotlive roky
+
+-------------------------
+Technicke riesenie
+databaza bude postgres
+
+prihalsovanie mas popisane vo foldri 001-shared-account-sync-platform/
+Tam je popisane aj technicke riesenie api, web aplikacia na serveri
+
+Pokial potrebujes dalsie informacie, alebo pristup na aplikaciu adhd tracker , daj mi vediet 
+
+V ramci navrhu aplikacie navrhni sposob ako zmergovat prihlasnie oboch aplikacii , pripadne ako onboardovat dalsie aplikacie.

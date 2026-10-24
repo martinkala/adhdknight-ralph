@@ -1,0 +1,37 @@
+UC1 Prehľad: Zoznam alebo kalendár : Kalendar
+UC2 Pridaj deň: Je predvolený dnešný dátum? Čo ak deň už existuje (chyba alebo otvoriť existujúci)? Povoliť budúce dátumy?: predvoleny dnesny datum , ak den existuje , nepridat vyposat hlasku  den existuje, uduce datumy nepovolovat.
+UC3 Fulltext: Našepkávac : poradit podla cetnosti , len z jedla
+UC4 je v spec dvakrát (edit aj delete). Mazanie jednotlivého záznamu v dni chýba úplne, hoci je zrejme potrebné - ano prodaj zmazanie zaznamu
+Zmaž deň po 3 otázkach" je UX antipattern. Návrh: jedno potvrdenie s prepísaním dátumu, alebo soft-delete s „Späť" / košom. : tak daj 2 otazky nie 3, mazania zaznamu omylom ma byt ztazene.
+UC5 Import vs. „Prvotný import bude cez LLM, nie cez aplikáciu": - neskorsi , atial neopravuj preklepy, to urobi az llm import, slo eln o to aby so tom vedel a poskytol informacie dolezite pre import ako je struktura,pripadne upozornil na potencialne problemy .
+Paste z Google Docs/Sheets: pri kopírovaní cez schránku je výsledok TSV (tabulátory), nie CSV. : ano TSV aj csv oba formaty
+ Definícia konfliktu pri merge: Rovnaký deň + rovnaké pole + iný text? Je duplicitný záznam konflikt, - spytaj sa ktory zanzma ma prioritu a ten zapis
+Registrácia: otvorená pre každého, alebo len pozvánky/admin? Reset hesla? - len pozvanky , ano eset hesla.
+Zdravotné dáta sú citlivé: HTTPS, zálohy, zmazanie účtu, izolácia používateľov ako testovaný požiadavok (existuje test, že používateľ A nevidí dáta B, ani v autocomplete). - ano pridaj test test , data musia byt striktne len pre jedneho uzovatela.
+Responzívny web: do príchodu Android appky sa bude zadávať z mobilu, a rýchle zadávanie je cieľ appky. - ano
+Jazyk UI (slovenčina), časová zóna, nasadenie : jazyk bude mozne zmenit, urob ho volitelny , casova zona default CET, uzivatel si ju bude moct zmenit ale az ako buduci requirement .
+API-first: OpenAPI kontrakt hneď, aby ho Android neskôr len použil.  - ano
+"kolac 2 perniky, " končí čiarkou (vznikne prázdny záznam). Hodnoty majú medzery navyše (chipsy ). Množstvo je súčasťou textu (3 nealko piva, 2 tioasty). : ked konci , tak dalsi zanam uz nebude, prazdne medzery vythod, navrhni ako mnozstvo jednoducho zobrazit a editovat, mozu byt oddelene
+reklepy: tioasty, sosvocpova, jalbkovy, parika. - vyriesi import
+Text je bez diakritiky. Vyhľadávanie musí ignorovať diakritiku (unaccent : vyriesi import
+ Spec hovorí „over kompatibilitu za jednotlivé roky", ale sample obsahuje iba 2026 - pridal som dalsie roky, tu je drobna komplikacia, je ina struktura, hlavicky, navrhni mapping
+│ Rozdeliť na dve kategórie? Pri importe podľa slovníka?           - ano - dobry napad
+ Je čas merania povinný? Môže byť viac meraní za deň?  - ano viac merani za den , ku kazdemu meraniu, moze byt poznamka, ale je to vynimocny case
+Presný formát: 130/85 (7:30)? S pulzom?  - Pulz je optional, dolezity je tlak, moze ist pulz a cas do poznamky ? 
+ Pevne 2 hodnoty (stolica/vetry)
+  │                     │  s/v                │ definuje používateľ"             │                                               │ definovaných problémov? Platí 1 = OK, 10 = najhoršie?    - ano 1 OK 10 najhorsie
+ Aký je rozsah? Je to číslo (1, 2, 3…) alebo škála?  - stlpc ma malo hodnot, ignoruj ho 
+Aká škála?   1 -zly , 2 - priemer, 3 ok
+ Čo je „prvý šport"? Mal starší export dva stĺpce šport? Patrí pohyb k: prvy sport som zrusil 2 riadky vyssie, nechaj iaba tento konkretny riadok
+Symptómy            │ symptoms 1,         │ jedno fulltextové pole           │ header symptoms 12 (preklep)                  │ Zlúčiť do jedného zoznamu?  - ano
+│ medical note / note │ 3 textové polia     │ —                                │ —                                             │ Aký je medzi nimi rozdiel?  : zluc do 1 zoznamu
+6. Navrhovaná štruktúra pre Ralph - ano rozdel podla tvojeho navrhu .
+Stack webu: FastAPI + šablóny/HTMX, FastAPI + React SPA, alebo Django (ako existujúca ADHD web app) - presne takto ako ADHD web
+Repo a server: Samostatné repo so zdieľanou DB a auth, alebo modul v ADHD repe - modul v adhd repe
+ Constitution: Môžem ju prepísať na web-first a Android presunúť do „fáza 2"? - ano prepis
+
+pridal som subory zo vzorkami dat za jednotlive roky 2022.csv  2023.csv  2024.csv  2025.csv  2026.csv
+
+
+
+
