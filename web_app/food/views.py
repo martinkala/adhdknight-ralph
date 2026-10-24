@@ -1,4 +1,5 @@
 from datetime import date as date_type
+from urllib.parse import quote
 
 from django.contrib import messages
 from django.http import Http404, HttpResponse, JsonResponse, QueryDict
@@ -49,6 +50,8 @@ _ERRORS = {
     "bp_range": gettext_lazy("Blood pressure is out of range (systolic 60–260, diastolic 30–160, pulse 30–220)."),
     "weight_range": gettext_lazy("Enter weight between 20 and 300 kg."),
     "time_format": gettext_lazy("Enter time as HH:MM."),
+    "invalid_kind": gettext_lazy("Choose medication or supplement."),
+    "dictionary_item_not_found": gettext_lazy("The item is not in the dictionary anymore."),
 }
 UNIT_CHOICES = ("ks", "l", "ml", "g", "kg")
 # Autocomplete group per entry category (constitution D2); notes have none.
@@ -60,6 +63,8 @@ SUGGESTION_GROUPS = {
     "sport": "sport",
 }
 SUGGESTIONS_LIMIT_MAX = 20
+MED_KINDS = ("medication", "supplement")
+MED_KIND_LABELS = (("medication", gettext_lazy("Medication")), ("supplement", gettext_lazy("Supplement")))
 
 
 def _error_message(code: str) -> str:
@@ -143,7 +148,11 @@ def day_view(request, day):
 
     sections = []
     for key in SECTION_ORDER:
-        if key in ENTRY_SECTION_LABELS:
+        if key in MED_KINDS:
+            # Medication and supplements share one input (food-007 FR-3), the lists stay separate.
+            if key == MED_KINDS[0]:
+                sections.append({"kind": "meds", "key": "meds", **_meds_context(detail)})
+        elif key in ENTRY_SECTION_LABELS:
             sections.append(_entry_section(detail, key))
         else:
             sections.append({"kind": key, "key": key})
@@ -306,6 +315,89 @@ def suggestions(request):
     result = api_client.call(request, "GET", "/suggestions",
                              params={"group": group, "q": request.GET.get("q", "")[:200], "limit": limit})
     return JsonResponse({"suggestions": result.get("suggestions", [])})
+
+
+# --- Medication and supplements (food-007) ---------------------------------------------------
+
+
+def _meds_context(detail: dict, classify_items=None, meds_text: str = "") -> dict:
+    return {"meds_sections": [_entry_section(detail, kind) for kind in MED_KINDS],
+            "classify_items": classify_items or [], "meds_text": meds_text}
+
+
+def _meds_partial(request, day: str, error: str | None = None, classify_items=None, meds_text: str = ""):
+    response = _partial(request, day, "food/_meds.html",
+                        lambda d: _meds_context(d, classify_items, meds_text), error)
+    if classify_items and "X-Food-Error" not in response:
+        # Keeps the typed text in the quick add field while the classification dialog is open.
+        response["X-Food-Keep-Input"] = "1"
+    return response
+
+
+@require_POST
+def add_meds(request, day):
+    """The common medication + supplement input. Unknown items come back from the API in
+    `needs_classification`; the partial then contains the "medication or supplement?" dialog."""
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    text = request.POST.get("text", "")
+    classify = {norm: kind for norm, kind in zip(request.POST.getlist("classify_norm"),
+                                                 request.POST.getlist("classify_kind")) if kind in MED_KINDS}
+    payload = {"text": text, "classify": classify} if classify else {"text": text}
+    result = api_client.call(request, "POST", f"/days/{day}/meds", json=payload)
+    if result.get("needs_classification"):
+        return _meds_partial(request, day, classify_items=result["needs_classification"], meds_text=text)
+    return _meds_partial(request, day, result.get("error"))
+
+
+def _put_med_kind(request, text_norm: str, kind: str) -> dict:
+    if kind not in MED_KINDS or not text_norm:
+        return {"error": "invalid_kind"}
+    return api_client.call(request, "PUT", f"/med-dictionary/{quote(text_norm, safe='')}", json={"kind": kind})
+
+
+@require_POST
+def move_med(request, day):
+    """Moves an entry (and every entry of its text) to the other section by changing the dictionary."""
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    result = _put_med_kind(request, request.POST.get("text_norm", ""), request.POST.get("kind", ""))
+    return _meds_partial(request, day, result.get("error"))
+
+
+def _render_dictionary(request, template: str, error: str | None = None, status: int = 200):
+    result = api_client.call(request, "GET", "/med-dictionary")
+    error = error or result.get("error")
+    context = {"items": result.get("items", []), "kinds": MED_KIND_LABELS, "error": error,
+               "error_message": _error_message(error) if error else None}
+    response = render(request, template, context, status=status)
+    if error:
+        response["X-Food-Error"] = error
+    return response
+
+
+def meds_dictionary(request):
+    if not _require_login(request):
+        return redirect("login")
+    return _render_dictionary(request, "food/meds_dictionary.html")
+
+
+@require_POST
+def meds_dictionary_kind(request):
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    result = _put_med_kind(request, request.POST.get("text_norm", ""), request.POST.get("kind", ""))
+    return _render_dictionary(request, "food/_meds_dictionary.html", result.get("error"))
+
+
+@require_POST
+def meds_dictionary_delete(request):
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    text_norm = request.POST.get("text_norm", "")
+    result = api_client.call(request, "DELETE", f"/med-dictionary/{quote(text_norm, safe='')}") if text_norm \
+        else {"error": "dictionary_item_not_found"}
+    return _render_dictionary(request, "food/_meds_dictionary.html", result.get("error"))
 
 
 def _measurements_partial(request, day: str, kind: str, error: str | None = None):

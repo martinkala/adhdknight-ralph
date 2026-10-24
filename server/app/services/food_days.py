@@ -2,7 +2,7 @@
 Every query is scoped to the given user (constitution A1)."""
 from datetime import datetime, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.food import FoodBloodPressure, FoodDay, FoodEntry, FoodWeight
@@ -25,6 +25,17 @@ class FoodDayError(Exception):
 class DayNotFound(FoodDayError):
     def __init__(self):
         super().__init__("day_not_found")
+
+
+async def next_position(db: AsyncSession, day_id: str, category: str) -> int:
+    """Position after the last not deleted entry of the category section of the day."""
+    result = await db.execute(
+        select(func.max(FoodEntry.position)).where(
+            FoodEntry.day_id == day_id, FoodEntry.category == category, FoodEntry.deleted_at.is_(None)
+        )
+    )
+    current = result.scalar_one_or_none()
+    return 0 if current is None else current + 1
 
 
 def today_str(user: User, now: datetime | None = None) -> str:

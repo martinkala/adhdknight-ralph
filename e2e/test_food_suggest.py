@@ -134,10 +134,10 @@ def test_keyboard_choice_and_escape(page, user_factory, api_server, console_erro
 def test_groups_and_inline_edit(page, user_factory, api_server, console_errors, failed_responses):
     _user_with_history(page, user_factory, api_server, HISTORY)
     _open_new_day(page, 1)
-    meds = page.get_by_test_id("add-medication")
+    meds = page.get_by_test_id("add-meds")
     meds.click()
     meds.press_sequentially("e")
-    expect(_suggestions(page, "medication")).to_have_text(["emanera"])
+    expect(_suggestions(page, "meds")).to_have_text(["emanera"])
     meds.press("Escape")
 
     field = page.get_by_test_id("add-lunch")

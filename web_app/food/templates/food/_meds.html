@@ -1,0 +1,33 @@
+{% load i18n %}
+<div id="meds-lists" class="meds-lists">
+    {% if error_message %}<p class="field-error" role="alert" data-testid="entry-error">{{ error_message }}</p>{% endif %}
+    {% for section in meds_sections %}
+    <div class="meds-sub" data-testid="section-{{ section.key }}">
+        <h4>{{ section.label }}</h4>
+        {% include "food/_entries.html" with error_message=None %}
+    </div>
+    {% endfor %}
+    {% if classify_items %}
+    <dialog class="food-dialog" data-classify-dialog data-testid="classify-dialog">
+        <form hx-post="{% url 'food:add_meds' day=day.date %}" hx-target="#meds-lists" hx-swap="outerHTML" data-classify-form>
+            <p class="classify-title">{% translate "Medication or supplement?" %}</p>
+            <input type="hidden" name="text" value="{{ meds_text }}">
+            {% for item in classify_items %}
+            <div class="classify-row" data-testid="classify-item">
+                <span class="classify-text">{{ item.text }}</span>
+                <input type="hidden" name="classify_norm" value="{{ item.text_norm }}">
+                <input type="hidden" name="classify_kind" value="" data-classify-kind>
+                <span class="kind-toggle">
+                    <button type="button" class="kind-btn" data-kind="medication" aria-pressed="false" data-testid="classify-medication">{% translate "Medication" %}</button>
+                    <button type="button" class="kind-btn" data-kind="supplement" aria-pressed="false" data-testid="classify-supplement">{% translate "Supplement" %}</button>
+                </span>
+            </div>
+            {% endfor %}
+            <div class="dialog-actions">
+                <button type="button" class="btn btn-secondary" data-classify-cancel data-testid="classify-cancel">{% translate "Cancel" %}</button>
+                <button type="submit" class="btn btn-primary" data-testid="classify-submit" disabled>{% translate "Save" %}</button>
+            </div>
+        </form>
+    </dialog>
+    {% endif %}
+</div>

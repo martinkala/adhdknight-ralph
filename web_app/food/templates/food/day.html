@@ -19,6 +19,8 @@
 {% for section in sections %}
 {% if section.kind == "entries" %}
 {% include "food/_entry_section.html" %}
+{% elif section.kind == "meds" %}
+{% include "food/_meds_section.html" with meds_sections=section.meds_sections classify_items=section.classify_items %}
 {% elif section.kind == "bp" %}
 <section class="card day-section" data-testid="section-bp">
     <h3>{% translate "Blood pressure" %}</h3>
@@ -74,4 +76,5 @@
 <script src="{% static 'js/food_day.js' %}"></script>
 <script src="{% static 'js/food_entries.js' %}"></script>
 <script src="{% static 'js/food_suggest.js' %}"></script>
+<script src="{% static 'js/food_meds.js' %}"></script>
 {% endblock %}

@@ -1,6 +1,7 @@
 """Pydantic schemas of the Food diary API (`/api/v1/food`)."""
 from datetime import date as date_type
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -27,6 +28,8 @@ class Entry(BaseModel):
     id: str
     category: str
     text: str
+    # Normalized text (constitution D5), the key of the medication dictionary.
+    text_norm: str
     quantity: float | None
     unit: str | None
     intensity: int | None
@@ -81,7 +84,7 @@ class DayDetail(BaseModel):
                 "entries": {
                     "breakfast": [{
                         "id": "5d1c2b3a-0000-4000-8000-000000000001", "category": "breakfast", "text": "toasty",
-                        "quantity": 2, "unit": None, "intensity": None, "position": 0,
+                        "text_norm": "toasty", "quantity": 2, "unit": None, "intensity": None, "position": 0,
                         "updated_at": "2026-10-24T07:30:00Z",
                     }],
                     "lunch": [],
@@ -161,10 +164,10 @@ class EntriesCreated(BaseModel):
                 "schema_version": "1.0",
                 "created": [
                     {"id": "5d1c2b3a-0000-4000-8000-000000000001", "category": "breakfast", "text": "toasty",
-                     "quantity": 2, "unit": None, "intensity": None, "position": 0,
+                     "text_norm": "toasty", "quantity": 2, "unit": None, "intensity": None, "position": 0,
                      "updated_at": "2026-10-24T07:30:00Z"},
                     {"id": "5d1c2b3a-0000-4000-8000-000000000002", "category": "breakfast", "text": "kafe",
-                     "quantity": None, "unit": None, "intensity": None, "position": 1,
+                     "text_norm": "kafe", "quantity": None, "unit": None, "intensity": None, "position": 1,
                      "updated_at": "2026-10-24T07:30:00Z"},
                 ],
             }
@@ -220,6 +223,90 @@ class Suggestions(BaseModel):
             "example": {
                 "schema_version": "1.0",
                 "suggestions": [{"text": "toasty", "count": 3}, {"text": "smažený tuniak", "count": 1}],
+            }
+        }
+    )
+
+
+# --- Medication dictionary and the common meds input (food-007) -------------------------------
+
+MedKind = Literal["medication", "supplement"]
+
+
+class MedDictionaryItem(BaseModel):
+    text_norm: str
+    display_text: str
+    kind: str
+    # Not deleted medication + supplement entries with this text_norm.
+    usage_count: int
+
+
+class MedDictionary(BaseModel):
+    schema_version: str = "1.0"
+    items: list[MedDictionaryItem]
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "schema_version": "1.0",
+                "items": [
+                    {"text_norm": "prestarium", "display_text": "Prestarium", "kind": "medication", "usage_count": 12},
+                    {"text_norm": "zn", "display_text": "zn", "kind": "supplement", "usage_count": 30},
+                ],
+            }
+        }
+    )
+
+
+class MedDictionaryItemResponse(MedDictionaryItem):
+    schema_version: str = "1.0"
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"schema_version": "1.0", "text_norm": "zn", "display_text": "zn", "kind": "supplement",
+                        "usage_count": 30}
+        }
+    )
+
+
+class MedDictionaryUpdate(BaseModel):
+    """A changed `kind` moves all existing entries of the text between Medication and Supplements."""
+
+    kind: MedKind
+    display_text: str | None = Field(default=None, max_length=TEXT_MAX_LENGTH)
+
+    model_config = ConfigDict(extra="forbid", json_schema_extra={"example": {"kind": "supplement"}})
+
+
+class MedsCreate(BaseModel):
+    """Medication and supplements in one input ("zn, mg, omega+fe, prestarium"). `classify` answers
+    the items returned in `needs_classification` (text_norm -> kind)."""
+
+    text: str = Field(max_length=2000)
+    classify: dict[str, MedKind] | None = None
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"example": {"text": "prestarium, zn", "classify": {"zn": "supplement"}}},
+    )
+
+
+class MedToClassify(BaseModel):
+    text: str
+    text_norm: str
+
+
+class MedsResult(BaseModel):
+    schema_version: str = "1.0"
+    created: list[Entry]
+    needs_classification: list[MedToClassify]
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "schema_version": "1.0",
+                "created": [],
+                "needs_classification": [{"text": "emanera", "text_norm": "emanera"}],
             }
         }
     )

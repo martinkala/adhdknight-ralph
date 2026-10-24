@@ -226,7 +226,7 @@ class FoodDeleteDayTests(TestCase):
 
 
 def _entry(text, quantity=None, unit=None, intensity=None, entry_id="e1", category="breakfast"):
-    return {"id": entry_id, "category": category, "text": text, "quantity": quantity, "unit": unit,
+    return {"id": entry_id, "category": category, "text": text, "text_norm": text.lower(), "quantity": quantity, "unit": unit,
             "intensity": intensity, "position": 0, "updated_at": "2026-10-20T08:00:00Z"}
 
 
@@ -250,7 +250,7 @@ class FoodEntriesTests(TestCase):
         fake, p = _patch_api({("GET", "/days/2026-10-20"): detail})
         with p:
             html = self.client.get("/food/day/2026-10-20/").content.decode()
-        for key in ("breakfast", "unassigned", "medication", "supplement", "sport", "note", "bp", "weight"):
+        for key in ("breakfast", "unassigned", "meds", "sport", "note", "bp", "weight"):
             self.assertIn(f'data-testid="add-{key}"', html)
         self.assertIn("2×", html)
         self.assertIn("0.5 l", html)
@@ -453,9 +453,155 @@ class FoodSuggestionsViewTests(TestCase):
         with p:
             html = self.client.get("/food/day/2026-10-20/").content.decode()
         self.assertIn('data-testid="add-breakfast"\n               data-suggest="food"', html)
-        self.assertIn('data-testid="add-medication"\n               data-suggest="meds"', html)
+        self.assertIn('data-testid="add-meds"\n               data-suggest="meds"', html)
         self.assertIn('data-testid="add-sport"\n               data-suggest="sport"', html)
-        self.assertEqual(html.count('data-suggest="'), 10 + 1)  # 10 add fields (no notes) + 1 edit field (no note edit)
+        # 9 add fields (no notes; medication + supplements share one) + 1 edit field (no note edit)
+        self.assertEqual(html.count('data-suggest="'), 9 + 1)
         self.assertIn("data-suggest-whole", html)
         self.assertIn('data-suggest-url="/food/suggestions/"', html)
         self.assertIn("js/food_suggest.js", html)
+
+
+class FoodMedsTests(TestCase):
+    """food-007: common medication + supplement input, classification dialog, move, dictionary page."""
+
+    def setUp(self):
+        _login_session(self.client)
+
+    def _detail(self):
+        return _detail_with(medication=[_entry("prestarium", category="medication", entry_id="m1")],
+                            supplement=[_entry("zn", category="supplement", entry_id="s1")])
+
+    def test_day_screen_has_one_meds_input_and_two_lists(self):
+        fake, p = _patch_api({("GET", "/days/2026-10-20"): self._detail()})
+        with p:
+            html = self.client.get("/food/day/2026-10-20/").content.decode()
+        self.assertIn('data-testid="add-meds"', html)
+        self.assertNotIn('data-testid="add-medication"', html)
+        self.assertNotIn('data-testid="add-supplement"', html)
+        self.assertIn('hx-post="/food/day/2026-10-20/meds/"', html)
+        positions = [html.index(f'data-testid="{t}"') for t in ("section-meds", "section-medication",
+                                                                   "section-supplement", "add-meds")]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn('data-testid="meds-dictionary-link"', html)
+        self.assertIn('href="/food/settings/meds/"', html)
+        self.assertEqual(html.count('data-testid="entry-move"'), 2)
+        self.assertIn('"text_norm": "zn", "kind": "medication"', html)
+        self.assertIn('"text_norm": "prestarium", "kind": "supplement"', html)
+        self.assertNotIn('data-testid="classify-dialog"', html)
+        self.assertIn("js/food_meds.js", html)
+
+    def test_add_meds_known_items(self):
+        fake, p = _patch_api({
+            ("POST", "/days/2026-10-20/meds"): {"created": [], "needs_classification": []},
+            ("GET", "/days/2026-10-20"): self._detail(),
+        })
+        with p:
+            response = self.client.post("/food/day/2026-10-20/meds/", {"text": "zn, prestarium"})
+        self.assertIn(("POST", "/days/2026-10-20/meds", {"text": "zn, prestarium"}), fake.calls)
+        self.assertNotIn("X-Food-Error", response)
+        self.assertNotIn("X-Food-Keep-Input", response)
+        html = response.content.decode()
+        self.assertIn('id="meds-lists"', html)
+        self.assertEqual(html.count('data-testid="entry"'), 2)
+        self.assertNotIn('data-testid="classify-dialog"', html)
+
+    def test_add_meds_unknown_items_show_dialog(self):
+        fake, p = _patch_api({
+            ("POST", "/days/2026-10-20/meds"): {"created": [], "needs_classification": [
+                {"text": "Emanera", "text_norm": "emanera"}, {"text": "zn", "text_norm": "zn"}]},
+            ("GET", "/days/2026-10-20"): self._detail(),
+        })
+        with p:
+            response = self.client.post("/food/day/2026-10-20/meds/", {"text": "Emanera, zn"})
+        self.assertEqual(response["X-Food-Keep-Input"], "1")
+        html = response.content.decode()
+        self.assertIn('data-testid="classify-dialog"', html)
+        self.assertEqual(html.count('data-testid="classify-item"'), 2)
+        self.assertEqual(html.count('data-testid="classify-medication"'), 2)
+        self.assertEqual(html.count('data-testid="classify-supplement"'), 2)
+        self.assertIn('name="text" value="Emanera, zn"', html)
+        self.assertIn('name="classify_norm" value="emanera"', html)
+
+    def test_add_meds_sends_classification(self):
+        fake, p = _patch_api({
+            ("POST", "/days/2026-10-20/meds"): {"created": [], "needs_classification": []},
+            ("GET", "/days/2026-10-20"): self._detail(),
+        })
+        with p:
+            self.client.post("/food/day/2026-10-20/meds/", {
+                "text": "Emanera, zn", "classify_norm": ["emanera", "zn", "x"],
+                "classify_kind": ["medication", "supplement", "bogus"]})
+        self.assertIn(("POST", "/days/2026-10-20/meds",
+                       {"text": "Emanera, zn", "classify": {"emanera": "medication", "zn": "supplement"}}), fake.calls)
+
+    def test_add_meds_error_keeps_text(self):
+        fake, p = _patch_api({
+            ("POST", "/days/2026-10-20/meds"): {"error": "empty_text", "status_code": 422},
+            ("GET", "/days/2026-10-20"): self._detail(),
+        })
+        with p:
+            response = self.client.post("/food/day/2026-10-20/meds/", {"text": " "})
+        self.assertEqual(response["X-Food-Error"], "empty_text")
+        self.assertEqual(response.content.decode().count('data-testid="entry-error"'), 1)
+
+    def test_move_changes_dictionary_kind(self):
+        fake, p = _patch_api({
+            ("PUT", "/med-dictionary/vitamin%20d%2Fk"): {"text_norm": "vitamin d/k", "kind": "medication"},
+            ("GET", "/days/2026-10-20"): self._detail(),
+        })
+        with p:
+            response = self.client.post("/food/day/2026-10-20/meds/move/",
+                                        {"text_norm": "vitamin d/k", "kind": "medication"})
+        self.assertIn(("PUT", "/med-dictionary/vitamin%20d%2Fk", {"kind": "medication"}), fake.calls)
+        self.assertNotIn("X-Food-Error", response)
+        self.assertIn('id="meds-lists"', response.content.decode())
+
+    def test_move_rejects_unknown_kind(self):
+        fake, p = _patch_api({("GET", "/days/2026-10-20"): self._detail()})
+        with p:
+            response = self.client.post("/food/day/2026-10-20/meds/move/", {"text_norm": "zn", "kind": "food"})
+        self.assertEqual(response["X-Food-Error"], "invalid_kind")
+        self.assertNotIn("PUT", [c[0] for c in fake.calls])
+
+    def test_dictionary_page(self):
+        items = [{"text_norm": "prestarium", "display_text": "Prestarium", "kind": "medication", "usage_count": 3},
+                 {"text_norm": "zn", "display_text": "zn", "kind": "supplement", "usage_count": 7}]
+        fake, p = _patch_api({("GET", "/med-dictionary"): {"items": items}})
+        with p:
+            html = self.client.get("/food/settings/meds/").content.decode()
+        self.assertIn('data-testid="meds-dictionary"', html)
+        self.assertEqual(html.count('data-testid="dict-item"'), 2)
+        self.assertIn("(7×)", html)
+        start = html.index('data-text-norm="zn"')
+        row = html[start:html.index("</li>", start)]
+        marker = row.index('data-testid="dict-kind-supplement"')
+        self.assertIn('aria-pressed="true"', row[row.rindex("<button", 0, marker):marker])
+        self.assertIn('data-testid="nav-food-meds"', html)
+
+    def test_dictionary_empty(self):
+        fake, p = _patch_api({("GET", "/med-dictionary"): {"items": []}})
+        with p:
+            html = self.client.get("/food/settings/meds/").content.decode()
+        self.assertIn('data-testid="dictionary-empty"', html)
+
+    def test_dictionary_kind_and_delete(self):
+        fake, p = _patch_api({
+            ("PUT", "/med-dictionary/zn"): {"text_norm": "zn", "kind": "medication"},
+            ("DELETE", "/med-dictionary/zn"): {},
+            ("GET", "/med-dictionary"): {"items": []},
+        })
+        with p:
+            response = self.client.post("/food/settings/meds/kind/", {"text_norm": "zn", "kind": "medication"})
+            self.assertNotIn("X-Food-Error", response)
+            response = self.client.post("/food/settings/meds/delete/", {"text_norm": "zn"})
+            self.assertNotIn("X-Food-Error", response)
+        self.assertIn(("PUT", "/med-dictionary/zn", {"kind": "medication"}), fake.calls)
+        self.assertIn(("DELETE", "/med-dictionary/zn", None), fake.calls)
+        self.assertIn('id="meds-dictionary"', response.content.decode())
+
+    def test_anonymous(self):
+        client = Client()
+        self.assertRedirects(client.get("/food/settings/meds/"), reverse("login"), fetch_redirect_response=False)
+        self.assertEqual(client.post("/food/day/2026-10-20/meds/", {"text": "zn"}).status_code, 401)
+        self.assertEqual(client.post("/food/settings/meds/kind/", {"text_norm": "zn"}).status_code, 401)

@@ -24,7 +24,9 @@
         var form = event.detail.elt;
         if (!form.matches || !form.matches('form[data-quick-add]') || !form._sent) return;
         var xhr = event.detail.xhr;
-        var failed = !event.detail.successful || (xhr && xhr.getResponseHeader('X-Food-Error'));
+        // X-Food-Keep-Input: saved nothing yet, a question follows (food-007 classification dialog).
+        var failed = !event.detail.successful ||
+            (xhr && (xhr.getResponseHeader('X-Food-Error') || xhr.getResponseHeader('X-Food-Keep-Input')));
         if (failed) {
             var list = fields(form);
             var untouched = list.every(function (field) { return field.value === ''; });

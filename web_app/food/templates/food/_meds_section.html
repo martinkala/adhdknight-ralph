@@ -1,0 +1,14 @@
+{% load i18n %}
+<section class="card day-section" data-testid="section-meds">
+    <div class="section-head">
+        <h3>{% translate "Medication and supplements" %}</h3>
+        <a class="section-link" href="{% url 'food:meds_dictionary' %}" data-testid="meds-dictionary-link">{% translate "Dictionary" %}</a>
+    </div>
+    {% include "food/_meds.html" %}
+    <form class="add-form" hx-post="{% url 'food:add_meds' day=day.date %}" hx-target="#meds-lists" hx-swap="outerHTML"
+          hx-sync="this:queue all" data-quick-add data-meds-form autocomplete="off">
+        <input type="text" name="text" maxlength="2000" enterkeyhint="enter" placeholder="{% translate 'Add…' %}"
+               aria-label="{% translate 'Medication and supplements' %}" data-testid="add-meds"
+               data-suggest="meds" data-suggest-url="{% url 'food:suggestions' %}">
+    </form>
+</section>

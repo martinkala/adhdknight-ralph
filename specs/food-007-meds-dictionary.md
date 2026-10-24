@@ -1,5 +1,7 @@
 # Specification: food-007 — Lieky a doplnky so slovníkom
 
+## Status: COMPLETE
+
 ## Feature: Jedno pole „Lieky a doplnky“, automatické zaradenie podľa slovníka používateľa
 
 ### Overview
@@ -24,9 +26,9 @@ spýta a odpoveď si zapamätá (constitution D7).
   položku do slovníka, ak tam ešte nie je.
 
 **Acceptance Criteria:**
-- [ ] API testy CRUD + presun existujúcich záznamov pri zmene `kind`
-- [ ] API test: POST entry do `supplement` „zn“ vytvorí slovníkovú položku `zn → supplement`
-- [ ] API testy izolácie (slovník A nevidí ani nemení B; rovnaký `text_norm` môže mať u A a B iný `kind`)
+- [x] API testy CRUD + presun existujúcich záznamov pri zmene `kind`
+- [x] API test: POST entry do `supplement` „zn“ vytvorí slovníkovú položku `zn → supplement`
+- [x] API testy izolácie (slovník A nevidí ani nemení B; rovnaký `text_norm` môže mať u A a B iný `kind`)
 
 ### FR-2: Spoločný vstup
 `POST /api/v1/food/days/{date}/meds` `{text, classify?: {<text_norm>: "medication"|"supplement"}}`:
@@ -38,11 +40,11 @@ spýta a odpoveď si zapamätá (constitution D7).
 4. Inak 201 `{schema_version, created: [Entry...], needs_classification: []}`.
 
 **Acceptance Criteria:**
-- [ ] API test: prázdny slovník, „prestarium, zn“ → `needs_classification` obsahuje obe, nič sa nevytvorilo
-- [ ] API test: druhý request s `classify` → 201, prestarium v `medication`, zn v `supplement`, slovník doplnený
-- [ ] API test: tretí request „zn, prestarium, emanera“ → pýta sa iba na emanera
-- [ ] API test: „omega+fe+D“ → 3 položky
-- [ ] API test: „emanera, prestarium, emanera“ (všetko známe) → emanera s množstvom 2
+- [x] API test: prázdny slovník, „prestarium, zn“ → `needs_classification` obsahuje obe, nič sa nevytvorilo
+- [x] API test: druhý request s `classify` → 201, prestarium v `medication`, zn v `supplement`, slovník doplnený
+- [x] API test: tretí request „zn, prestarium, emanera“ → pýta sa iba na emanera
+- [x] API test: „omega+fe+D“ → 3 položky
+- [x] API test: „emanera, prestarium, emanera“ (všetko známe) → emanera s množstvom 2
 
 ### FR-3: UI
 - Na obrazovke dňa nahradí samostatné polia Liekov a Doplnkov jedno pole „Lieky a doplnky“
@@ -56,9 +58,9 @@ spýta a odpoveď si zapamätá (constitution D7).
   Odkaz z obrazovky dňa (pri sekcii) a z food navigácie.
 
 **Acceptance Criteria:**
-- [ ] e2e: „prestarium, zn“ → dialóg → Liek / Doplnok → záznamy v správnych sekciách
-- [ ] e2e: druhý deň „zn, prestarium“ → bez dialógu, priamo uložené
-- [ ] e2e: na stránke slovníka zmena zn na Liek → zn sa v dňoch zobrazuje v sekcii Lieky
+- [x] e2e: „prestarium, zn“ → dialóg → Liek / Doplnok → záznamy v správnych sekciách
+- [x] e2e: druhý deň „zn, prestarium“ → bez dialógu, priamo uložené
+- [x] e2e: na stránke slovníka zmena zn na Liek → zn sa v dňoch zobrazuje v sekcii Lieky
 
 ---
 
@@ -76,14 +78,29 @@ spýta a odpoveď si zapamätá (constitution D7).
 ## Completion Signal
 
 ### Implementation Checklist
-- [ ] Dictionary API + presun pri zmene druhu
-- [ ] `/meds` endpoint s `needs_classification`
-- [ ] UI spoločného vstupu, dialóg, stránka slovníka
+- [x] Dictionary API + presun pri zmene druhu
+- [x] `/meds` endpoint s `needs_classification`
+- [x] UI spoločného vstupu, dialóg, stránka slovníka
 
 ### Testing Requirements
-- [ ] `./scripts/test-food.sh` → exit 0
+- [x] `./scripts/test-food.sh` → exit 0
 
 ### Iteration Instructions
 Ak niečo zlyhá: oprav, spusti testy znova, over kritériá, commitni a pushni. Až keď je všetko zelené: `<promise>DONE</promise>`.
 
-<!-- NR_OF_TRIES: 0 -->
+## Implementation notes
+- Slovník je soft delete (`deleted_at`); PUT zmazanú položku obnoví (unique `user_id + text_norm`).
+  `text_norm` v URL sa na serveri znova normalizuje (`PUT /med-dictionary/Prestárium` → `prestarium`), cesta je
+  `{text_norm:path}`, takže funguje aj `/` v texte (Django ho kóduje ako `%2F`).
+- PUT bez `display_text` pri novej položke použije `text_norm`; pri existujúcej ponechá pôvodný tvar.
+- `usage_count` = nezmazané záznamy v Liekoch + Doplnkoch (bez zmazaných dní).
+- Presun pri zmene `kind` dáva záznamy na koniec cieľovej sekcie daného dňa.
+- POST entry do `medication`/`supplement` pridá do slovníka iba chýbajúcu položku; existujúca si druh ponechá.
+- `/meds`: `classify` sa použije iba pre položky, ktoré v slovníku nie sú (známe položky sa riadia slovníkom).
+  Kľúče `classify` sa normalizujú.
+- `Entry` v API má navyše `text_norm` (kľúč slovníka pre akciu „presunúť“ na webe).
+- Web: jedna karta „Lieky a doplnky“ (`section-meds`) obsahuje podsekcie `section-medication` /
+  `section-supplement` a pole `add-meds`. Akcia presunu = tlačidlo `entry-move` (⇅). Dialóg má pre každú
+  položku Liek/Doplnok a Uložiť (`classify-submit`, aktívne až po výbere všetkých), Zrušiť (`classify-cancel`) alebo Esc.
+
+<!-- NR_OF_TRIES: 1 -->

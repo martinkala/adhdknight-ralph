@@ -30,6 +30,13 @@
                 {% for v in "12345" %}<option value="{{ v }}"{% if entry.intensity|stringformat:"d" == v %} selected{% endif %}>{{ v }}/5</option>{% endfor %}
             </select>
             {% endif %}
+            {% if section.key == "medication" or section.key == "supplement" %}
+            <button type="button" class="icon-btn" hx-post="{% url 'food:move_med' day=day.date %}"
+                    hx-vals='{"text_norm": "{{ entry.text_norm|escapejs }}", "kind": "{% if section.key == "medication" %}supplement{% else %}medication{% endif %}"}'
+                    hx-target="#meds-lists" hx-swap="outerHTML" data-testid="entry-move"
+                    aria-label="{% if section.key == "medication" %}{% translate 'Move to supplements' %}{% else %}{% translate 'Move to medication' %}{% endif %}"
+                    title="{% if section.key == "medication" %}{% translate 'Move to supplements' %}{% else %}{% translate 'Move to medication' %}{% endif %}">&#8645;</button>
+            {% endif %}
             <button type="button" class="icon-btn" hx-delete="{{ entry_url }}" hx-target="#entries-{{ section.key }}" hx-swap="outerHTML"
                     aria-label="{% translate 'Delete' %}" data-testid="entry-delete">&#10005;</button>
             <div id="qty-popover-{{ entry.id }}" class="qty-popover-slot"></div>

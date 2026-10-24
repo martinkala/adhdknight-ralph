@@ -1,0 +1,25 @@
+{% load i18n %}
+<div id="meds-dictionary" class="meds-dictionary" data-testid="meds-dictionary">
+    {% if error_message %}<p class="field-error" role="alert" data-testid="dictionary-error">{{ error_message }}</p>{% endif %}
+    {% if items %}
+    <ul class="entry-list">
+        {% for item in items %}
+        <li class="entry-row dict-row" data-testid="dict-item" data-text-norm="{{ item.text_norm }}">
+            <span class="entry-text" data-testid="dict-text">{{ item.display_text }} <small class="usage">({{ item.usage_count }}×)</small></span>
+            <span class="kind-toggle">
+                {% for kind, label in kinds %}
+                <button type="button" class="kind-btn" aria-pressed="{% if item.kind == kind %}true{% else %}false{% endif %}"
+                        hx-post="{% url 'food:meds_dictionary_kind' %}" hx-vals='{"text_norm": "{{ item.text_norm|escapejs }}", "kind": "{{ kind }}"}'
+                        hx-target="#meds-dictionary" hx-swap="outerHTML" data-testid="dict-kind-{{ kind }}">{{ label }}</button>
+                {% endfor %}
+            </span>
+            <button type="button" class="icon-btn" hx-post="{% url 'food:meds_dictionary_delete' %}"
+                    hx-vals='{"text_norm": "{{ item.text_norm|escapejs }}"}' hx-target="#meds-dictionary" hx-swap="outerHTML"
+                    aria-label="{% translate 'Delete' %}" data-testid="dict-delete">&#10005;</button>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty" data-testid="dictionary-empty">{% translate "The dictionary is empty. Items are added when you enter medication or supplements." %}</p>
+    {% endif %}
+</div>

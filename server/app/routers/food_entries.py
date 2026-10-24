@@ -29,7 +29,9 @@ from app.services.food_suggestions import SUGGESTIONS_LIMIT_DEFAULT, SUGGESTIONS
 
 router = APIRouter(prefix="/api/v1/food", tags=["food"])
 
-_ERROR_STATUS = {"id_exists": 409, "entry_not_found": 404, "measurement_not_found": 404}
+_ERROR_STATUS = {
+    "id_exists": 409, "entry_not_found": 404, "measurement_not_found": 404, "dictionary_item_not_found": 404,
+}
 _ENTRY_NOT_FOUND = {404: {"description": "`entry_not_found`"}}
 _MEASUREMENT_NOT_FOUND = {404: {"description": "`measurement_not_found`"}}
 

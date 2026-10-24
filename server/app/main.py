@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.routers import health, compute, auth, sync, migrate, user, config, monitoring, food_days, food_entries
+from app.routers import health, compute, auth, sync, migrate, user, config, monitoring, food_days, food_entries, food_meds
 from app.middleware.logging import RequestLoggingMiddleware
 from app.db.database import engine, Base
 from app.logging_config import configure_api_logging
@@ -35,7 +35,7 @@ app = FastAPI(
         {"name": "user", "description": "User profile and history for web client"},
         {"name": "config", "description": "Distributes the canonical entities.yaml per app_id, versioned"},
         {"name": "monitoring", "description": "Operator-facing synthetic check + integrity monitoring status"},
-        {"name": "food", "description": "Food diary: days, entries and measurements of the logged-in user"},
+        {"name": "food", "description": "Food diary: days, entries, measurements and the medication dictionary of the logged-in user"},
     ],
     lifespan=lifespan,
 )
@@ -65,3 +65,4 @@ app.include_router(config.router)
 app.include_router(monitoring.router)
 app.include_router(food_days.router)
 app.include_router(food_entries.router)
+app.include_router(food_meds.router)

@@ -1,0 +1,9 @@
+{% extends "food/base_food.html" %}
+{% load i18n %}
+{% block content %}
+<section class="card day-section">
+    <h2 class="food-title">{% translate "Medication and supplements" %}</h2>
+    <p class="hint">{% translate "Entering medication and supplements together uses this dictionary. Changing an item moves its entries in all days." %}</p>
+    {% include "food/_meds_dictionary.html" %}
+</section>
+{% endblock %}

@@ -8,8 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.food import FoodDay, FoodEntry
 from app.models.user import User
-from app.services.food_constants import ALL_CATEGORIES, CATEGORY_GROUP, SPORT_CATEGORIES, TEXT_MAX_LENGTH, UNITS
-from app.services.food_days import FoodDayError
+from app.services import food_med_dictionary as med_dictionary
+from app.services.food_constants import (
+    ALL_CATEGORIES, CATEGORY_GROUP, MEDS_CATEGORIES, SPORT_CATEGORIES, TEXT_MAX_LENGTH, UNITS,
+)
+from app.services.food_days import FoodDayError, next_position
 from app.services.food_quantity import ParsedItem, merge_duplicates, parse_item
 from app.services.food_text import clean_text, normalize, split_entries
 
@@ -79,16 +82,6 @@ def parse_input(category: str, text: str, quantity: float | None = None, unit: s
     return items
 
 
-async def _next_position(db: AsyncSession, day_id: str, category: str) -> int:
-    result = await db.execute(
-        select(func.max(FoodEntry.position)).where(
-            FoodEntry.day_id == day_id, FoodEntry.category == category, FoodEntry.deleted_at.is_(None)
-        )
-    )
-    current = result.scalar_one_or_none()
-    return 0 if current is None else current + 1
-
-
 async def add_entries(
     db: AsyncSession,
     day: FoodDay,
@@ -109,7 +102,26 @@ async def add_entries(
         if await db.get(FoodEntry, entry_id) is not None:
             raise FoodDayError("id_exists")
 
-    position = await _next_position(db, day.id, category)
+    entries = await _append(db, day, category, items, intensity, entry_id)
+    if category in MEDS_CATEGORIES:
+        for item in items:
+            await med_dictionary.stage(db, day.user_id, item.text, category)
+    await db.commit()
+    for entry in entries:
+        await db.refresh(entry)
+    return entries
+
+
+async def _append(
+    db: AsyncSession,
+    day: FoodDay,
+    category: str,
+    items: list[ParsedItem],
+    intensity: int | None = None,
+    entry_id: str | None = None,
+) -> list[FoodEntry]:
+    """Adds the items at the end of the category section of the day (not committed)."""
+    position = await next_position(db, day.id, category)
     entries = []
     for offset, item in enumerate(items):
         entry = FoodEntry(
@@ -127,10 +139,46 @@ async def add_entries(
             entry.id = entry_id
         db.add(entry)
         entries.append(entry)
+    return entries
+
+
+def parse_meds_input(text: str) -> list[ParsedItem]:
+    """Like parse_input, but a part with "+" ("omega+fe+D") is split into separate items too."""
+    parts = [piece for part in split_entries(text) for piece in (clean_text(p) for p in part.split("+")) if piece]
+    if not parts:
+        raise FoodDayError("empty_text")
+    items = merge_duplicates([parse_item(part) for part in parts])
+    for item in items:
+        _check_text(item.text)
+    return items
+
+
+async def add_meds(db: AsyncSession, day: FoodDay, text: str, classify: dict[str, str] | None = None) -> dict:
+    """The common medication + supplement input (food-007 FR-2). Items are sorted by the user's
+    dictionary; `classify` (text_norm -> kind) answers unknown items and is saved to the dictionary.
+    While any item is still unknown nothing is stored and the unknown items are returned."""
+    items = parse_meds_input(text)
+    answers = {normalize(key): med_dictionary.check_kind(kind) for key, kind in (classify or {}).items()}
+    norms = [normalize(item.text) for item in items]
+    known = await med_dictionary.kinds(db, day.user_id, set(norms))
+    unknown = [item for item, norm in zip(items, norms) if norm not in known and norm not in answers]
+    if unknown:
+        return {"created": [], "needs_classification": [{"text": i.text, "text_norm": normalize(i.text)} for i in unknown]}
+
+    by_kind: dict[str, list[ParsedItem]] = {kind: [] for kind in MEDS_CATEGORIES}
+    for item, norm in zip(items, norms):
+        kind = known.get(norm) or answers[norm]
+        by_kind[kind].append(item)
+        if norm not in known:
+            await med_dictionary.stage(db, day.user_id, item.text, kind)
+    entries = []
+    for kind, kind_items in by_kind.items():
+        if kind_items:
+            entries += await _append(db, day, kind, kind_items)
     await db.commit()
     for entry in entries:
         await db.refresh(entry)
-    return entries
+    return {"created": entries, "needs_classification": []}
 
 
 async def get_entry(db: AsyncSession, user: User, entry_id: str) -> FoodEntry:
@@ -154,7 +202,7 @@ async def update_entry(db: AsyncSession, entry: FoodEntry, changes: dict) -> Foo
             raise FoodDayError("unknown_category")
         _check_category(category)
         if category != entry.category:
-            entry.position = await _next_position(db, entry.day_id, category)
+            entry.position = await next_position(db, entry.day_id, category)
             entry.category = category
             if category not in SPORT_CATEGORIES:
                 entry.intensity = None
