@@ -1,5 +1,7 @@
 # Specification: food-002 — Účty: pozvánky, dlhá session, zmena hesla, zmazanie účtu, nastavenia
 
+## Status: COMPLETE
+
 ## Feature: Zmeny spoločného účtu potrebné pre Food diary
 
 ### Overview
@@ -25,10 +27,10 @@ dotknú aj ADHD konzoly (constitution A2, B3, B5).
 - `SESSION_COOKIE_AGE = 30 * 24 * 3600`, `SESSION_SAVE_EVERY_REQUEST = True`.
 
 **Acceptance Criteria:**
-- [ ] Django test (mock httpx): API vráti 401, refresh 200 → view vráti 200 a session má nové tokeny
-- [ ] Django test: API 401 a refresh 401 → redirect na `/login/?expired=1` a session je prázdna
-- [ ] Django test: po logine je v session `refresh_token`
-- [ ] `SESSION_COOKIE_AGE` je 30 dní
+- [x] Django test (mock httpx): API vráti 401, refresh 200 → view vráti 200 a session má nové tokeny
+- [x] Django test: API 401 a refresh 401 → redirect na `/login/?expired=1` a session je prázdna
+- [x] Django test: po logine je v session `refresh_token`
+- [x] `SESSION_COOKIE_AGE` je 30 dní
 
 ### FR-2: Pozvánky
 - Tabuľka `invitations`: `id` (UUID), `token_hash` (SHA-256 hex, unique), `note` (nullable, max. 200),
@@ -50,14 +52,14 @@ dotknú aj ADHD konzoly (constitution A2, B3, B5).
   Chyby `invite_invalid` / `invite_required` majú zrozumiteľnú hlášku.
 
 **Acceptance Criteria:**
-- [ ] API test: register bez tokenu v režime invite → 403 `invite_required`
-- [ ] API test: platný token → 201; ten istý token druhýkrát → 403 `invite_invalid`
-- [ ] API test: expirovaný token → 403 `invite_invalid`
-- [ ] API test: v režime open register bez tokenu → 201
-- [ ] Unit test CLI: vytvorí riadok s hashom (nie plain tokenom) a vypíše URL s tokenom
-- [ ] Migrácia: `alembic upgrade head` a `alembic downgrade -1` prejdú na SQLite
-- [ ] e2e: pozvánka (vytvorená priamo v teste cez CLI alebo DB) → registrácia cez UI → login funguje
-- [ ] e2e harness (food-001) beží v režime `invite`, `user_factory` vytvára používateľov cez pozvánku
+- [x] API test: register bez tokenu v režime invite → 403 `invite_required`
+- [x] API test: platný token → 201; ten istý token druhýkrát → 403 `invite_invalid`
+- [x] API test: expirovaný token → 403 `invite_invalid`
+- [x] API test: v režime open register bez tokenu → 201
+- [x] Unit test CLI: vytvorí riadok s hashom (nie plain tokenom) a vypíše URL s tokenom
+- [x] Migrácia: `alembic upgrade head` a `alembic downgrade -1` prejdú na SQLite
+- [x] e2e: pozvánka (vytvorená priamo v teste cez CLI alebo DB) → registrácia cez UI → login funguje
+- [x] e2e harness (food-001) beží v režime `invite`, `user_factory` vytvára používateľov cez pozvánku
 
 ### FR-3: Zmena hesla
 - `POST /api/v1/auth/change-password` (auth) `{old_password, new_password}` → 204;
@@ -65,8 +67,8 @@ dotknú aj ADHD konzoly (constitution A2, B3, B5).
 - Django stránka Účet: formulár zmeny hesla (`data-testid="change-password-form"`), úspech/chyba ako hláška.
 
 **Acceptance Criteria:**
-- [ ] API testy: 204, 400 `wrong_password`, 422; po zmene funguje login iba s novým heslom
-- [ ] Django test: formulár zavolá API a zobrazí úspech
+- [x] API testy: 204, 400 `wrong_password`, 422; po zmene funguje login iba s novým heslom
+- [x] Django test: formulár zavolá API a zobrazí úspech
 
 ### FR-4: Zmazanie účtu
 - `DELETE /api/v1/user/me` (auth) body `{password, confirm: "DELETE"}` → 204. Zlé heslo → 400
@@ -79,10 +81,10 @@ dotknú aj ADHD konzoly (constitution A2, B3, B5).
   ADHD aj Food**, pole heslo, checkbox potvrdenia. Po úspechu `session.flush()` a redirect na login s hláškou.
 
 **Acceptance Criteria:**
-- [ ] API test: používateľ s ADHD dátami (sync batch) → DELETE → v DB nie je user ani žiadny jeho riadok v ADHD tabuľkách
-- [ ] API test: dáta iného používateľa ostali nedotknuté
-- [ ] API test: zlé heslo → 400, bez `confirm` → 422
-- [ ] Django test: úspešné zmazanie vyprázdni session
+- [x] API test: používateľ s ADHD dátami (sync batch) → DELETE → v DB nie je user ani žiadny jeho riadok v ADHD tabuľkách
+- [x] API test: dáta iného používateľa ostali nedotknuté
+- [x] API test: zlé heslo → 400, bez `confirm` → 422
+- [x] Django test: úspešné zmazanie vyprázdni session
 
 ### FR-5: Nastavenia používateľa (jazyk, časová zóna)
 - Stĺpce `users.language` (`sk`|`cs`|`en`, default `sk`, NOT NULL, server_default) a `users.timezone`
@@ -92,8 +94,8 @@ dotknú aj ADHD konzoly (constitution A2, B3, B5).
 - Django po logine načíta settings a uloží `language` do session (použije food-010).
 
 **Acceptance Criteria:**
-- [ ] API testy GET/PATCH, 422 pre `de`
-- [ ] Existujúci používatelia po migrácii majú `sk` a `Europe/Bratislava`
+- [x] API testy GET/PATCH, 422 pre `de`
+- [x] Existujúci používatelia po migrácii majú `sk` a `Europe/Bratislava`
 
 ---
 
@@ -112,18 +114,34 @@ dotknú aj ADHD konzoly (constitution A2, B3, B5).
 ## Completion Signal
 
 ### Implementation Checklist
-- [ ] Refresh v session + 30-dňová session
-- [ ] Invitations: model, migrácia, CLI, register, Django register
-- [ ] Change password API + UI
-- [ ] Delete account API + UI
-- [ ] User settings API + migrácia
+- [x] Refresh v session + 30-dňová session
+- [x] Invitations: model, migrácia, CLI, register, Django register
+- [x] Change password API + UI
+- [x] Delete account API + UI
+- [x] User settings API + migrácia
 
 ### Testing Requirements
-- [ ] `./scripts/test-food.sh` → exit 0
-- [ ] Všetky existujúce ADHD testy zelené
-- [ ] OpenAPI obsahuje nové endpointy (rozšír `tests/api/test_openapi.py`)
+- [x] `./scripts/test-food.sh` → exit 0
+- [x] Všetky existujúce ADHD testy zelené
+- [x] OpenAPI obsahuje nové endpointy (rozšír `tests/api/test_openapi.py`)
 
 ### Iteration Instructions
 Ak niečo zlyhá: oprav, spusti testy znova, over kritériá, commitni a pushni. Až keď je všetko zelené: `<promise>DONE</promise>`.
 
-<!-- NR_OF_TRIES: 0 -->
+## Implementation notes
+- `call_with_refresh` raises `core.api_client.SessionExpired` after `session.flush()`; the middleware
+  `core.middleware.SessionExpiredMiddleware` turns it into the redirect to `login?expired=1`, so views
+  don't repeat the 401 handling. Food views use `food.api_client.call(request, method, path, ...)`.
+- If the refresh request cannot reach the server (`server_unavailable`), the session is kept and the
+  error is shown like any other server outage (no logout).
+- Account deletion also removes the user's monitoring rows (`user_data_volume_snapshots`,
+  `integrity_warnings`) and sets `invitations.used_by_user_id` to NULL, otherwise PostgreSQL FKs would fail.
+- After deletion the browser lands on `/login/?deleted=1` with a confirmation (`data-testid="account-deleted"`).
+- Web `/register/` always requires `?invite=` (Django does not know REGISTRATION_MODE). In `open` mode
+  any value works because the server ignores the token.
+- Migration test: `tests/unit/test_migrations.py` (upgrade to the previous head with the seeded monitoring
+  user → `upgrade head` → defaults `sk` / `Europe/Bratislava` → `downgrade -1` → `upgrade head`).
+- e2e `user_factory` inserts invitation rows directly into the API SQLite DB; the registration e2e test
+  creates its link with the real CLI.
+
+<!-- NR_OF_TRIES: 1 -->
