@@ -75,7 +75,7 @@ class FakeApi:
         self.calls = []
         self.params = []
 
-    def __call__(self, token, method, path, json=None, params=None):
+    def __call__(self, token, method, path, json=None, params=None, timeout=None):
         self.calls.append((method, path, json))
         self.params.append(params)
         return self.routes.get((method, path), {"error": "server_error", "status_code": 500})
@@ -427,7 +427,7 @@ class FoodSuggestionsViewTests(TestCase):
         from unittest.mock import patch
         calls = []
 
-        def fake(token, method, path, json=None, params=None):
+        def fake(token, method, path, json=None, params=None, timeout=None):
             calls.append((method, path, params))
             return api_result
 
@@ -775,3 +775,110 @@ class ExportTests(TestCase):
             response = self.client.get("/food/export/", {"format": "xml"})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(self.download_calls, [])
+
+
+def _import_preview(days=(), conflicts=(), needs=(), issues=(), unknown=(), skipped=()):
+    preview_days = []
+    for date, status in days:
+        preview_days.append({
+            "date": date, "status": status,
+            "add": {"entries": {"breakfast": [{"text": "toasty", "quantity": 2.0, "unit": None, "intensity": None}]},
+                    "unclassified_meds": [], "weights": [{"kg": 80.6, "measured_at": None, "note": None}],
+                    "blood_pressures": [], "values": {"gas": 3}},
+            "duplicates_skipped": 1,
+            "conflicts": [c for c in conflicts if c["date"] == date],
+        })
+    return {
+        "schema_version": "1.0", "format": "tsv", "days": preview_days, "needs_classification": list(needs),
+        "issues": list(issues), "skipped_empty_days": list(skipped), "unknown_columns": list(unknown),
+        "totals": {"new_days": 1, "merged_days": 0, "entries_added": 1, "measurements_added": 1, "values_filled": 1,
+                   "duplicates_skipped": 1, "conflicts": len(conflicts), "issues": len(issues),
+                   "skipped_empty_days": len(skipped)},
+    }
+
+
+CONFLICT = {"date": "2026-10-20", "field": "stool", "existing": 3, "incoming": 5}
+
+
+class FoodImportTests(TestCase):
+    def setUp(self):
+        _login_session(self.client)
+
+    def test_form_and_nav_link(self):
+        response = self.client.get("/food/import/")
+        self.assertContains(response, 'data-testid="import-input"')
+        self.assertContains(response, 'data-testid="nav-food-import"')
+        self.assertNotContains(response, 'data-testid="import-preview"')
+
+    def test_requires_login(self):
+        self.client.session.flush()
+        self.client.cookies.clear()
+        response = self.client.get("/food/import/")
+        self.assertEqual(response.status_code, 302)
+
+    def test_preview_shows_days_issues_and_keeps_text(self):
+        preview = _import_preview(
+            days=[("2026-10-20", "new")],
+            issues=[{"date": "2026-10-20", "column": "presure", "value": "145/02", "code": "bp_range"}],
+            unknown=["kalorie"], skipped=["2026-09-21"],
+        )
+        fake, p = _patch_api({("POST", "/import/preview"): preview})
+        with p:
+            response = self.client.post("/food/import/", {"raw_text": "a\tb", "format": "tsv", "action": "preview"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(fake.calls, [("POST", "/import/preview", {"raw_text": "a\tb", "format": "tsv"})])
+        html = response.content.decode()
+        self.assertIn('data-testid="import-preview"', html)
+        self.assertIn('data-date="2026-10-20" data-status="new"', html)
+        self.assertIn("Tlak mimo rozsahu", html)
+        self.assertIn("145/02", html)
+        self.assertIn("kalorie", html)
+        self.assertIn(">a\tb</textarea>", html)
+        self.assertIn('<span class="qty">2×</span>', html)
+        self.assertNotIn('data-import-commit disabled', html)
+
+    def test_conflicts_and_classification_disable_import(self):
+        preview = _import_preview(days=[("2026-10-20", "merge")], conflicts=[CONFLICT],
+                                  needs=[{"text": "zn", "text_norm": "zn"}])
+        fake, p = _patch_api({("POST", "/import/preview"): preview})
+        with p:
+            html = self.client.post("/food/import/", {"raw_text": "x", "action": "preview"}).content.decode()
+        self.assertIn('data-testid="import-conflict"', html)
+        self.assertIn("Ponechať existujúce (3)", html)
+        self.assertIn("Prepísať importom (5)", html)
+        self.assertIn('data-testid="classify-item"', html)
+        self.assertIn('data-import-commit disabled', html)
+
+    def test_commit_sends_resolutions_and_classification(self):
+        result = {"schema_version": "1.0", "dates": ["2026-09-30", "2026-10-20"],
+                  "totals": _import_preview()["totals"]}
+        fake, p = _patch_api({("POST", "/import/commit"): result})
+        with p:
+            response = self.client.post("/food/import/", {
+                "raw_text": "x", "format": "auto", "action": "commit",
+                "conflict": ["2026-10-20|stool", "2026-10-20|gas", "bad|stool"], "choice": ["import", "", "keep"],
+                "classify_norm": ["zn", "fe"], "classify_kind": ["supplement", ""],
+            })
+        self.assertEqual(fake.calls, [("POST", "/import/commit", {
+            "raw_text": "x", "format": "auto", "classify": {"zn": "supplement"},
+            "resolutions": [{"date": "2026-10-20", "field": "stool", "choice": "import"}],
+        })])
+        self.assertContains(response, 'data-testid="import-result"')
+        self.assertContains(response, "/food/?month=2026-10")
+
+    def test_unresolved_commit_shows_preview_again(self):
+        preview = _import_preview(days=[("2026-10-20", "merge")], conflicts=[CONFLICT])
+        fake, p = _patch_api({("POST", "/import/commit"): {"error": "unresolved", "status_code": 409},
+                              ("POST", "/import/preview"): preview})
+        with p:
+            response = self.client.post("/food/import/", {"raw_text": "x", "action": "commit"})
+        self.assertEqual(response.status_code, 409)
+        self.assertContains(response, 'data-testid="import-error"', status_code=409)
+        self.assertContains(response, 'data-testid="import-conflict"', status_code=409)
+
+    def test_legacy_format_error(self):
+        fake, p = _patch_api({("POST", "/import/preview"): {"error": "unsupported_format_legacy", "status_code": 422}})
+        with p:
+            response = self.client.post("/food/import/", {"raw_text": "\twlk", "action": "preview"})
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, "docs/food/import-mapping.md", status_code=400)

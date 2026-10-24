@@ -1,0 +1,116 @@
+{% extends "food/base_food.html" %}
+{% load i18n static food_format %}
+{% block content %}
+<section class="card day-section">
+    <h2 class="food-title">{% translate "Import" %}</h2>
+    {% if result %}
+    <div class="import-result" data-testid="import-result">
+        <p class="alert alert-success">{% translate "Import finished." %}</p>
+        <ul class="import-totals">
+            <li>{% translate "New days" %}: <strong>{{ result.totals.new_days }}</strong></li>
+            <li>{% translate "Completed days" %}: <strong>{{ result.totals.merged_days }}</strong></li>
+            <li>{% translate "Added entries" %}: <strong data-testid="import-entries-added">{{ result.totals.entries_added }}</strong></li>
+            <li>{% translate "Added measurements" %}: <strong>{{ result.totals.measurements_added }}</strong></li>
+            <li>{% translate "Skipped duplicates" %}: <strong>{{ result.totals.duplicates_skipped }}</strong></li>
+        </ul>
+        {% if calendar_month %}<a class="btn btn-primary" href="{% url 'food:home' %}?month={{ calendar_month }}" data-testid="import-calendar-link">{% translate "Open the calendar" %}</a>{% endif %}
+        <a class="btn btn-secondary" href="{% url 'food:import' %}">{% translate "Import more" %}</a>
+    </div>
+    {% else %}
+    <p class="hint">{% translate "Paste rows copied from your diary sheet (with the header row) or an exported JSON. Nothing is saved before you confirm the preview. Typos are not corrected." %}</p>
+    {% if error_message %}<div class="alert alert-error" role="alert" data-testid="import-error">{{ error_message }}</div>{% endif %}
+    <form method="post" action="{% url 'food:import' %}" class="import-form" data-import-form>
+        {% csrf_token %}
+        <textarea name="raw_text" rows="8" class="import-input" spellcheck="false" data-testid="import-input" aria-label="{% translate 'Pasted text' %}">{{ raw_text }}</textarea>
+        <label class="import-format">{% translate "Format" %}
+            <select name="format" data-testid="import-format">
+                {% for value, label in formats %}<option value="{{ value }}"{% if value == format %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+        </label>
+        <button type="submit" name="action" value="preview" class="btn btn-secondary btn-big" data-testid="import-preview-submit">{% translate "Preview" %}</button>
+
+        {% if preview %}
+        <div class="import-preview" data-testid="import-preview">
+            <h3 class="food-subtitle">{% translate "Preview" %}</h3>
+            <ul class="import-totals" data-testid="import-totals">
+                <li>{% translate "New days" %}: <strong data-testid="total-new-days">{{ preview.totals.new_days }}</strong></li>
+                <li>{% translate "Completed days" %}: <strong data-testid="total-merged-days">{{ preview.totals.merged_days }}</strong></li>
+                <li>{% translate "Added entries" %}: <strong data-testid="total-entries-added">{{ preview.totals.entries_added }}</strong></li>
+                <li>{% translate "Added measurements" %}: <strong>{{ preview.totals.measurements_added }}</strong></li>
+                <li>{% translate "Skipped duplicates" %}: <strong data-testid="total-duplicates">{{ preview.totals.duplicates_skipped }}</strong></li>
+                <li>{% translate "Conflicts" %}: <strong data-testid="total-conflicts">{{ preview.totals.conflicts }}</strong></li>
+                <li>{% translate "Problems" %}: <strong>{{ preview.totals.issues }}</strong></li>
+            </ul>
+
+            {% if conflicts %}
+            <h4 class="import-heading">{% translate "Conflicts" %}</h4>
+            {% for c in conflicts %}
+            <div class="choice-row" data-choice-row data-testid="import-conflict">
+                <span class="classify-text">{{ c.date_value|food_date }} · {{ c.label }}</span>
+                <input type="hidden" name="conflict" value="{{ c.date }}|{{ c.field }}">
+                <input type="hidden" name="choice" value="{{ c.choice }}" data-choice-input>
+                <span class="kind-toggle">
+                    <button type="button" class="kind-btn" data-choice="keep" aria-pressed="{% if c.choice == 'keep' %}true{% else %}false{% endif %}" data-testid="conflict-keep">{% blocktranslate with value=c.existing %}Keep existing ({{ value }}){% endblocktranslate %}</button>
+                    <button type="button" class="kind-btn" data-choice="import" aria-pressed="{% if c.choice == 'import' %}true{% else %}false{% endif %}" data-testid="conflict-import">{% blocktranslate with value=c.incoming %}Overwrite with import ({{ value }}){% endblocktranslate %}</button>
+                </span>
+            </div>
+            {% endfor %}
+            {% if conflicts|length > 1 %}<button type="button" class="btn btn-secondary" data-apply-all disabled data-testid="apply-to-all">{% translate "Use for all" %}</button>{% endif %}
+            {% endif %}
+
+            {% if classify_items %}
+            <h4 class="import-heading">{% translate "Medication or supplement?" %}</h4>
+            {% for item in classify_items %}
+            <div class="choice-row" data-choice-row data-testid="classify-item">
+                <span class="classify-text">{{ item.text }}</span>
+                <input type="hidden" name="classify_norm" value="{{ item.text_norm }}">
+                <input type="hidden" name="classify_kind" value="{{ item.kind }}" data-choice-input>
+                <span class="kind-toggle">
+                    {% for value, label in kinds %}
+                    <button type="button" class="kind-btn" data-choice="{{ value }}" aria-pressed="{% if item.kind == value %}true{% else %}false{% endif %}" data-testid="classify-{{ value }}">{{ label }}</button>
+                    {% endfor %}
+                </span>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <h4 class="import-heading">{% translate "Days" %}</h4>
+            {% if not days %}<p class="empty" data-testid="import-no-days">{% translate "Nothing to import." %}</p>{% endif %}
+            {% for day in days %}
+            <details class="import-day" data-testid="import-day" data-date="{{ day.date }}" data-status="{{ day.status }}">
+                <summary>
+                    <strong>{{ day.date_value|food_date }}</strong>
+                    {% if day.status == "new" %}{% translate "new day" %}{% else %}{% translate "completes an existing day" %}{% endif %}
+                    · {% translate "Entries" %}: {{ day.entry_count }}
+                    {% if day.duplicates_skipped %}· {% translate "Skipped duplicates" %}: {{ day.duplicates_skipped }}{% endif %}
+                </summary>
+                {% for section in day.sections %}
+                <p class="import-section"><span class="import-label">{{ section.label }}:</span>
+                    {% for item in section.items %}{{ item.text }}{% if item.quantity is not None %} <span class="qty">{{ item|qty }}</span>{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </p>
+                {% endfor %}
+                {% for label, value in day.values %}<p class="import-section"><span class="import-label">{{ label }}:</span> {{ value }}</p>{% endfor %}
+                {% for w in day.add.weights %}<p class="import-section"><span class="import-label">{% translate "Weight" %}:</span> {{ w.kg|number }} kg</p>{% endfor %}
+                {% for bp in day.add.blood_pressures %}<p class="import-section"><span class="import-label">{% translate "Blood pressure" %}:</span> {{ bp.systolic }}/{{ bp.diastolic }}{% if bp.pulse %} {{ bp.pulse }}{% endif %}{% if bp.measured_at %} {{ bp.measured_at }}{% endif %}</p>{% endfor %}
+            </details>
+            {% endfor %}
+
+            {% if issues or preview.unknown_columns or preview.skipped_empty_days %}
+            <h4 class="import-heading">{% translate "Problems" %}</h4>
+            <ul class="import-issues" data-testid="import-issues">
+                {% for issue in issues %}
+                <li data-testid="import-issue" data-code="{{ issue.code }}">{% if issue.date_value %}{{ issue.date_value|food_date }} · {% endif %}{% if issue.column %}{{ issue.column }} · {% endif %}{{ issue.message }}{% if issue.value %}: <code>{{ issue.value }}</code>{% endif %}</li>
+                {% endfor %}
+                {% if preview.unknown_columns %}<li data-testid="import-unknown-columns">{% translate "Ignored unknown columns" %}: {{ preview.unknown_columns|join:", " }}</li>{% endif %}
+                {% if preview.skipped_empty_days %}<li>{% translate "Skipped empty days" %}: {{ preview.skipped_empty_days|length }}</li>{% endif %}
+            </ul>
+            {% endif %}
+
+            <button type="submit" name="action" value="commit" class="btn btn-primary btn-big" data-import-commit{% if not ready or not days %} disabled{% endif %} data-testid="import-submit">{% translate "Import" %}</button>
+        </div>
+        {% endif %}
+    </form>
+    {% endif %}
+</section>
+<script src="{% static 'js/food_import.js' %}"></script>
+{% endblock %}

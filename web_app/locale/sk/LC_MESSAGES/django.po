@@ -615,3 +615,183 @@ msgstr "Deň nebol zmazaný: dátum sa nezhoduje."
 msgid "The day was deleted."
 msgstr "Deň bol zmazaný."
 
+
+#: food/views.py food/templates/food/import.html
+msgid "Import"
+msgstr "Import"
+
+#: food/views.py food/templates/food/import.html
+msgid "Automatic"
+msgstr "Automaticky"
+
+#: food/views.py food/templates/food/import.html
+msgid "Paste the rows of your diary sheet or an exported JSON."
+msgstr "Vložte riadky z tabuľky denníka alebo exportovaný JSON."
+
+#: food/views.py food/templates/food/import.html
+msgid "The JSON is not a food diary export."
+msgstr "JSON nie je export denníka stravy."
+
+#: food/views.py food/templates/food/import.html
+msgid "The header row with column names was not found."
+msgstr "Nenašiel sa riadok hlavičky s názvami stĺpcov."
+
+#: food/views.py food/templates/food/import.html
+msgid "Sheets from 2022–2025 are not supported; convert them to JSON as described in docs/food/import-mapping.md."
+msgstr "Tabuľky z rokov 2022–2025 nie sú podporované; preveďte ich do JSON podľa docs/food/import-mapping.md."
+
+#: food/views.py food/templates/food/import.html
+msgid "The text is too large (max. 1 MB)."
+msgstr "Text je príliš veľký (max. 1 MB)."
+
+#: food/views.py food/templates/food/import.html
+msgid "Decide every conflict and classify every medication before importing."
+msgstr "Pred importom rozhodnite všetky konflikty a zaraďte všetky lieky."
+
+#: food/views.py food/templates/food/import.html
+msgid "A day in the future, not imported"
+msgstr "Deň v budúcnosti, neimportuje sa"
+
+#: food/views.py food/templates/food/import.html
+msgid "Invalid date"
+msgstr "Neplatný dátum"
+
+#: food/views.py food/templates/food/import.html
+msgid "Invalid blood pressure"
+msgstr "Neplatný tlak"
+
+#: food/views.py food/templates/food/import.html
+msgid "Blood pressure out of range"
+msgstr "Tlak mimo rozsahu"
+
+#: food/views.py food/templates/food/import.html
+msgid "Weight out of range"
+msgstr "Váha mimo rozsahu"
+
+#: food/views.py food/templates/food/import.html
+msgid "Invalid time"
+msgstr "Neplatný čas"
+
+#: food/views.py food/templates/food/import.html
+msgid "Stool / gas must be written as 6/3"
+msgstr "Stolica / vetry sa píšu ako 6/3"
+
+#: food/views.py food/templates/food/import.html
+msgid "Stool / gas out of range 1–10"
+msgstr "Stolica / vetry mimo rozsahu 1–10"
+
+#: food/views.py food/templates/food/import.html
+msgid "Sleep must be 1, 2 or 3"
+msgstr "Spánok musí byť 1, 2 alebo 3"
+
+#: food/views.py food/templates/food/import.html
+msgid "Text longer than 200 characters"
+msgstr "Text dlhší ako 200 znakov"
+
+#: food/views.py food/templates/food/import.html
+msgid "A second, different value for the same day"
+msgstr "Druhá, iná hodnota v ten istý deň"
+
+#: food/views.py food/templates/food/import.html
+msgid "A row before the first date"
+msgstr "Riadok pred prvým dátumom"
+
+#: food/views.py food/templates/food/import.html
+msgid "No header row, the 2026 column order was used"
+msgstr "Bez hlavičky, použilo sa poradie stĺpcov z roku 2026"
+
+#: food/views.py food/templates/food/import.html
+msgid "Unknown category"
+msgstr "Neznáma kategória"
+
+#: food/views.py food/templates/food/import.html
+msgid "Import finished."
+msgstr "Import je hotový."
+
+#: food/views.py food/templates/food/import.html
+msgid "New days"
+msgstr "Nové dni"
+
+#: food/views.py food/templates/food/import.html
+msgid "Completed days"
+msgstr "Doplnené dni"
+
+#: food/views.py food/templates/food/import.html
+msgid "Added entries"
+msgstr "Pridané záznamy"
+
+#: food/views.py food/templates/food/import.html
+msgid "Added measurements"
+msgstr "Pridané merania"
+
+#: food/views.py food/templates/food/import.html
+msgid "Skipped duplicates"
+msgstr "Preskočené duplicity"
+
+#: food/views.py food/templates/food/import.html
+msgid "Open the calendar"
+msgstr "Otvoriť kalendár"
+
+#: food/views.py food/templates/food/import.html
+msgid "Import more"
+msgstr "Importovať ďalšie"
+
+#: food/views.py food/templates/food/import.html
+msgid "Paste rows copied from your diary sheet (with the header row) or an exported JSON. Nothing is saved before you confirm the preview. Typos are not corrected."
+msgstr "Vložte riadky skopírované z tabuľky denníka (aj s hlavičkou) alebo exportovaný JSON. Pred potvrdením náhľadu sa nič neuloží. Preklepy sa neopravujú."
+
+#: food/views.py food/templates/food/import.html
+msgid "Pasted text"
+msgstr "Vložený text"
+
+#: food/views.py food/templates/food/import.html
+msgid "Preview"
+msgstr "Náhľad"
+
+#: food/views.py food/templates/food/import.html
+msgid "Conflicts"
+msgstr "Konflikty"
+
+#: food/views.py food/templates/food/import.html
+msgid "Problems"
+msgstr "Problémy"
+
+#: food/views.py food/templates/food/import.html
+msgid "Keep existing (%(value)s)"
+msgstr "Ponechať existujúce (%(value)s)"
+
+#: food/views.py food/templates/food/import.html
+msgid "Overwrite with import (%(value)s)"
+msgstr "Prepísať importom (%(value)s)"
+
+#: food/views.py food/templates/food/import.html
+msgid "Use for all"
+msgstr "Použiť pre všetky"
+
+#: food/views.py food/templates/food/import.html
+msgid "Days"
+msgstr "Dni"
+
+#: food/views.py food/templates/food/import.html
+msgid "Nothing to import."
+msgstr "Nie je čo importovať."
+
+#: food/views.py food/templates/food/import.html
+msgid "new day"
+msgstr "nový deň"
+
+#: food/views.py food/templates/food/import.html
+msgid "completes an existing day"
+msgstr "doplní existujúci deň"
+
+#: food/views.py food/templates/food/import.html
+msgid "Entries"
+msgstr "Záznamy"
+
+#: food/views.py food/templates/food/import.html
+msgid "Ignored unknown columns"
+msgstr "Ignorované neznáme stĺpce"
+
+#: food/views.py food/templates/food/import.html
+msgid "Skipped empty days"
+msgstr "Preskočené prázdne dni"

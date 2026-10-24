@@ -615,3 +615,183 @@ msgstr "The day was not deleted: the date does not match."
 msgid "The day was deleted."
 msgstr "The day was deleted."
 
+
+#: food/views.py food/templates/food/import.html
+msgid "Import"
+msgstr "Import"
+
+#: food/views.py food/templates/food/import.html
+msgid "Automatic"
+msgstr "Automatic"
+
+#: food/views.py food/templates/food/import.html
+msgid "Paste the rows of your diary sheet or an exported JSON."
+msgstr "Paste the rows of your diary sheet or an exported JSON."
+
+#: food/views.py food/templates/food/import.html
+msgid "The JSON is not a food diary export."
+msgstr "The JSON is not a food diary export."
+
+#: food/views.py food/templates/food/import.html
+msgid "The header row with column names was not found."
+msgstr "The header row with column names was not found."
+
+#: food/views.py food/templates/food/import.html
+msgid "Sheets from 2022–2025 are not supported; convert them to JSON as described in docs/food/import-mapping.md."
+msgstr "Sheets from 2022–2025 are not supported; convert them to JSON as described in docs/food/import-mapping.md."
+
+#: food/views.py food/templates/food/import.html
+msgid "The text is too large (max. 1 MB)."
+msgstr "The text is too large (max. 1 MB)."
+
+#: food/views.py food/templates/food/import.html
+msgid "Decide every conflict and classify every medication before importing."
+msgstr "Decide every conflict and classify every medication before importing."
+
+#: food/views.py food/templates/food/import.html
+msgid "A day in the future, not imported"
+msgstr "A day in the future, not imported"
+
+#: food/views.py food/templates/food/import.html
+msgid "Invalid date"
+msgstr "Invalid date"
+
+#: food/views.py food/templates/food/import.html
+msgid "Invalid blood pressure"
+msgstr "Invalid blood pressure"
+
+#: food/views.py food/templates/food/import.html
+msgid "Blood pressure out of range"
+msgstr "Blood pressure out of range"
+
+#: food/views.py food/templates/food/import.html
+msgid "Weight out of range"
+msgstr "Weight out of range"
+
+#: food/views.py food/templates/food/import.html
+msgid "Invalid time"
+msgstr "Invalid time"
+
+#: food/views.py food/templates/food/import.html
+msgid "Stool / gas must be written as 6/3"
+msgstr "Stool / gas must be written as 6/3"
+
+#: food/views.py food/templates/food/import.html
+msgid "Stool / gas out of range 1–10"
+msgstr "Stool / gas out of range 1–10"
+
+#: food/views.py food/templates/food/import.html
+msgid "Sleep must be 1, 2 or 3"
+msgstr "Sleep must be 1, 2 or 3"
+
+#: food/views.py food/templates/food/import.html
+msgid "Text longer than 200 characters"
+msgstr "Text longer than 200 characters"
+
+#: food/views.py food/templates/food/import.html
+msgid "A second, different value for the same day"
+msgstr "A second, different value for the same day"
+
+#: food/views.py food/templates/food/import.html
+msgid "A row before the first date"
+msgstr "A row before the first date"
+
+#: food/views.py food/templates/food/import.html
+msgid "No header row, the 2026 column order was used"
+msgstr "No header row, the 2026 column order was used"
+
+#: food/views.py food/templates/food/import.html
+msgid "Unknown category"
+msgstr "Unknown category"
+
+#: food/views.py food/templates/food/import.html
+msgid "Import finished."
+msgstr "Import finished."
+
+#: food/views.py food/templates/food/import.html
+msgid "New days"
+msgstr "New days"
+
+#: food/views.py food/templates/food/import.html
+msgid "Completed days"
+msgstr "Completed days"
+
+#: food/views.py food/templates/food/import.html
+msgid "Added entries"
+msgstr "Added entries"
+
+#: food/views.py food/templates/food/import.html
+msgid "Added measurements"
+msgstr "Added measurements"
+
+#: food/views.py food/templates/food/import.html
+msgid "Skipped duplicates"
+msgstr "Skipped duplicates"
+
+#: food/views.py food/templates/food/import.html
+msgid "Open the calendar"
+msgstr "Open the calendar"
+
+#: food/views.py food/templates/food/import.html
+msgid "Import more"
+msgstr "Import more"
+
+#: food/views.py food/templates/food/import.html
+msgid "Paste rows copied from your diary sheet (with the header row) or an exported JSON. Nothing is saved before you confirm the preview. Typos are not corrected."
+msgstr "Paste rows copied from your diary sheet (with the header row) or an exported JSON. Nothing is saved before you confirm the preview. Typos are not corrected."
+
+#: food/views.py food/templates/food/import.html
+msgid "Pasted text"
+msgstr "Pasted text"
+
+#: food/views.py food/templates/food/import.html
+msgid "Preview"
+msgstr "Preview"
+
+#: food/views.py food/templates/food/import.html
+msgid "Conflicts"
+msgstr "Conflicts"
+
+#: food/views.py food/templates/food/import.html
+msgid "Problems"
+msgstr "Problems"
+
+#: food/views.py food/templates/food/import.html
+msgid "Keep existing (%(value)s)"
+msgstr "Keep existing (%(value)s)"
+
+#: food/views.py food/templates/food/import.html
+msgid "Overwrite with import (%(value)s)"
+msgstr "Overwrite with import (%(value)s)"
+
+#: food/views.py food/templates/food/import.html
+msgid "Use for all"
+msgstr "Use for all"
+
+#: food/views.py food/templates/food/import.html
+msgid "Days"
+msgstr "Days"
+
+#: food/views.py food/templates/food/import.html
+msgid "Nothing to import."
+msgstr "Nothing to import."
+
+#: food/views.py food/templates/food/import.html
+msgid "new day"
+msgstr "new day"
+
+#: food/views.py food/templates/food/import.html
+msgid "completes an existing day"
+msgstr "completes an existing day"
+
+#: food/views.py food/templates/food/import.html
+msgid "Entries"
+msgstr "Entries"
+
+#: food/views.py food/templates/food/import.html
+msgid "Ignored unknown columns"
+msgstr "Ignored unknown columns"
+
+#: food/views.py food/templates/food/import.html
+msgid "Skipped empty days"
+msgstr "Skipped empty days"

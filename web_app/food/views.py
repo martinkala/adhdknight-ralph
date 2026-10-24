@@ -69,6 +69,7 @@ SUGGESTION_GROUPS = {
     "sport": "sport",
 }
 SUGGESTIONS_LIMIT_MAX = 20
+IMPORT_TIMEOUT = 60.0  # seconds; a pasted history can be large
 MED_KINDS = ("medication", "supplement")
 MED_KIND_LABELS = (("medication", gettext_lazy("Medication")), ("supplement", gettext_lazy("Supplement")))
 
@@ -578,3 +579,128 @@ def export(request):
     response = HttpResponse(result["content"], content_type=result["content_type"])
     response["Content-Disposition"] = result["content_disposition"]
     return response
+
+
+IMPORT_FORMATS = (("auto", gettext_lazy("Automatic")), ("tsv", "TSV"), ("csv", "CSV"), ("json", "JSON"))
+IMPORT_FIELD_LABELS = {
+    "sleep_quality": gettext_lazy("Sleep"), "stool": gettext_lazy("Stool"), "gas": gettext_lazy("Gas"),
+}
+_IMPORT_ERRORS = {
+    "empty_input": gettext_lazy("Paste the rows of your diary sheet or an exported JSON."),
+    "invalid_json": gettext_lazy("The JSON is not a food diary export."),
+    "missing_header": gettext_lazy("The header row with column names was not found."),
+    "unsupported_format_legacy": gettext_lazy(
+        "Sheets from 2022–2025 are not supported; convert them to JSON as described in "
+        "docs/food/import-mapping.md."),
+    "input_too_large": gettext_lazy("The text is too large (max. 1 MB)."),
+    "unresolved": gettext_lazy("Decide every conflict and classify every medication before importing."),
+}
+# Problems in single values of the import (`issues[].code`).
+_IMPORT_ISSUES = {
+    "future_date": gettext_lazy("A day in the future, not imported"),
+    "invalid_date": gettext_lazy("Invalid date"),
+    "bp_format": gettext_lazy("Invalid blood pressure"),
+    "bp_range": gettext_lazy("Blood pressure out of range"),
+    "weight_range": gettext_lazy("Weight out of range"),
+    "time_format": gettext_lazy("Invalid time"),
+    "digestion_format": gettext_lazy("Stool / gas must be written as 6/3"),
+    "digestion_range": gettext_lazy("Stool / gas out of range 1–10"),
+    "sleep_quality_format": gettext_lazy("Sleep must be 1, 2 or 3"),
+    "sleep_quality_range": gettext_lazy("Sleep must be 1, 2 or 3"),
+    "stool_range": gettext_lazy("Stool / gas out of range 1–10"),
+    "gas_range": gettext_lazy("Stool / gas out of range 1–10"),
+    "text_too_long": gettext_lazy("Text longer than 200 characters"),
+    "duplicate_value": gettext_lazy("A second, different value for the same day"),
+    "row_without_day": gettext_lazy("A row before the first date"),
+    "default_header": gettext_lazy("No header row, the 2026 column order was used"),
+    "unknown_category": gettext_lazy("Unknown category"),
+}
+
+
+def _import_payload(post) -> dict:
+    payload = {"raw_text": post.get("raw_text", ""), "format": post.get("format", "auto")}
+    if payload["format"] not in dict(IMPORT_FORMATS):
+        payload["format"] = "auto"
+    classify = {norm: kind for norm, kind in zip(post.getlist("classify_norm"), post.getlist("classify_kind"))
+                if norm and kind in MED_KINDS}
+    if classify:
+        payload["classify"] = classify
+    return payload
+
+
+def _import_resolutions(post) -> list[dict]:
+    resolutions = []
+    for key, choice in zip(post.getlist("conflict"), post.getlist("choice")):
+        date, _sep, field = key.partition("|")
+        if choice in ("keep", "import") and field in IMPORT_FIELD_LABELS and _parse_date(date):
+            resolutions.append({"date": date, "field": field, "choice": choice})
+    return resolutions
+
+
+def _preview_context(preview: dict, payload: dict, resolutions: list[dict]) -> dict:
+    """Template data of the API preview: labels, chosen kinds and resolutions kept from the form."""
+    chosen = {(r["date"], r["field"]): r["choice"] for r in resolutions}
+    classified = payload.get("classify", {})
+    days = []
+    for day in preview["days"]:
+        add = day["add"]
+        sections = [{"label": ENTRY_SECTION_LABELS.get(category, category), "items": items}
+                    for category, items in add["entries"].items() if items]
+        if add["unclassified_meds"]:
+            sections.append({"label": _("Medication or supplement?"), "items": add["unclassified_meds"]})
+        days.append({
+            **day,
+            "date_value": _parse_date(day["date"]),
+            "sections": sections,
+            "entry_count": sum(len(s["items"]) for s in sections),
+            "measurement_count": len(add["weights"]) + len(add["blood_pressures"]),
+            "values": [(IMPORT_FIELD_LABELS.get(k, k), v) for k, v in add["values"].items()],
+        })
+    conflicts = [{**c, "label": IMPORT_FIELD_LABELS.get(c["field"], c["field"]),
+                  "date_value": _parse_date(c["date"]), "choice": chosen.get((c["date"], c["field"]), "")}
+                 for d in preview["days"] for c in d["conflicts"]]
+    classify = [{**item, "kind": classified.get(item["text_norm"], "")} for item in preview["needs_classification"]]
+    issues = [{**i, "message": _IMPORT_ISSUES.get(i["code"], i["code"]), "date_value": _parse_date(i["date"] or "")}
+              for i in preview["issues"]]
+    return {
+        "preview": preview,
+        "days": days,
+        "conflicts": conflicts,
+        "classify_items": classify,
+        "issues": issues,
+        "ready": all(c["choice"] for c in conflicts) and all(i["kind"] for i in classify),
+    }
+
+
+def import_view(request):
+    """Paste → preview → decide conflicts and classify medication → import (food-011 FR-4)."""
+    if not _require_login(request):
+        return redirect("login")
+    context = {"formats": IMPORT_FORMATS, "raw_text": "", "format": "auto", "kinds": MED_KIND_LABELS}
+    if request.method != "POST":
+        return render(request, "food/import.html", context)
+
+    payload = _import_payload(request.POST)
+    resolutions = _import_resolutions(request.POST)
+    context.update(raw_text=payload["raw_text"], format=payload["format"])
+    status = 200
+    if request.POST.get("action") == "commit":
+        result = api_client.call(request, "POST", "/import/commit", timeout=IMPORT_TIMEOUT,
+                                 json={**payload, "resolutions": resolutions})
+        if "error" not in result:
+            dates = result["dates"]
+            context["result"] = result
+            context["calendar_month"] = dates[-1][:7] if dates else None
+            return render(request, "food/import.html", context)
+        if result["error"] != "unresolved":
+            context["error_message"] = str(_IMPORT_ERRORS.get(result["error"]) or _error_message(result["error"]))
+            return render(request, "food/import.html", context, status=400 if result.get("status_code") else 502)
+        context["error_message"] = str(_IMPORT_ERRORS["unresolved"])
+        status = 409
+
+    preview = api_client.call(request, "POST", "/import/preview", json=payload, timeout=IMPORT_TIMEOUT)
+    if "error" in preview:
+        context["error_message"] = str(_IMPORT_ERRORS.get(preview["error"]) or _error_message(preview["error"]))
+        return render(request, "food/import.html", context, status=400 if preview.get("status_code") else 502)
+    context.update(_preview_context(preview, payload, resolutions))
+    return render(request, "food/import.html", context, status=status)

@@ -15,7 +15,10 @@ def _url(path: str) -> str:
     return f"{settings.SERVER_URL}{_PREFIX}{path}"
 
 
-def request(token: str, method: str, path: str, json: dict | None = None, params: dict | None = None) -> dict:
+def request(
+    token: str, method: str, path: str, json: dict | None = None, params: dict | None = None,
+    timeout: float = _TIMEOUT,
+) -> dict:
     try:
         r = httpx.request(
             method,
@@ -23,7 +26,7 @@ def request(token: str, method: str, path: str, json: dict | None = None, params
             json=json,
             params=params,
             headers={"Authorization": f"Bearer {token}"},
-            timeout=_TIMEOUT,
+            timeout=timeout,
         )
         if r.status_code in (200, 201):
             return r.json()
@@ -49,8 +52,11 @@ def post(token: str, path: str, json: dict | None = None) -> dict:
     return request(token, "POST", path, json=json)
 
 
-def call(django_request, method: str, path: str, json: dict | None = None, params: dict | None = None) -> dict:
-    return call_with_refresh(django_request, request, method, path, json=json, params=params)
+def call(
+    django_request, method: str, path: str, json: dict | None = None, params: dict | None = None,
+    timeout: float = _TIMEOUT,
+) -> dict:
+    return call_with_refresh(django_request, request, method, path, json=json, params=params, timeout=timeout)
 
 
 def download(token: str, path: str, params: dict | None = None) -> dict:

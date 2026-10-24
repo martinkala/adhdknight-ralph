@@ -588,3 +588,150 @@ class FoodChanges(BaseModel):
             }
         }
     )
+
+
+# --- Import (food-011) ------------------------------------------------------------------------
+
+ImportFormat = Literal["auto", "tsv", "csv", "json"]
+ResolutionChoice = Literal["keep", "import"]
+
+
+class ImportPreviewRequest(BaseModel):
+    """Pasted text: TSV / CSV in format C of the diary sheet or JSON in the export format (`FoodExport`).
+    `auto` = JSON if it starts with "{", TSV if the first line has a TAB, otherwise CSV. Max. 1 MB."""
+
+    raw_text: str
+    format: ImportFormat = "auto"
+    # Answers for medication items unknown to the dictionary (text_norm -> medication | supplement).
+    classify: dict[str, MedKind] | None = None
+
+    model_config = ConfigDict(
+        json_schema_extra={"example": {
+            "raw_text": " \tpohyb\tspanok\tRanajky\n2026-10-23\t\t3\t2 toasty, kafe",
+            "format": "auto",
+        }}
+    )
+
+
+class ImportResolution(BaseModel):
+    date: str = Field(pattern=DATE_PATTERN)
+    field: Literal["sleep_quality", "stool", "gas"]
+    choice: ResolutionChoice
+
+
+class ImportCommitRequest(ImportPreviewRequest):
+    resolutions: list[ImportResolution] = []
+    # Used for every conflict without its own resolution.
+    default_resolution: ResolutionChoice | None = None
+
+    model_config = ConfigDict(
+        json_schema_extra={"example": {
+            "raw_text": " \tpohyb\tspanok\tRanajky\toills\tdig problemy (1-10) s/v\n"
+                        "2026-10-23\t\t3\t2 toasty\temanera, zn\t6/3",
+            "format": "tsv",
+            "resolutions": [{"date": "2026-10-23", "field": "stool", "choice": "import"}],
+            "default_resolution": "keep",
+            "classify": {"zn": "supplement"},
+        }}
+    )
+
+
+class ImportItemOut(BaseModel):
+    text: str
+    quantity: float | None = None
+    unit: str | None = None
+    intensity: int | None = None
+
+
+class ImportAdd(BaseModel):
+    """What the import adds to the day."""
+
+    entries: dict[str, list[ImportItemOut]]
+    # Medication / supplement items waiting for "medication or supplement?".
+    unclassified_meds: list[ImportItemOut]
+    weights: list[ExportWeight]
+    blood_pressures: list[ExportBloodPressure]
+    # Day values that were empty and get filled.
+    values: dict[str, int]
+
+
+class ImportConflict(BaseModel):
+    date: str
+    field: str
+    existing: int
+    incoming: int
+
+
+class ImportDayPreview(BaseModel):
+    date: str
+    status: Literal["new", "merge"]
+    add: ImportAdd
+    duplicates_skipped: int
+    conflicts: list[ImportConflict]
+
+
+class ImportIssue(BaseModel):
+    date: str | None
+    column: str | None
+    value: str
+    # future_date, bp_range, bp_format, weight_range, digestion_format, digestion_range, sleep_quality_range,
+    # text_too_long, duplicate_value, row_without_day, default_header, invalid_date, unknown_category, ...
+    code: str
+
+
+class ImportTotals(BaseModel):
+    new_days: int
+    merged_days: int
+    entries_added: int
+    measurements_added: int
+    values_filled: int
+    duplicates_skipped: int
+    conflicts: int
+    issues: int
+    skipped_empty_days: int
+
+
+class ImportPreview(BaseModel):
+    schema_version: str = "1.0"
+    format: Literal["tsv", "csv", "json"]
+    days: list[ImportDayPreview]
+    needs_classification: list[MedToClassify]
+    issues: list[ImportIssue]
+    skipped_empty_days: list[str]
+    unknown_columns: list[str]
+    totals: ImportTotals
+
+    model_config = ConfigDict(
+        json_schema_extra={"example": {
+            "schema_version": "1.0",
+            "format": "tsv",
+            "days": [{
+                "date": "2026-10-23", "status": "merge",
+                "add": {
+                    "entries": {"breakfast": [{"text": "toasty", "quantity": 2, "unit": None, "intensity": None}]},
+                    "unclassified_meds": [{"text": "zn", "quantity": None, "unit": None, "intensity": None}],
+                    "weights": [], "blood_pressures": [], "values": {"gas": 3},
+                },
+                "duplicates_skipped": 1,
+                "conflicts": [{"date": "2026-10-23", "field": "stool", "existing": 3, "incoming": 6}],
+            }],
+            "needs_classification": [{"text": "zn", "text_norm": "zn"}],
+            "issues": [{"date": "2026-10-22", "column": "presure", "value": "145/02", "code": "bp_range"}],
+            "skipped_empty_days": ["2026-09-21"],
+            "unknown_columns": [],
+            "totals": {"new_days": 0, "merged_days": 1, "entries_added": 2, "measurements_added": 0,
+                       "values_filled": 1, "duplicates_skipped": 1, "conflicts": 1, "issues": 1,
+                       "skipped_empty_days": 1},
+        }}
+    )
+
+
+class ImportResult(BaseModel):
+    schema_version: str = "1.0"
+    dates: list[str]
+    totals: ImportTotals
+
+
+class ImportUnresolvedResponse(BaseModel):
+    detail: Literal["unresolved"]
+    preview: ImportPreview
