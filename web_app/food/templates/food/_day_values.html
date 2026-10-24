@@ -1,0 +1,27 @@
+{% load i18n %}
+<div id="day-values" class="day-values" data-testid="day-values">
+    <p class="save-status{% if save_status == 'error' %} save-error{% endif %}" data-testid="save-status" aria-live="polite">{% if save_status == "saved" %}{% translate "Saved" %}{% elif save_status == "error" %}{% translate "Saving failed" %}{% endif %}</p>
+    <section class="card day-section" data-testid="section-digestion">
+        <h3>{% translate "Stool / gas" %}</h3>
+        <p class="value-label">{% translate "Stool" %} <small>{% translate "(1 = all OK, 10 = worst)" %}</small></p>
+        <div class="value-grid value-grid-10">
+            {% for v in digestion_choices %}
+            {% include "food/_value_button.html" with field="stool" value=v label=v current=day.stool %}
+            {% endfor %}
+        </div>
+        <p class="value-label">{% translate "Gas" %} <small>{% translate "(1 = all OK, 10 = worst)" %}</small></p>
+        <div class="value-grid value-grid-10">
+            {% for v in digestion_choices %}
+            {% include "food/_value_button.html" with field="gas" value=v label=v current=day.gas %}
+            {% endfor %}
+        </div>
+    </section>
+    <section class="card day-section" data-testid="section-sleep">
+        <h3>{% translate "Sleep" %}</h3>
+        <div class="value-grid value-grid-3">
+            {% for v, label in sleep_choices %}
+            {% include "food/_value_button.html" with field="sleep_quality" value=v label=label current=day.sleep_quality testid="sleep" %}
+            {% endfor %}
+        </div>
+    </section>
+</div>

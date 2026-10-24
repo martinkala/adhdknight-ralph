@@ -1,5 +1,6 @@
 """HTTP client for the Food diary API (`/api/v1/food/*`), same conventions as core/api_client.py:
-success returns the parsed JSON, failure returns {"error": "server_unavailable" | "unauthorized" | "server_error"}.
+success returns the parsed JSON, failure returns {"error": "server_unavailable" | "unauthorized" | "server_error"}
+or, for a 4xx with a string API `detail` (e.g. "day_exists"), {"error": <detail>, "status_code": ...}.
 Views call it through `call(request, ...)`, which refreshes an expired access token (core.api_client.call_with_refresh)."""
 import httpx
 from django.conf import settings
@@ -30,6 +31,11 @@ def request(token: str, method: str, path: str, json: dict | None = None, params
             return {}
         if r.status_code == 401:
             return {"error": "unauthorized"}
+        if 400 <= r.status_code < 500:
+            detail = r.json().get("detail") if r.headers.get("content-type", "").startswith("application/json") else None
+            # FastAPI validation errors carry a list in `detail`.
+            error = detail if isinstance(detail, str) else "invalid_input"
+            return {"error": error, "status_code": r.status_code}
         return {"error": "server_error", "status_code": r.status_code}
     except (httpx.ConnectError, httpx.TimeoutException):
         return {"error": "server_unavailable"}

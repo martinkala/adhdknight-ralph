@@ -1,0 +1,3 @@
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}" data-testid="flash-{{ message.tags }}">{{ message }}</div>
+{% endfor %}

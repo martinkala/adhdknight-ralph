@@ -1,0 +1,5 @@
+{# Tapping the selected value again clears it (sends an empty value). #}
+<button type="button" class="value-btn{% if current == value %} selected{% endif %}"
+        data-testid="{{ testid|default:field }}-{{ value }}" aria-pressed="{% if current == value %}true{% else %}false{% endif %}"
+        hx-patch="{% url 'food:day_values' day=day.date %}" hx-target="#day-values" hx-swap="outerHTML"
+        hx-vals='{"{{ field }}": "{% if current != value %}{{ value }}{% endif %}"}'>{% if label != value %}{{ value }} {{ label }}{% else %}{{ value }}{% endif %}</button>

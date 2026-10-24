@@ -1,8 +1,35 @@
 {% extends "food/base_food.html" %}
 {% load i18n %}
 {% block content %}
+{% include "food/_messages.html" %}
 <div class="card" data-testid="food-home">
-    <h2 style="margin-bottom:0.5rem;font-size:1.25rem;">{% translate "Food diary" %}</h2>
-    <p>{% translate "Coming soon." %}</p>
+    <h2 class="food-title">{% translate "Food diary" %}</h2>
+    <form method="post" action="{% url 'food:open_today' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-big" data-testid="open-today">{% translate "Today" %}</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3 class="food-subtitle">{% translate "Add a day" %}</h3>
+    {% if error == "day_exists" %}
+    <div class="alert alert-error" data-testid="error-day-exists">
+        {{ error_message }}.
+        {% if existing_date %}<a href="{% url 'food:day' day=existing_date %}" data-testid="existing-day-link">{% translate "Open the day" %}</a>{% endif %}
+    </div>
+    {% elif error == "future_date" %}
+    <div class="alert alert-error" data-testid="error-future-date">{{ error_message }}</div>
+    {% elif error %}
+    <div class="alert alert-error" data-testid="error-message">{{ error_message }}</div>
+    {% endif %}
+    <form method="post" action="{% url 'food:new_day' %}" class="new-day-form" data-testid="new-day-form">
+        {% csrf_token %}
+        <label for="new-day-date">{% translate "Date" %}</label>
+        <div class="new-day-row">
+            <input type="date" id="new-day-date" name="date" required data-testid="new-day-date"
+                   {% if today %}value="{{ today }}" max="{{ today }}"{% endif %}>
+            <button type="submit" class="btn btn-secondary" data-testid="new-day-submit">{% translate "Add" %}</button>
+        </div>
+    </form>
 </div>
 {% endblock %}

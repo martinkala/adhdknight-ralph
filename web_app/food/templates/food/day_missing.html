@@ -1,0 +1,16 @@
+{% extends "food/base_food.html" %}
+{% load i18n %}
+{% block content %}
+<div class="card" data-testid="day-missing">
+    <h2 class="food-title">{% if day_date %}{{ day_date|date:"l, j. n. Y" }}{% else %}{{ day }}{% endif %}</h2>
+    <p>{% translate "This day does not exist." %}</p>
+    {% if can_create %}
+    <form method="post" action="{% url 'food:new_day' %}">
+        {% csrf_token %}
+        <input type="hidden" name="date" value="{{ day }}">
+        <button type="submit" class="btn btn-primary btn-big" data-testid="create-day">{% translate "Create this day" %}</button>
+    </form>
+    {% endif %}
+    <p><a href="{% url 'food:home' %}">{% translate "Back to the diary" %}</a></p>
+</div>
+{% endblock %}

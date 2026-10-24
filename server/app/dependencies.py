@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,3 +33,8 @@ async def require_monitoring_operator(x_monitoring_key: str = Header(default="")
     settings = get_settings()
     if not settings.monitoring_api_key or x_monitoring_key != settings.monitoring_api_key:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or missing monitoring key")
+
+
+def get_now() -> datetime:
+    """Current UTC time; tests override this dependency to fake the clock."""
+    return datetime.now(timezone.utc)

@@ -1,6 +1,9 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 {% block title %}{% translate "Food diary" %}{% endblock %}
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'css/food.css' %}">
+{% endblock %}
 {% block app_nav %}
     <a href="{% url 'food:home' %}" data-testid="nav-food-home">{% translate "Diary" %}</a>
 {% endblock %}
