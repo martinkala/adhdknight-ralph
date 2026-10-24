@@ -48,3 +48,4 @@ playwright-report/
 
 # Ralph container venvs
 .venv-docker/
+.claude/settings.local.json

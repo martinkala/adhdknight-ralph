@@ -24,7 +24,8 @@ ensure_venv() {
     local req="$dir/requirements.txt"
     local stamp="$venv/.requirements.sha256"
 
-    if ! "$venv/bin/python" -c pass >/dev/null 2>&1; then
+    # pip check also catches venvs left over from another Python version (interpreter runs, packages missing)
+    if ! "$venv/bin/python" -m pip --version >/dev/null 2>&1; then
         echo ">> Creating $1/$VENV"
         rm -rf "$venv"
         python3 -m venv "$venv"
