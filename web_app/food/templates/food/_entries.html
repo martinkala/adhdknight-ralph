@@ -18,7 +18,8 @@
                 {% if section.key == "note" %}
                 <textarea name="text" rows="2" maxlength="200" data-enter-submits aria-label="{% translate 'Edit' %}" data-testid="entry-edit-input">{{ entry.text }}</textarea>
                 {% else %}
-                <input type="text" name="text" maxlength="200" value="{{ entry.text }}" aria-label="{% translate 'Edit' %}" data-testid="entry-edit-input">
+                <input type="text" name="text" maxlength="200" value="{{ entry.text }}" aria-label="{% translate 'Edit' %}" data-testid="entry-edit-input"
+                       data-suggest="{{ section.group }}" data-suggest-url="{% url 'food:suggestions' %}" data-suggest-whole>
                 {% endif %}
                 <button type="submit" class="icon-btn" aria-label="{% translate 'Save' %}" data-testid="entry-edit-save">&#10003;</button>
             </form>

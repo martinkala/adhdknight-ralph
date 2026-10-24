@@ -9,7 +9,8 @@
                   aria-label="{{ section.label }}" data-testid="add-{{ section.key }}"></textarea>
         {% else %}
         <input type="text" name="text" maxlength="2000" enterkeyhint="enter" placeholder="{% translate 'Add…' %}"
-               aria-label="{{ section.label }}" data-testid="add-{{ section.key }}">
+               aria-label="{{ section.label }}" data-testid="add-{{ section.key }}"
+               data-suggest="{{ section.group }}" data-suggest-url="{% url 'food:suggestions' %}">
         {% endif %}
     </form>
 </section>

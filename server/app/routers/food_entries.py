@@ -18,12 +18,14 @@ from app.schemas.food import (
     EntryCreate,
     EntryUpdate,
     QuantityOptions,
+    Suggestions,
     Weight,
     WeightCreate,
     WeightUpdate,
 )
-from app.services import food_entries, food_measurement_records as records
+from app.services import food_entries, food_measurement_records as records, food_suggestions
 from app.services.food_days import FoodDayError
+from app.services.food_suggestions import SUGGESTIONS_LIMIT_DEFAULT, SUGGESTIONS_LIMIT_MAX
 
 router = APIRouter(prefix="/api/v1/food", tags=["food"])
 
@@ -114,6 +116,23 @@ async def get_quantities(
     except FoodDayError as exc:
         raise _http_error(exc)
     return QuantityOptions(options=options)
+
+
+@router.get("/suggestions", response_model=Suggestions, responses={422: {"description": "`unknown_group`"}})
+async def get_suggestions(
+    group: Annotated[str, Query(examples=["food"], description="`food`, `meds` or `sport`")],
+    q: Annotated[str, Query(max_length=200, examples=["tu"])] = "",
+    limit: Annotated[int, Query(ge=1, le=SUGGESTIONS_LIMIT_MAX)] = SUGGESTIONS_LIMIT_DEFAULT,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Autocomplete: the user's texts of the group matching `q` from the start of the text or of any
+    word, without diacritics, by number of uses. An empty `q` returns the most used texts."""
+    try:
+        items = await food_suggestions.suggestions(db, current_user, group, q, limit)
+    except FoodDayError as exc:
+        raise _http_error(exc)
+    return Suggestions(suggestions=items)
 
 
 # --- Measurements ----------------------------------------------------------------------------

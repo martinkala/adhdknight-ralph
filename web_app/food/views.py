@@ -1,7 +1,7 @@
 from datetime import date as date_type
 
 from django.contrib import messages
-from django.http import Http404, HttpResponse, QueryDict
+from django.http import Http404, HttpResponse, JsonResponse, QueryDict
 from django.shortcuts import render, redirect
 from django.utils.translation import gettext as _, gettext_lazy
 from django.views.decorators.http import require_http_methods, require_POST
@@ -51,6 +51,15 @@ _ERRORS = {
     "time_format": gettext_lazy("Enter time as HH:MM."),
 }
 UNIT_CHOICES = ("ks", "l", "ml", "g", "kg")
+# Autocomplete group per entry category (constitution D2); notes have none.
+SUGGESTION_GROUPS = {
+    **{c: "food" for c in ("breakfast", "morning_snack", "lunch", "afternoon_snack", "dinner", "after_dinner",
+                           "unassigned")},
+    "medication": "meds",
+    "supplement": "meds",
+    "sport": "sport",
+}
+SUGGESTIONS_LIMIT_MAX = 20
 
 
 def _error_message(code: str) -> str:
@@ -199,7 +208,7 @@ def delete_day(request, day):
 
 def _entry_section(detail: dict, key: str) -> dict:
     return {"kind": "entries", "key": key, "label": ENTRY_SECTION_LABELS[key],
-            "items": detail["entries"].get(key, [])}
+            "group": SUGGESTION_GROUPS.get(key), "items": detail["entries"].get(key, [])}
 
 
 def _decimal_or_none(raw: str | None):
@@ -281,6 +290,22 @@ def entry_quantities(request, day, category, entry_id):
     context = {"day": {"date": day}, "section": {"key": category}, "entry_id": entry_id,
                "options": result.get("options", []), "unit_choices": UNIT_CHOICES}
     return render(request, "food/_qty_popover.html", context)
+
+
+def suggestions(request):
+    """Autocomplete JSON for food_suggest.js (food-006). Errors give an empty list, typing goes on."""
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    group = request.GET.get("group", "")
+    if group not in SUGGESTION_GROUPS.values():
+        return JsonResponse({"suggestions": []})
+    try:
+        limit = min(max(int(request.GET.get("limit", 10)), 1), SUGGESTIONS_LIMIT_MAX)
+    except ValueError:
+        limit = 10
+    result = api_client.call(request, "GET", "/suggestions",
+                             params={"group": group, "q": request.GET.get("q", "")[:200], "limit": limit})
+    return JsonResponse({"suggestions": result.get("suggestions", [])})
 
 
 def _measurements_partial(request, day: str, kind: str, error: str | None = None):

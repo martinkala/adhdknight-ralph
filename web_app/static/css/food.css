@@ -78,6 +78,15 @@
 .qty-manual { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; }
 .qty-manual input { flex: 1; width: 100%; }
 .qty-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+/* Autocomplete (food-006): list under the field, options >= 44 px. */
+.add-form, .entry-row .edit-form { position: relative; }
+.suggestions { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; margin: 2px 0 0; padding: 0.25rem 0;
+               list-style: none; background: white; border: 1px solid #ccc; border-radius: 6px;
+               box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); max-height: 22rem; overflow-y: auto; }
+.suggestions[hidden] { display: none; }
+.suggestions li { min-height: 44px; display: flex; align-items: center; padding: 0 0.75rem; cursor: pointer;
+                  overflow-wrap: anywhere; }
+.suggestions li:hover, .suggestions li[aria-selected=true] { background: #e3f2fd; }
 
 @media (min-width: 600px) {
     .value-grid-10 { grid-template-columns: repeat(10, 1fr); }

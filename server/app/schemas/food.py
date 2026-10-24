@@ -206,6 +206,25 @@ class QuantityOptions(BaseModel):
     )
 
 
+class Suggestion(BaseModel):
+    text: str
+    count: int
+
+
+class Suggestions(BaseModel):
+    schema_version: str = "1.0"
+    suggestions: list[Suggestion]
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "schema_version": "1.0",
+                "suggestions": [{"text": "toasty", "count": 3}, {"text": "smažený tuniak", "count": 1}],
+            }
+        }
+    )
+
+
 # --- Measurements (food-005 FR-2) ------------------------------------------------------------
 
 

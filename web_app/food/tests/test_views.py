@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
 
@@ -404,3 +404,58 @@ class QtyFilterTests(TestCase):
         from django.utils import translation
         with translation.override("sk"):
             self.assertEqual(qty({"quantity": 0.5, "unit": "l"}), "0,5 l")
+
+
+class FoodSuggestionsViewTests(TestCase):
+    def setUp(self):
+        _login_session(self.client)
+
+    def _get(self, params, api_result):
+        from unittest.mock import patch
+        calls = []
+
+        def fake(token, method, path, json=None, params=None):
+            calls.append((method, path, params))
+            return api_result
+
+        with patch("food.api_client.request", fake):
+            response = self.client.get("/food/suggestions/", params)
+        return response, calls
+
+    def test_proxies_api_suggestions(self):
+        response, calls = self._get({"group": "food", "q": "to", "limit": "8"},
+                                    {"suggestions": [{"text": "toasty", "count": 3}]})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"suggestions": [{"text": "toasty", "count": 3}]})
+        self.assertEqual(calls, [("GET", "/suggestions", {"group": "food", "q": "to", "limit": 8})])
+
+    def test_limit_is_clamped_and_defaults(self):
+        _, calls = self._get({"group": "meds", "limit": "500"}, {"suggestions": []})
+        self.assertEqual(calls[0][2], {"group": "meds", "q": "", "limit": 20})
+        _, calls = self._get({"group": "sport", "limit": "x"}, {"suggestions": []})
+        self.assertEqual(calls[0][2]["limit"], 10)
+
+    def test_unknown_group_and_api_error_give_empty_list(self):
+        response, calls = self._get({"group": "note", "q": "x"}, {"suggestions": [{"text": "x", "count": 1}]})
+        self.assertEqual(response.json(), {"suggestions": []})
+        self.assertEqual(calls, [])
+        response, _ = self._get({"group": "food", "q": "x"}, {"error": "server_unavailable"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"suggestions": []})
+
+    def test_anonymous_is_401(self):
+        response = Client().get("/food/suggestions/", {"group": "food"})
+        self.assertEqual(response.status_code, 401)
+
+    def test_day_screen_inputs_have_suggest_groups(self):
+        detail = _detail_with(lunch=[_entry("ryza", category="lunch")], note=[_entry("unava", category="note", entry_id="n1")])
+        fake, p = _patch_api({("GET", "/days/2026-10-20"): detail})
+        with p:
+            html = self.client.get("/food/day/2026-10-20/").content.decode()
+        self.assertIn('data-testid="add-breakfast"\n               data-suggest="food"', html)
+        self.assertIn('data-testid="add-medication"\n               data-suggest="meds"', html)
+        self.assertIn('data-testid="add-sport"\n               data-suggest="sport"', html)
+        self.assertEqual(html.count('data-suggest="'), 10 + 1)  # 10 add fields (no notes) + 1 edit field (no note edit)
+        self.assertIn("data-suggest-whole", html)
+        self.assertIn('data-suggest-url="/food/suggestions/"', html)
+        self.assertIn("js/food_suggest.js", html)

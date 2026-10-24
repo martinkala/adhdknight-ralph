@@ -18,6 +18,7 @@ urlpatterns = [
     re_path(rf'^day/{DAY}/entries/{CATEGORY}/$', views.add_entries, name='add_entries'),
     re_path(rf'^day/{DAY}/entries/{CATEGORY}/{ENTRY_ID}/$', views.entry, name='entry'),
     re_path(rf'^day/{DAY}/entries/{CATEGORY}/{ENTRY_ID}/quantities/$', views.entry_quantities, name='entry_quantities'),
+    path('suggestions/', views.suggestions, name='suggestions'),
     re_path(rf'^day/{DAY}/blood-pressures/$', views.add_blood_pressure, name='add_bp'),
     re_path(rf'^day/{DAY}/blood-pressures/{RECORD_ID}/$', views.blood_pressure, name='bp'),
     re_path(rf'^day/{DAY}/weights/$', views.add_weight, name='add_weight'),

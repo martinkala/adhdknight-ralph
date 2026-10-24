@@ -1,5 +1,7 @@
 # Specification: food-006 — Autocomplete (našepkávač)
 
+## Status: COMPLETE
+
 ## Feature: Návrhy z vlastnej histórie podľa početnosti, bez ohľadu na diakritiku
 
 ### Overview
@@ -27,14 +29,14 @@ prihláseného používateľa.
 - Výkon: index (`user_id`,`category`,`text_norm`) z food-003. Dotaz nesmie načítať všetky záznamy do Pythonu.
 
 **Acceptance Criteria:**
-- [ ] API test: 3× „toasty“, 1× „tuniak“ → `q=t` vráti [toasty(3), tuniak(1)]
-- [ ] API test: uložené „Ryža“ 2× a „ryza“ 1× → `q=ryz` vráti 1 návrh `Ryža` s count 3
-- [ ] API test: `q=tuniak` nájde „smazeny tuniak“ (začiatok slova), `q=niak` ho nenájde
-- [ ] API test: skupiny sú oddelené: liek „emanera“ sa neobjaví v `group=food`
-- [ ] API test: zmazaný záznam a záznam zo zmazaného dňa sa nepočítajú
-- [ ] API test izolácie: texty používateľa B sa používateľovi A nikdy neponúknu (ani pri prázdnom `q`)
-- [ ] API test: `q` s `%` alebo `_` sa správa ako literál
-- [ ] API test: 1000 záznamov → odpoveď < 300 ms na SQLite (meraný test, toleruj pomalý CI faktorom 3)
+- [x] API test: 3× „toasty“, 1× „tuniak“ → `q=t` vráti [toasty(3), tuniak(1)]
+- [x] API test: uložené „Ryža“ 2× a „ryza“ 1× → `q=ryz` vráti 1 návrh `Ryža` s count 3
+- [x] API test: `q=tuniak` nájde „smazeny tuniak“ (začiatok slova), `q=niak` ho nenájde
+- [x] API test: skupiny sú oddelené: liek „emanera“ sa neobjaví v `group=food`
+- [x] API test: zmazaný záznam a záznam zo zmazaného dňa sa nepočítajú
+- [x] API test izolácie: texty používateľa B sa používateľovi A nikdy neponúknu (ani pri prázdnom `q`)
+- [x] API test: `q` s `%` alebo `_` sa správa ako literál
+- [x] API test: 1000 záznamov → odpoveď < 300 ms na SQLite (meraný test, toleruj pomalý CI faktorom 3)
 
 ### FR-2: UI našepkávača
 - Na všetkých poliach `add-<category>` okrem `note` (food, meds, sport), aj pri inline úprave textu.
@@ -48,11 +50,11 @@ prihláseného používateľa.
 - Prístupnosť: `role="listbox"`, `aria-activedescendant`.
 
 **Acceptance Criteria:**
-- [ ] e2e: po predchádzajúcich záznamoch „toasty“ napíš „to“ → v návrhoch je „toasty“; ťuk ho pridá ako záznam
-- [ ] e2e: „2 to“ → výber „toasty“ → záznam s množstvom 2
-- [ ] e2e: „kafe, to“ → výber „toasty“ doplní text „kafe, toasty“ (nepridá hneď) → Enter pridá 2 záznamy
-- [ ] e2e: šípka dole + Enter vyberie prvý návrh
-- [ ] e2e: druhý používateľ v inom prehliadačovom kontexte nevidí návrhy prvého
+- [x] e2e: po predchádzajúcich záznamoch „toasty“ napíš „to“ → v návrhoch je „toasty“; ťuk ho pridá ako záznam
+- [x] e2e: „2 to“ → výber „toasty“ → záznam s množstvom 2
+- [x] e2e: „kafe, to“ → výber „toasty“ doplní text „kafe, toasty“ (nepridá hneď) → Enter pridá 2 záznamy
+- [x] e2e: šípka dole + Enter vyberie prvý návrh
+- [x] e2e: druhý používateľ v inom prehliadačovom kontexte nevidí návrhy prvého
 
 ---
 
@@ -70,14 +72,27 @@ prihláseného používateľa.
 ## Completion Signal
 
 ### Implementation Checklist
-- [ ] Suggestions API
-- [ ] UI našepkávača (pridávanie aj inline edit)
+- [x] Suggestions API
+- [x] UI našepkávača (pridávanie aj inline edit)
 
 ### Testing Requirements
-- [ ] `./scripts/test-food.sh` → exit 0
-- [ ] Žiadne JS chyby v konzole počas e2e
+- [x] `./scripts/test-food.sh` → exit 0
+- [x] Žiadne JS chyby v konzole počas e2e
 
 ### Iteration Instructions
 Ak niečo zlyhá: oprav, spusti testy znova, over kritériá, commitni a pushni. Až keď je všetko zelené: `<promise>DONE</promise>`.
 
-<!-- NR_OF_TRIES: 0 -->
+## Implementation notes
+- Server: `services/food_suggestions.py`, endpoint in `routers/food_entries.py`. Unknown group → 422
+  `unknown_group`. Two SQL queries: top `text_norm` groups (count, then last use = latest day date, then
+  latest `created_at`), then the spellings of at most `limit` groups to pick the most used one. Entries are
+  joined with their day so a deleted day never contributes, even if an entry were left undeleted.
+- LIKE patterns escape `\`, `%`, `_` with `ESCAPE '\'` (works on SQLite and PostgreSQL).
+- Web: `/food/suggestions/` is a thin JSON proxy (unknown group or API error → empty list, HTTP 200).
+  `static/js/food_suggest.js` handles debounce, listbox, keyboard and choice. Inputs carry
+  `data-suggest="<group>"`; inline edit inputs also `data-suggest-whole` (whole text is searched, choice saves).
+- Max. 8 suggestions under 600 px width (the food CSS breakpoint), 10 otherwise.
+- Esc with an open list only closes the list (inline edit stays open); a second Esc cancels the edit.
+- The leading quantity and the comma split in JS mirror the server's `parse_quantity` / `split_entries` regexes.
+
+<!-- NR_OF_TRIES: 1 -->
