@@ -1,7 +1,10 @@
 """HTTP client for the Food diary API (`/api/v1/food/*`), same conventions as core/api_client.py:
-success returns the parsed JSON, failure returns {"error": "server_unavailable" | "unauthorized" | "server_error"}."""
+success returns the parsed JSON, failure returns {"error": "server_unavailable" | "unauthorized" | "server_error"}.
+Views call it through `call(request, ...)`, which refreshes an expired access token (core.api_client.call_with_refresh)."""
 import httpx
 from django.conf import settings
+
+from core.api_client import call_with_refresh
 
 _TIMEOUT = 5.0
 _PREFIX = "/api/v1/food"
@@ -38,3 +41,7 @@ def get(token: str, path: str, params: dict | None = None) -> dict:
 
 def post(token: str, path: str, json: dict | None = None) -> dict:
     return request(token, "POST", path, json=json)
+
+
+def call(django_request, method: str, path: str, json: dict | None = None, params: dict | None = None) -> dict:
+    return call_with_refresh(django_request, request, method, path, json=json, params=params)

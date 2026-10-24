@@ -57,7 +57,10 @@ INSTALLED_APPS = [
 ]
 
 SERVER_URL = os.environ.get('FASTAPI_URL', 'http://192.168.77.24:8095')
-SESSION_COOKIE_AGE = 86400
+# Food diary entries are written throughout the day: the session lasts 30 days and every
+# request extends it (food-002). The API access token is refreshed via core.api_client.call_with_refresh.
+SESSION_COOKIE_AGE = 30 * 24 * 3600
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Dedicated web-console log file (FR-017-FR-019), separate from the FastAPI API's
 # logs/api.log so each service can be monitored independently.
@@ -94,6 +97,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.SessionExpiredMiddleware',
 ]
 
 ROOT_URLCONF = 'adhd_web.urls'

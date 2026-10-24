@@ -7,6 +7,9 @@
         {% if request.GET.expired %}
         <div class="alert alert-error">Prihlásenie vypršalo. Prihláste sa znova.</div>
         {% endif %}
+        {% if request.GET.deleted %}
+        <div class="alert alert-success" data-testid="account-deleted">Účet a všetky jeho dáta boli zmazané.</div>
+        {% endif %}
         {% if error %}
         <div class="alert alert-error">{{ error }}</div>
         {% endif %}

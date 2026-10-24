@@ -1,11 +1,15 @@
 """E2E harness: starts the real FastAPI server and Django web console against throwaway
 SQLite databases and drives them with Playwright. Selectors must use data-testid only."""
+import hashlib
 import os
+import secrets
 import signal
 import socket
+import sqlite3
 import subprocess
 import time
 import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -76,24 +80,36 @@ def _start(cmd: list[str], cwd: Path, env: dict, log_path: Path) -> subprocess.P
 
 
 @pytest.fixture(scope="session")
-def api_server(tmp_path_factory):
+def api_env(tmp_path_factory) -> dict:
+    """Environment of the API server; also used to run server CLI scripts against the same DB."""
     tmp = tmp_path_factory.mktemp("api")
-    env = {
+    return {
         **os.environ,
         "DATABASE_URL": f"sqlite+aiosqlite:///{tmp / 'api.db'}",
         "SECRET_KEY": "e2e-test-secret-key",
-        "REGISTRATION_MODE": "open",
+        "REGISTRATION_MODE": "invite",
         "ENVIRONMENT": "test",
+        "E2E_API_DIR": str(tmp),
     }
+
+
+@pytest.fixture(scope="session")
+def api_db_path(api_env) -> Path:
+    return Path(api_env["E2E_API_DIR"]) / "api.db"
+
+
+@pytest.fixture(scope="session")
+def api_server(api_env):
+    tmp = Path(api_env["E2E_API_DIR"])
     subprocess.run(
         [str(SERVER_DIR / VENV / "bin" / "alembic"), "upgrade", "head"],
-        cwd=SERVER_DIR, env=env, check=True, capture_output=True,
+        cwd=SERVER_DIR, env=api_env, check=True, capture_output=True,
     )
     port = _free_port()
     log_path = tmp / "api.log"
     proc = _start(
         [str(SERVER_DIR / VENV / "bin" / "uvicorn"), "app.main:app", "--host", "127.0.0.1", "--port", str(port)],
-        SERVER_DIR, env, log_path,
+        SERVER_DIR, api_env, log_path,
     )
     url = f"http://127.0.0.1:{port}"
     try:
@@ -135,11 +151,30 @@ def base_url(web_server):
     return web_server
 
 
+def create_invitation_in_db(db_path: Path, days: int = 7) -> str:
+    """Inserts an invitation row directly (same format as app.services.invitation_service) and returns the token."""
+    token = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    fmt = "%Y-%m-%d %H:%M:%S.%f"
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "INSERT INTO invitations (id, token_hash, created_at, expires_at) VALUES (?, ?, ?, ?)",
+            (str(uuid.uuid4()), hashlib.sha256(token.encode()).hexdigest(),
+             now.strftime(fmt), (now + timedelta(days=days)).strftime(fmt)),
+        )
+    return token
+
+
 @pytest.fixture
-def user_factory(api_server):
+def user_factory(api_server, api_db_path):
+    """Creates users the same way as production: through a one-time invitation (REGISTRATION_MODE=invite)."""
     def create() -> tuple[str, str]:
         email = f"e2e-{uuid.uuid4().hex[:12]}@example.com"
-        r = httpx.post(f"{api_server}/api/v1/auth/register", json={"email": email, "password": TEST_PASSWORD})
+        token = create_invitation_in_db(api_db_path)
+        r = httpx.post(
+            f"{api_server}/api/v1/auth/register",
+            json={"email": email, "password": TEST_PASSWORD, "invite_token": token},
+        )
         assert r.status_code in (200, 201), r.text
         return email, TEST_PASSWORD
 

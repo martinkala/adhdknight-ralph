@@ -2,6 +2,9 @@
 {% block title %}Účet – ADHD Tracker{% endblock %}
 {% block content %}
 <h2 style="margin-bottom:1rem;">Môj účet</h2>
+{% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" data-testid="account-message">{{ message }}</div>
+{% endfor %}
 {% if me.error %}
     <div class="alert alert-error">{{ me.error }}</div>
 {% else %}
@@ -25,4 +28,40 @@
         </div>
     </div>
 {% endif %}
+
+<div class="card" style="max-width:480px;">
+    <h3 style="margin-bottom:1rem;font-size:1.05rem;">Zmena hesla</h3>
+    <form method="post" action="{% url 'change_password' %}" data-testid="change-password-form">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="old_password">Súčasné heslo</label>
+            <input type="password" id="old_password" name="old_password" required autocomplete="current-password" data-testid="old-password">
+        </div>
+        <div class="form-group">
+            <label for="new_password">Nové heslo (aspoň 8 znakov)</label>
+            <input type="password" id="new_password" name="new_password" required minlength="8" autocomplete="new-password" data-testid="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="min-height:44px;" data-testid="change-password-submit">Zmeniť heslo</button>
+    </form>
+</div>
+
+<div class="card" style="max-width:480px;border:1px solid #ef9a9a;" data-testid="delete-account">
+    <h3 style="margin-bottom:0.75rem;font-size:1.05rem;color:#c62828;">Zmazať účet</h3>
+    <p style="margin-bottom:1rem;font-size:0.9rem;">
+        Účet je spoločný pre všetky aplikácie. Zmazaním účtu sa natrvalo zmažú
+        <strong>všetky dáta ADHD aj Food</strong>. Túto akciu nie je možné vrátiť.
+    </p>
+    <form method="post" action="{% url 'delete_account' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="delete_password">Heslo</label>
+            <input type="password" id="delete_password" name="password" required autocomplete="current-password" data-testid="delete-account-password">
+        </div>
+        <label style="display:flex;align-items:center;gap:0.5rem;min-height:44px;font-size:0.9rem;margin-bottom:1rem;">
+            <input type="checkbox" name="confirm" required style="width:22px;height:22px;" data-testid="delete-account-confirm">
+            Rozumiem, že sa zmažú dáta ADHD aj Food.
+        </label>
+        <button type="submit" class="btn" style="background:#c62828;color:white;min-height:44px;" data-testid="delete-account-submit">Zmazať účet</button>
+    </form>
+</div>
 {% endblock %}
