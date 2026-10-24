@@ -18,43 +18,29 @@
 
 {% for section in sections %}
 {% if section.kind == "entries" %}
-<section class="card day-section" data-testid="section-{{ section.key }}">
-    <h3>{{ section.label }}</h3>
-    {% if section.items %}
-    <ul class="entry-list">
-        {% for entry in section.items %}
-        <li data-testid="entry">{% if entry.quantity is not None %}<span class="qty">{{ entry.quantity|floatformat:"-3" }}{% if entry.unit %} {{ entry.unit }}{% else %}&times;{% endif %}</span> {% endif %}{{ entry.text }}{% if entry.intensity %} <small>({{ entry.intensity }}/5)</small>{% endif %}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="empty">&ndash;</p>
-    {% endif %}
-</section>
+{% include "food/_entry_section.html" %}
 {% elif section.kind == "bp" %}
 <section class="card day-section" data-testid="section-bp">
     <h3>{% translate "Blood pressure" %}</h3>
-    {% if day.blood_pressures %}
-    <ul class="entry-list">
-        {% for bp in day.blood_pressures %}
-        <li>{{ bp.systolic }}/{{ bp.diastolic }}{% if bp.pulse %} {{ bp.pulse }}{% endif %}{% if bp.measured_at %} <small>{{ bp.measured_at }}</small>{% endif %}{% if bp.note %} &ndash; {{ bp.note }}{% endif %}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="empty">&ndash;</p>
-    {% endif %}
+    {% include "food/_bp.html" %}
+    <form class="add-form" hx-post="{% url 'food:add_bp' day=day.date %}" hx-target="#bp-list" hx-swap="outerHTML"
+          hx-sync="this:queue all" data-quick-add autocomplete="off">
+        <input type="text" name="raw" inputmode="decimal" enterkeyhint="enter" placeholder="130/85 72 7:30"
+               aria-label="{% translate 'Blood pressure' %}" data-testid="add-bp">
+        <button type="submit" class="icon-btn" aria-label="{% translate 'Add' %}" data-testid="add-bp-submit">+</button>
+    </form>
 </section>
 {% elif section.kind == "weight" %}
 <section class="card day-section" data-testid="section-weight">
     <h3>{% translate "Weight" %}</h3>
-    {% if day.weights %}
-    <ul class="entry-list">
-        {% for w in day.weights %}
-        <li>{{ w.kg|floatformat:"-1" }} kg{% if w.measured_at %} <small>{{ w.measured_at }}</small>{% endif %}{% if w.note %} &ndash; {{ w.note }}{% endif %}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p class="empty">&ndash;</p>
-    {% endif %}
+    {% include "food/_weight.html" %}
+    <form class="add-form" hx-post="{% url 'food:add_weight' day=day.date %}" hx-target="#weight-list" hx-swap="outerHTML"
+          hx-sync="this:queue all" data-quick-add autocomplete="off">
+        <input type="text" name="kg" inputmode="decimal" enterkeyhint="enter" placeholder="kg"
+               aria-label="{% translate 'Weight (kg)' %}" data-testid="add-weight">
+        <input type="time" name="measured_at" aria-label="{% translate 'Time' %}" data-testid="add-weight-time">
+        <button type="submit" class="icon-btn" aria-label="{% translate 'Add' %}" data-testid="add-weight-submit">+</button>
+    </form>
 </section>
 {% elif section.kind == "values" %}
 {% include "food/_day_values.html" %}
@@ -86,4 +72,5 @@
     </form>
 </dialog>
 <script src="{% static 'js/food_day.js' %}"></script>
+<script src="{% static 'js/food_entries.js' %}"></script>
 {% endblock %}

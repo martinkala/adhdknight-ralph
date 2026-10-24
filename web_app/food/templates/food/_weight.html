@@ -1,0 +1,22 @@
+{% load i18n food_format %}
+<div id="weight-list" class="entries">
+    {% if error_message %}<p class="field-error" role="alert" data-testid="weight-error">{{ error_message }}</p>{% endif %}
+    {% if day.weights %}
+    <ul class="entry-list">
+        {% for w in day.weights %}
+        {% url 'food:weight' day=day.date record_id=w.id as weight_url %}
+        <li class="entry-row" data-testid="weight-row">
+            <span class="entry-text" role="button" tabindex="0" data-edit-toggle data-testid="weight-text">{{ w.kg|number }} kg{% if w.measured_at %} &middot; {{ w.measured_at }}{% endif %}{% if w.note %} <small>&ndash; {{ w.note }}</small>{% endif %}</span>
+            <form class="edit-form" hx-patch="{{ weight_url }}" hx-target="#weight-list" hx-swap="outerHTML" autocomplete="off">
+                <input type="text" name="kg" value="{{ w.kg|number }}" inputmode="decimal" aria-label="{% translate 'Weight (kg)' %}" data-testid="weight-edit-input">
+                <input type="time" name="measured_at" value="{{ w.measured_at|default:'' }}" aria-label="{% translate 'Time' %}" data-testid="weight-edit-time">
+                <input type="text" name="note" value="{{ w.note|default:'' }}" maxlength="200" placeholder="{% translate 'Note' %}" aria-label="{% translate 'Note' %}" data-testid="weight-edit-note">
+                <button type="submit" class="icon-btn" aria-label="{% translate 'Save' %}" data-testid="weight-edit-save">&#10003;</button>
+            </form>
+            <button type="button" class="icon-btn" hx-delete="{{ weight_url }}" hx-target="#weight-list" hx-swap="outerHTML"
+                    aria-label="{% translate 'Delete' %}" data-testid="weight-delete">&#10005;</button>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>

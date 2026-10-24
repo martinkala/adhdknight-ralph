@@ -1,0 +1,25 @@
+{% load i18n food_format %}
+{% url 'food:entry' day=day.date category=section.key entry_id=entry_id as entry_url %}
+<div class="qty-popover" data-testid="qty-popover">
+    {% if options %}
+    <div class="qty-options">
+        {% for o in options %}
+        <button type="button" class="qty-option" hx-patch="{{ entry_url }}" hx-target="#entries-{{ section.key }}" hx-swap="outerHTML"
+                hx-vals='{"quantity": "{{ o.quantity|number }}", "unit": "{{ o.unit|default:"" }}"}' data-testid="qty-option">{{ o|qty }}</button>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <form class="qty-manual" hx-patch="{{ entry_url }}" hx-target="#entries-{{ section.key }}" hx-swap="outerHTML" autocomplete="off">
+        <input type="text" name="quantity" inputmode="decimal" required placeholder="{% translate 'Quantity' %}"
+               aria-label="{% translate 'Quantity' %}" data-testid="qty-input">
+        <select name="unit" aria-label="{% translate 'Unit' %}" data-testid="qty-unit">
+            {% for u in unit_choices %}<option value="{% if u != 'ks' %}{{ u }}{% endif %}">{{ u }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary" data-testid="qty-save">OK</button>
+    </form>
+    <div class="qty-actions">
+        <button type="button" class="btn btn-secondary" hx-patch="{{ entry_url }}" hx-target="#entries-{{ section.key }}" hx-swap="outerHTML"
+                hx-vals='{"quantity": ""}' data-testid="qty-none">{% translate "No quantity" %}</button>
+        <button type="button" class="btn btn-secondary" data-popover-close data-testid="qty-close">{% translate "Close" %}</button>
+    </div>
+</div>

@@ -223,3 +223,184 @@ class FoodDeleteDayTests(TestCase):
     def test_delete_requires_post(self):
         response = self.client.get("/food/day/2026-10-20/delete/")
         self.assertEqual(response.status_code, 405)
+
+
+def _entry(text, quantity=None, unit=None, intensity=None, entry_id="e1", category="breakfast"):
+    return {"id": entry_id, "category": category, "text": text, "quantity": quantity, "unit": unit,
+            "intensity": intensity, "position": 0, "updated_at": "2026-10-20T08:00:00Z"}
+
+
+def _detail_with(**lists):
+    detail = _day_detail()
+    for key, value in lists.items():
+        if key in ("weights", "blood_pressures"):
+            detail[key] = value
+        else:
+            detail["entries"][key] = value
+    return detail
+
+
+class FoodEntriesTests(TestCase):
+    def setUp(self):
+        _login_session(self.client)
+
+    def test_day_screen_has_add_fields_and_entries(self):
+        detail = _detail_with(breakfast=[_entry("toasty", 2), _entry("kofola", 0.5, "l", entry_id="e2")],
+                              sport=[_entry("eBike", intensity=3, entry_id="e3", category="sport")])
+        fake, p = _patch_api({("GET", "/days/2026-10-20"): detail})
+        with p:
+            html = self.client.get("/food/day/2026-10-20/").content.decode()
+        for key in ("breakfast", "unassigned", "medication", "supplement", "sport", "note", "bp", "weight"):
+            self.assertIn(f'data-testid="add-{key}"', html)
+        self.assertIn("2×", html)
+        self.assertIn("0.5 l", html)
+        self.assertIn('data-testid="entry-intensity"', html)
+        self.assertIn('<option value="3" selected>', html)
+        self.assertIn('hx-delete="/food/day/2026-10-20/entries/breakfast/e1/"', html)
+
+    def test_add_entries_posts_and_renders_section(self):
+        fake, p = _patch_api({
+            ("POST", "/days/2026-10-20/entries"): {"created": []},
+            ("GET", "/days/2026-10-20"): _detail_with(breakfast=[_entry("toasty", 2), _entry("kafe", entry_id="e2")]),
+        })
+        with p:
+            response = self.client.post("/food/day/2026-10-20/entries/breakfast/", {"text": "2 toasty, kafe"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("X-Food-Error", response)
+        self.assertIn(("POST", "/days/2026-10-20/entries", {"category": "breakfast", "text": "2 toasty, kafe"}),
+                      fake.calls)
+        html = response.content.decode()
+        self.assertIn('id="entries-breakfast"', html)
+        self.assertEqual(html.count('data-testid="entry"'), 2)
+        self.assertIn('data-testid="entry-qty-add"', html)
+
+    def test_add_error_is_shown_with_header(self):
+        fake, p = _patch_api({
+            ("POST", "/days/2026-10-20/entries"): {"error": "empty_text", "status_code": 422},
+            ("GET", "/days/2026-10-20"): _day_detail(),
+        })
+        with p:
+            response = self.client.post("/food/day/2026-10-20/entries/lunch/", {"text": " , "})
+        self.assertEqual(response["X-Food-Error"], "empty_text")
+        self.assertContains(response, 'data-testid="entry-error"')
+
+    def test_unknown_category_is_404(self):
+        response = self.client.post("/food/day/2026-10-20/entries/brunch/", {"text": "x"})
+        self.assertEqual(response.status_code, 404)
+
+    def test_patch_entry_text_quantity_intensity(self):
+        routes = {("PATCH", "/entries/e1"): _entry("x"), ("GET", "/days/2026-10-20"): _day_detail()}
+        cases = [
+            ("text=nove+jedlo", {"text": "nove jedlo"}),
+            ("quantity=0%2C5&unit=l", {"quantity": 0.5, "unit": "l"}),
+            ("quantity=2&unit=", {"quantity": 2.0, "unit": None}),
+            ("quantity=", {"quantity": None, "unit": None}),
+            ("intensity=4", {"intensity": 4}),
+            ("intensity=", {"intensity": None}),
+        ]
+        for body, payload in cases:
+            fake, p = _patch_api(routes)
+            with p:
+                response = self.client.patch("/food/day/2026-10-20/entries/sport/e1/", body,
+                                             content_type="application/x-www-form-urlencoded")
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(("PATCH", "/entries/e1", payload), fake.calls)
+
+    def test_patch_invalid_quantity_does_not_call_api(self):
+        fake, p = _patch_api({("GET", "/days/2026-10-20"): _day_detail()})
+        with p:
+            response = self.client.patch("/food/day/2026-10-20/entries/lunch/e1/", "quantity=abc",
+                                         content_type="application/x-www-form-urlencoded")
+        self.assertEqual(response["X-Food-Error"], "invalid_quantity")
+        self.assertNotIn("PATCH", [c[0] for c in fake.calls])
+
+    def test_delete_entry(self):
+        fake, p = _patch_api({("DELETE", "/entries/e1"): {}, ("GET", "/days/2026-10-20"): _day_detail()})
+        with p:
+            response = self.client.delete("/food/day/2026-10-20/entries/lunch/e1/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(("DELETE", "/entries/e1", None), fake.calls)
+
+    def test_quantity_popover_lists_options(self):
+        fake, p = _patch_api({("GET", "/quantities"): {"options": [
+            {"quantity": 2.0, "unit": None, "count": 3}, {"quantity": 0.5, "unit": "l", "count": 1}]}})
+        with p:
+            response = self.client.get("/food/day/2026-10-20/entries/breakfast/e1/quantities/", {"text": "toasty"})
+        html = response.content.decode()
+        self.assertIn('data-testid="qty-popover"', html)
+        self.assertEqual(html.count('data-testid="qty-option"'), 2)
+        self.assertLess(html.index("2×"), html.index("0.5 l"))
+        self.assertIn('data-testid="qty-none"', html)
+        self.assertIn('data-testid="qty-input"', html)
+
+
+class FoodMeasurementsViewTests(TestCase):
+    def setUp(self):
+        _login_session(self.client)
+
+    def test_add_blood_pressure_fills_time(self):
+        bp = {"id": "b1", "systolic": 130, "diastolic": 85, "pulse": 72, "measured_at": "07:30", "note": None,
+              "updated_at": "2026-10-20T08:00:00Z"}
+        fake, p = _patch_api({
+            ("POST", "/days/2026-10-20/blood-pressures"): bp,
+            ("GET", "/days/2026-10-20"): _detail_with(blood_pressures=[bp]),
+        })
+        with p:
+            response = self.client.post("/food/day/2026-10-20/blood-pressures/", {"raw": "130/85 72 7:30"})
+        self.assertIn(("POST", "/days/2026-10-20/blood-pressures", {"raw": "130/85 72 7:30", "fill_time": True}),
+                      fake.calls)
+        html = response.content.decode()
+        self.assertIn("130/85", html)
+        self.assertIn("07:30", html)
+        self.assertIn('value="130/85 72 07:30"', html)
+
+    def test_blood_pressure_error(self):
+        fake, p = _patch_api({
+            ("POST", "/days/2026-10-20/blood-pressures"): {"error": "bp_range", "status_code": 422},
+            ("GET", "/days/2026-10-20"): _day_detail(),
+        })
+        with p:
+            response = self.client.post("/food/day/2026-10-20/blood-pressures/", {"raw": "145/02"})
+        self.assertEqual(response["X-Food-Error"], "bp_range")
+        self.assertContains(response, 'data-testid="bp-error"')
+
+    def test_add_weight_accepts_comma(self):
+        fake, p = _patch_api({
+            ("POST", "/days/2026-10-20/weights"): {},
+            ("GET", "/days/2026-10-20"): _day_detail(),
+        })
+        with p:
+            self.client.post("/food/day/2026-10-20/weights/", {"kg": "80,6", "measured_at": ""})
+        self.assertIn(("POST", "/days/2026-10-20/weights", {"kg": 80.6, "measured_at": None, "note": ""}),
+                      fake.calls)
+
+    def test_add_weight_invalid(self):
+        fake, p = _patch_api({("GET", "/days/2026-10-20"): _day_detail()})
+        with p:
+            response = self.client.post("/food/day/2026-10-20/weights/", {"kg": "abc"})
+        self.assertEqual(response["X-Food-Error"], "weight_range")
+        self.assertContains(response, 'data-testid="weight-error"')
+
+    def test_patch_and_delete_measurements(self):
+        fake, p = _patch_api({
+            ("PATCH", "/blood-pressures/b1"): {}, ("DELETE", "/weights/w1"): {},
+            ("GET", "/days/2026-10-20"): _day_detail(),
+        })
+        with p:
+            self.client.patch("/food/day/2026-10-20/blood-pressures/b1/", "raw=120%2F80&note=ok",
+                              content_type="application/x-www-form-urlencoded")
+            self.client.delete("/food/day/2026-10-20/weights/w1/")
+        self.assertIn(("PATCH", "/blood-pressures/b1", {"raw": "120/80", "note": "ok"}), fake.calls)
+        self.assertIn(("DELETE", "/weights/w1", None), fake.calls)
+
+
+class QtyFilterTests(TestCase):
+    def test_labels(self):
+        from food.templatetags.food_format import qty, number
+        self.assertEqual(qty({"quantity": 2.0, "unit": None}), "2×")
+        self.assertEqual(qty({"quantity": 200.0, "unit": "g"}), "200 g")
+        self.assertEqual(qty({"quantity": None, "unit": None}), "")
+        self.assertEqual(number(80.6), "80.6")
+        from django.utils import translation
+        with translation.override("sk"):
+            self.assertEqual(qty({"quantity": 0.5, "unit": "l"}), "0,5 l")

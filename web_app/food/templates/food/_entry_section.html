@@ -1,0 +1,15 @@
+{% load i18n %}
+<section class="card day-section" data-testid="section-{{ section.key }}">
+    <h3>{{ section.label }}</h3>
+    {% include "food/_entries.html" %}
+    <form class="add-form" hx-post="{% url 'food:add_entries' day=day.date category=section.key %}"
+          hx-target="#entries-{{ section.key }}" hx-swap="outerHTML" hx-sync="this:queue all" data-quick-add autocomplete="off">
+        {% if section.key == "note" %}
+        <textarea name="text" rows="2" maxlength="2000" data-enter-submits placeholder="{% translate 'Add…' %}"
+                  aria-label="{{ section.label }}" data-testid="add-{{ section.key }}"></textarea>
+        {% else %}
+        <input type="text" name="text" maxlength="2000" enterkeyhint="enter" placeholder="{% translate 'Add…' %}"
+               aria-label="{{ section.label }}" data-testid="add-{{ section.key }}">
+        {% endif %}
+    </form>
+</section>

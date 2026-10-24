@@ -199,6 +199,14 @@ def console_errors(page):
 
 
 @pytest.fixture
+def failed_responses(page):
+    """Collects "<status> <url>" of every 4xx/5xx response seen by `page`."""
+    failed = []
+    page.on("response", lambda r: failed.append(f"{r.status} {r.url}") if r.status >= 400 else None)
+    return failed
+
+
+@pytest.fixture
 def logged_in_page(page, user_factory):
     email, password = user_factory()
     login(page, email, password)

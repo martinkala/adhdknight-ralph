@@ -25,3 +25,7 @@ def test_split_on_comma_without_space():
 
 def test_split_on_newline_and_empty_parts():
     assert split_entries("a\nb, ,c") == ["a", "b", "c"]
+
+
+def test_split_keeps_decimal_comma():
+    assert split_entries("0,5 l kofoly, 2,5 dl vody,3 jablka") == ["0,5 l kofoly", "2,5 dl vody", "3 jablka"]

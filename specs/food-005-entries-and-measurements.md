@@ -1,5 +1,7 @@
 # Specification: food-005 — Záznamy, množstvo a merania
 
+## Status: COMPLETE
+
 ## Feature: Pridanie, úprava a mazanie záznamov dňa, váhy a tlaku (UC3, UC4)
 
 ### Overview
@@ -34,13 +36,13 @@ jedným ťuknutím. Váha a tlak majú vlastné rýchle vstupy. Autocomplete pri
   iba vlastné nezmazané záznamy, zoradené podľa početnosti.
 
 **Acceptance Criteria:**
-- [ ] API test: `"2 toasty, kafe"` do `breakfast` → 2 záznamy: (toasty, 2) a (kafe, bez množstva)
-- [ ] API test: `"emanera , prestarium, emanera"` do `medication` → emanera množstvo 2, prestarium
-- [ ] API test: `note` `"rano prujem, unava"` → 1 záznam s celým textom
-- [ ] API test: `intensity` pre `lunch` → 422; pre `sport` 1–5 OK, 6 → 422
-- [ ] API test: PATCH textu prepočíta `text_norm`; presun kategórie funguje
-- [ ] API test: `quantities` vráti najčastejšie množstvá zoradené podľa počtu a ignoruje zmazané záznamy
-- [ ] API testy izolácie: B nevie PATCH/DELETE záznam A (404), `quantities` nepočíta záznamy B
+- [x] API test: `"2 toasty, kafe"` do `breakfast` → 2 záznamy: (toasty, 2) a (kafe, bez množstva)
+- [x] API test: `"emanera , prestarium, emanera"` do `medication` → emanera množstvo 2, prestarium
+- [x] API test: `note` `"rano prujem, unava"` → 1 záznam s celým textom
+- [x] API test: `intensity` pre `lunch` → 422; pre `sport` 1–5 OK, 6 → 422
+- [x] API test: PATCH textu prepočíta `text_norm`; presun kategórie funguje
+- [x] API test: `quantities` vráti najčastejšie množstvá zoradené podľa počtu a ignoruje zmazané záznamy
+- [x] API testy izolácie: B nevie PATCH/DELETE záznam A (404), `quantities` nepočíta záznamy B
 
 ### FR-2: Measurements API
 - `POST /api/v1/food/days/{date}/weights` `{kg, measured_at?, note?, id?}` → 201 Weight. Validácia D4.
@@ -51,9 +53,9 @@ jedným ťuknutím. Váha a tlak majú vlastné rýchle vstupy. Autocomplete pri
 - Viac meraní za deň, v `DayDetail` zoradené podľa `measured_at` (bez času na konci), potom podľa `created_at`.
 
 **Acceptance Criteria:**
-- [ ] API testy: `raw` všetkých formátov z food-003 FR-5, chyby `bp_range`/`bp_format`, váha mimo rozsahu → 422
-- [ ] API test: 2 merania tlaku v jeden deň sú obe v `DayDetail`
-- [ ] API testy izolácie pre PATCH/DELETE meraní
+- [x] API testy: `raw` všetkých formátov z food-003 FR-5, chyby `bp_range`/`bp_format`, váha mimo rozsahu → 422
+- [x] API test: 2 merania tlaku v jeden deň sú obe v `DayDetail`
+- [x] API testy izolácie pre PATCH/DELETE meraní
 
 ### FR-3: UI záznamov na obrazovke dňa
 Pre každú kategóriu (D2) okrem `note`:
@@ -71,12 +73,12 @@ Pre každú kategóriu (D2) okrem `note`:
   samostatný záznam s úpravou a ✕.
 
 **Acceptance Criteria:**
-- [ ] e2e: do raňajok „2 toasty, kafe“ + Enter → 2 riadky, prvý s čipom `2×`; focus ostal v poli
-- [ ] e2e: ✕ zmaže záznam bez dialógu a po reloade nie je
-- [ ] e2e: úprava textu inline + reload → zmena ostala
-- [ ] e2e: po 3 dňoch s „2 toasty“ a 1 dni s „3 toasty“ ponúkne popover množstvá v poradí 2, 3
-- [ ] e2e: šport „eBike 60 km“ + intenzita 3 → po reloade ostalo
-- [ ] e2e (mobil 360 px): pridanie záznamu funguje, ✕ a čip majú cieľovú plochu ≥ 44 × 44 px
+- [x] e2e: do raňajok „2 toasty, kafe“ + Enter → 2 riadky, prvý s čipom `2×`; focus ostal v poli
+- [x] e2e: ✕ zmaže záznam bez dialógu a po reloade nie je
+- [x] e2e: úprava textu inline + reload → zmena ostala
+- [x] e2e: po 3 dňoch s „2 toasty“ a 1 dni s „3 toasty“ ponúkne popover množstvá v poradí 2, 3
+- [x] e2e: šport „eBike 60 km“ + intenzita 3 → po reloade ostalo
+- [x] e2e (mobil 360 px): pridanie záznamu funguje, ✕ a čip majú cieľovú plochu ≥ 44 × 44 px
 
 ### FR-4: UI meraní
 - Tlak: jedno pole (`data-testid="add-bp"`, placeholder „130/85 72 7:30“), Enter uloží. Pri prázdnom
@@ -86,9 +88,9 @@ Pre každú kategóriu (D2) okrem `note`:
   rovnaký zoznam.
 
 **Acceptance Criteria:**
-- [ ] e2e: „130/85 72 7:30“ → riadok s 130/85, pulz 72, 07:30
-- [ ] e2e: „145/02“ → zobrazí `bp-error`, nič sa neuloží
-- [ ] e2e: váha „80,6“ → uloží 80.6
+- [x] e2e: „130/85 72 7:30“ → riadok s 130/85, pulz 72, 07:30
+- [x] e2e: „145/02“ → zobrazí `bp-error`, nič sa neuloží
+- [x] e2e: váha „80,6“ → uloží 80.6
 
 ---
 
@@ -106,16 +108,36 @@ Pre každú kategóriu (D2) okrem `note`:
 ## Completion Signal
 
 ### Implementation Checklist
-- [ ] Entries API + quantities
-- [ ] Measurements API
-- [ ] UI sekcií záznamov (pridanie, inline edit, ✕, popover množstva, intenzita, poznámky)
-- [ ] UI tlaku a váhy
+- [x] Entries API + quantities
+- [x] Measurements API
+- [x] UI sekcií záznamov (pridanie, inline edit, ✕, popover množstva, intenzita, poznámky)
+- [x] UI tlaku a váhy
 
 ### Testing Requirements
-- [ ] `./scripts/test-food.sh` → exit 0
-- [ ] Žiadne JS chyby v konzole, žiadne 4xx/5xx v sieti počas e2e (okrem testovaných chýb)
+- [x] `./scripts/test-food.sh` → exit 0
+- [x] Žiadne JS chyby v konzole, žiadne 4xx/5xx v sieti počas e2e (okrem testovaných chýb)
 
 ### Iteration Instructions
 Ak niečo zlyhá: oprav, spusti testy znova, over kritériá, commitni a pushni. Až keď je všetko zelené: `<promise>DONE</promise>`.
 
-<!-- NR_OF_TRIES: 0 -->
+## Implementation notes
+- Server: `services/food_entries.py` (add / update / delete / quantities), `services/food_measurement_records.py`
+  (weights, blood pressures), router `routers/food_entries.py`. Domain errors are `FoodDayError` codes:
+  404 `entry_not_found` / `measurement_not_found`, 409 `id_exists`, everything else 422
+  (`empty_text`, `text_too_long`, `unknown_category`, `intensity_not_allowed`, `invalid_unit`,
+  `unit_without_quantity`, `id_requires_single_entry`, `bp_format`, `bp_range`, `weight_range`, `time_format`).
+- `split_entries` no longer splits a decimal comma between two digits (`0,5 l kofoly` stays one entry,
+  constitution D6 has priority over a plain comma split).
+- Explicit `quantity` in POST is used for every part as is (no parsing). `unit: "ks"` is stored as no unit.
+  `unit` without `quantity` is 422. Moving an entry out of `sport` clears its intensity.
+- Notes keep line breaks (each line trimmed, empty lines dropped) and are not quantity-parsed.
+- "Current time when the time is empty on today's day" is done on the server: `fill_time: true` in POST
+  weights / blood-pressures (the web sends it for blood pressure). Android can use the same flag.
+- `quantities` ties (same count) are ordered by the most recent use.
+- Web: HTMX partials `_entries.html`, `_bp.html`, `_weight.html`, `_qty_popover.html`; a failed save returns
+  the list with an error and the `X-Food-Error` header (HTTP 200, so no 4xx in the network log) and
+  `static/js/food_entries.js` puts the typed text back. Quick-add fields are cleared as soon as the
+  request is sent, so typing can continue immediately.
+- Quantity chip uses the localized decimal separator (`0,5 l` in sk once food-010 activates the language).
+
+<!-- NR_OF_TRIES: 1 -->

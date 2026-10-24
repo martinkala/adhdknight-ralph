@@ -1,0 +1,21 @@
+{% load i18n food_format %}
+<div id="bp-list" class="entries">
+    {% if error_message %}<p class="field-error" role="alert" data-testid="bp-error">{{ error_message }}</p>{% endif %}
+    {% if day.blood_pressures %}
+    <ul class="entry-list">
+        {% for bp in day.blood_pressures %}
+        {% url 'food:bp' day=day.date record_id=bp.id as bp_url %}
+        <li class="entry-row" data-testid="bp-row">
+            <span class="entry-text" role="button" tabindex="0" data-edit-toggle data-testid="bp-text">{{ bp.systolic }}/{{ bp.diastolic }}{% if bp.pulse %} &middot; {% translate "pulse" %} {{ bp.pulse }}{% endif %}{% if bp.measured_at %} &middot; {{ bp.measured_at }}{% endif %}{% if bp.note %} <small>&ndash; {{ bp.note }}</small>{% endif %}</span>
+            <form class="edit-form" hx-patch="{{ bp_url }}" hx-target="#bp-list" hx-swap="outerHTML" autocomplete="off">
+                <input type="text" name="raw" value="{{ bp|bp_raw }}" inputmode="decimal" aria-label="{% translate 'Blood pressure' %}" data-testid="bp-edit-input">
+                <input type="text" name="note" value="{{ bp.note|default:'' }}" maxlength="200" placeholder="{% translate 'Note' %}" aria-label="{% translate 'Note' %}" data-testid="bp-edit-note">
+                <button type="submit" class="icon-btn" aria-label="{% translate 'Save' %}" data-testid="bp-edit-save">&#10003;</button>
+            </form>
+            <button type="button" class="icon-btn" hx-delete="{{ bp_url }}" hx-target="#bp-list" hx-swap="outerHTML"
+                    aria-label="{% translate 'Delete' %}" data-testid="bp-delete">&#10005;</button>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>

@@ -1,0 +1,39 @@
+{% load i18n food_format %}
+<div id="entries-{{ section.key }}" class="entries">
+    {% if error_message %}<p class="field-error" role="alert" data-testid="entry-error">{{ error_message }}</p>{% endif %}
+    {% if section.items %}
+    <ul class="entry-list">
+        {% for entry in section.items %}
+        {% url 'food:entry' day=day.date category=section.key entry_id=entry.id as entry_url %}
+        <li class="entry-row" data-testid="entry">
+            {% if section.key != "note" %}
+            {% with label=entry|qty %}
+            <button type="button" class="chip-btn" data-testid="{% if label %}entry-qty{% else %}entry-qty-add{% endif %}"
+                    hx-get="{% url 'food:entry_quantities' day=day.date category=section.key entry_id=entry.id %}?text={{ entry.text|urlencode }}"
+                    hx-target="#qty-popover-{{ entry.id }}" aria-label="{% translate 'Quantity' %}">{% if label %}<span class="qty">{{ label }}</span>{% else %}<span class="qty qty-add">+</span>{% endif %}</button>
+            {% endwith %}
+            {% endif %}
+            <span class="entry-text" role="button" tabindex="0" data-edit-toggle data-testid="entry-text">{{ entry.text }}</span>
+            <form class="edit-form" hx-patch="{{ entry_url }}" hx-target="#entries-{{ section.key }}" hx-swap="outerHTML" autocomplete="off">
+                {% if section.key == "note" %}
+                <textarea name="text" rows="2" maxlength="200" data-enter-submits aria-label="{% translate 'Edit' %}" data-testid="entry-edit-input">{{ entry.text }}</textarea>
+                {% else %}
+                <input type="text" name="text" maxlength="200" value="{{ entry.text }}" aria-label="{% translate 'Edit' %}" data-testid="entry-edit-input">
+                {% endif %}
+                <button type="submit" class="icon-btn" aria-label="{% translate 'Save' %}" data-testid="entry-edit-save">&#10003;</button>
+            </form>
+            {% if section.key == "sport" %}
+            <select name="intensity" class="intensity-select" hx-patch="{{ entry_url }}" hx-trigger="change"
+                    hx-target="#entries-{{ section.key }}" hx-swap="outerHTML" aria-label="{% translate 'Intensity 1–5' %}" data-testid="entry-intensity">
+                <option value="">{% translate "Intensity" %}</option>
+                {% for v in "12345" %}<option value="{{ v }}"{% if entry.intensity|stringformat:"d" == v %} selected{% endif %}>{{ v }}/5</option>{% endfor %}
+            </select>
+            {% endif %}
+            <button type="button" class="icon-btn" hx-delete="{{ entry_url }}" hx-target="#entries-{{ section.key }}" hx-swap="outerHTML"
+                    aria-label="{% translate 'Delete' %}" data-testid="entry-delete">&#10005;</button>
+            <div id="qty-popover-{{ entry.id }}" class="qty-popover-slot"></div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>

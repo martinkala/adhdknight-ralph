@@ -3,7 +3,8 @@ import re
 import unicodedata
 
 _WHITESPACE = re.compile(r"\s+")
-_SEPARATORS = re.compile(r"[,\n]")
+# A comma between two digits is a decimal comma ("0,5 l kofoly"), not a separator.
+_SEPARATORS = re.compile(r"\n|(?<!\d),|,(?!\d)")
 
 
 def clean_text(s: str) -> str:

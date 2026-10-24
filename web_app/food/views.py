@@ -37,7 +37,20 @@ _ERRORS = {
     "invalid_input": gettext_lazy("Enter a valid date."),
     "day_exists": gettext_lazy("Day already exists"),
     "future_date": gettext_lazy("A day in the future cannot be added."),
+    "day_not_found": gettext_lazy("The day does not exist anymore."),
+    "entry_not_found": gettext_lazy("The entry does not exist anymore."),
+    "measurement_not_found": gettext_lazy("The measurement does not exist anymore."),
+    "empty_text": gettext_lazy("Enter a text."),
+    "text_too_long": gettext_lazy("The text is too long (max. 200 characters)."),
+    "invalid_quantity": gettext_lazy("Enter a valid quantity."),
+    "invalid_unit": gettext_lazy("Enter a valid quantity."),
+    "unit_without_quantity": gettext_lazy("Enter a valid quantity."),
+    "bp_format": gettext_lazy("Enter blood pressure as 130/85, optionally with pulse and time: 130/85 72 7:30."),
+    "bp_range": gettext_lazy("Blood pressure is out of range (systolic 60–260, diastolic 30–160, pulse 30–220)."),
+    "weight_range": gettext_lazy("Enter weight between 20 and 300 kg."),
+    "time_format": gettext_lazy("Enter time as HH:MM."),
 }
+UNIT_CHOICES = ("ks", "l", "ml", "g", "kg")
 
 
 def _error_message(code: str) -> str:
@@ -122,14 +135,14 @@ def day_view(request, day):
     sections = []
     for key in SECTION_ORDER:
         if key in ENTRY_SECTION_LABELS:
-            sections.append({"kind": "entries", "key": key, "label": ENTRY_SECTION_LABELS[key],
-                             "items": detail["entries"].get(key, [])})
+            sections.append(_entry_section(detail, key))
         else:
             sections.append({"kind": key, "key": key})
     context = {
         **_values_context(detail),
         "day_date": _parse_date(day),
         "sections": sections,
+        "unit_choices": UNIT_CHOICES,
     }
     return render(request, "food/day.html", context)
 
@@ -177,3 +190,155 @@ def delete_day(request, day):
         return redirect("food:day", day=day)
     messages.success(request, _("The day was deleted."))
     return redirect("food:home")
+
+
+# --- Entries and measurements (food-005) -----------------------------------------------------
+# HTMX endpoints return the re-rendered list partial of the section. A failed save returns the
+# current list with an error message and the `X-Food-Error` header, so the input keeps its text.
+
+
+def _entry_section(detail: dict, key: str) -> dict:
+    return {"kind": "entries", "key": key, "label": ENTRY_SECTION_LABELS[key],
+            "items": detail["entries"].get(key, [])}
+
+
+def _decimal_or_none(raw: str | None):
+    """"0,5" -> 0.5; empty -> None; raises ValueError for anything else."""
+    raw = (raw or "").strip().replace(",", ".")
+    return float(raw) if raw else None
+
+
+def _partial(request, day: str, template: str, context_for, error: str | None = None):
+    detail = api_client.call(request, "GET", f"/days/{day}")
+    if "error" in detail:
+        error = error or detail["error"]
+        response = HttpResponse(_error_message(error))
+        response["X-Food-Error"] = error
+        return response
+    context = {"day": detail, "unit_choices": UNIT_CHOICES, "error": error,
+               "error_message": _error_message(error) if error else None, **context_for(detail)}
+    response = render(request, template, context)
+    if error:
+        response["X-Food-Error"] = error
+    return response
+
+
+def _entries_partial(request, day: str, category: str, error: str | None = None):
+    return _partial(request, day, "food/_entries.html", lambda d: {"section": _entry_section(d, category)}, error)
+
+
+def _check_category(category: str):
+    if category not in ENTRY_SECTION_LABELS:
+        raise Http404
+
+
+@require_POST
+def add_entries(request, day, category):
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    _check_category(category)
+    result = api_client.call(request, "POST", f"/days/{day}/entries",
+                             json={"category": category, "text": request.POST.get("text", "")})
+    return _entries_partial(request, day, category, result.get("error"))
+
+
+def _entry_changes(data: QueryDict) -> dict:
+    changes = {}
+    if "text" in data:
+        changes["text"] = data["text"]
+    if "quantity" in data:
+        changes["quantity"] = _decimal_or_none(data["quantity"])
+        changes["unit"] = data.get("unit") or None
+    if "intensity" in data:
+        changes["intensity"] = _parse_value(data["intensity"])
+    return changes
+
+
+@require_http_methods(["PATCH", "DELETE"])
+def entry(request, day, category, entry_id):
+    """PATCH saves inline edits (text, quantity, intensity); DELETE removes the entry (one tap)."""
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    _check_category(category)
+    if request.method == "DELETE":
+        result = api_client.call(request, "DELETE", f"/entries/{entry_id}")
+        return _entries_partial(request, day, category, result.get("error"))
+    try:
+        changes = _entry_changes(QueryDict(request.body))
+    except ValueError:
+        return _entries_partial(request, day, category, "invalid_quantity")
+    result = api_client.call(request, "PATCH", f"/entries/{entry_id}", json=changes)
+    return _entries_partial(request, day, category, result.get("error"))
+
+
+def entry_quantities(request, day, category, entry_id):
+    """Quantity popover: the most used quantities of the entry text + manual entry."""
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    _check_category(category)
+    result = api_client.call(request, "GET", "/quantities",
+                             params={"text": request.GET.get("text", ""), "category": category})
+    context = {"day": {"date": day}, "section": {"key": category}, "entry_id": entry_id,
+               "options": result.get("options", []), "unit_choices": UNIT_CHOICES}
+    return render(request, "food/_qty_popover.html", context)
+
+
+def _measurements_partial(request, day: str, kind: str, error: str | None = None):
+    return _partial(request, day, f"food/_{kind}.html", lambda d: {}, error)
+
+
+@require_POST
+def add_blood_pressure(request, day):
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    # Without a time on today's day, the server fills in the current local time.
+    result = api_client.call(request, "POST", f"/days/{day}/blood-pressures",
+                             json={"raw": request.POST.get("raw", ""), "fill_time": True})
+    return _measurements_partial(request, day, "bp", result.get("error"))
+
+
+@require_http_methods(["PATCH", "DELETE"])
+def blood_pressure(request, day, record_id):
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    if request.method == "DELETE":
+        result = api_client.call(request, "DELETE", f"/blood-pressures/{record_id}")
+    else:
+        data = QueryDict(request.body)
+        result = api_client.call(request, "PATCH", f"/blood-pressures/{record_id}",
+                                 json={"raw": data.get("raw", ""), "note": data.get("note", "")})
+    return _measurements_partial(request, day, "bp", result.get("error"))
+
+
+def _weight_payload(data) -> dict:
+    kg = _decimal_or_none(data.get("kg"))
+    if kg is None:
+        raise ValueError("kg")
+    return {"kg": kg, "measured_at": data.get("measured_at") or None, "note": data.get("note", "")}
+
+
+@require_POST
+def add_weight(request, day):
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    try:
+        payload = _weight_payload(request.POST)
+    except ValueError:
+        return _measurements_partial(request, day, "weight", "weight_range")
+    result = api_client.call(request, "POST", f"/days/{day}/weights", json=payload)
+    return _measurements_partial(request, day, "weight", result.get("error"))
+
+
+@require_http_methods(["PATCH", "DELETE"])
+def weight(request, day, record_id):
+    if not _require_login(request):
+        return HttpResponse(status=401)
+    if request.method == "DELETE":
+        result = api_client.call(request, "DELETE", f"/weights/{record_id}")
+        return _measurements_partial(request, day, "weight", result.get("error"))
+    try:
+        payload = _weight_payload(QueryDict(request.body))
+    except ValueError:
+        return _measurements_partial(request, day, "weight", "weight_range")
+    result = api_client.call(request, "PATCH", f"/weights/{record_id}", json=payload)
+    return _measurements_partial(request, day, "weight", result.get("error"))

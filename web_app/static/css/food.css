@@ -47,6 +47,38 @@
                      border: 1px solid #ccc; border-radius: 4px; }
 .dialog-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.75rem; flex-wrap: wrap; }
 
+/* Entries and measurements (food-005): chip, text, intensity, delete in one row; tap targets >= 44 px. */
+.entry-list li.entry-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; padding: 0.15rem 0; }
+.entry-text { flex: 1; min-width: 0; min-height: 44px; padding: 0.6rem 0; line-height: 1.5rem; white-space: pre-line; cursor: text; }
+.entry-row .edit-form { display: none; flex: 1; min-width: 0; gap: 0.25rem; flex-wrap: wrap; }
+.entry-row.editing .edit-form { display: flex; }
+.entry-row.editing .entry-text { display: none; }
+.edit-form input, .edit-form textarea, .add-form input, .add-form textarea, .qty-manual input, .qty-manual select,
+.intensity-select { min-height: 44px; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid #ccc; border-radius: 4px;
+                    font-size: 1rem; font-family: inherit; background: white; }
+.edit-form input, .edit-form textarea { flex: 1 1 8rem; }
+.edit-form input[type=time], .add-form input[type=time] { flex: 0 1 7.5rem; width: 7.5rem; }
+.add-form { display: flex; gap: 0.35rem; margin-top: 0.5rem; }
+.add-form input, .add-form textarea { flex: 1; width: 100%; }
+.add-form textarea { resize: vertical; }
+.icon-btn, .chip-btn { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+                       min-width: 44px; min-height: 44px; padding: 0; border: none; background: transparent;
+                       font-size: 1.1rem; color: #666; cursor: pointer; border-radius: 6px; }
+.icon-btn:hover, .chip-btn:hover { background: #f0f0f0; }
+.chip-btn .qty { white-space: nowrap; line-height: 1.6; }
+.qty-add { background: #f5f5f5; color: #888; }
+.intensity-select { flex: 0 0 auto; padding: 0 0.25rem; }
+.field-error { color: #c62828; font-size: 0.9rem; margin-bottom: 0.35rem; }
+.qty-popover-slot { flex-basis: 100%; }
+.qty-popover-slot:empty { display: none; }
+.qty-popover { border: 1px solid #ddd; border-radius: 8px; padding: 0.5rem; margin: 0.25rem 0 0.5rem; background: #fafafa; }
+.qty-options { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; }
+.qty-option { min-width: 44px; min-height: 44px; padding: 0 0.75rem; border: 1px solid #90caf9; border-radius: 22px;
+              background: #e3f2fd; color: #1565c0; font-size: 1rem; cursor: pointer; }
+.qty-manual { display: flex; gap: 0.35rem; margin-bottom: 0.5rem; }
+.qty-manual input { flex: 1; width: 100%; }
+.qty-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
 @media (min-width: 600px) {
     .value-grid-10 { grid-template-columns: repeat(10, 1fr); }
 }

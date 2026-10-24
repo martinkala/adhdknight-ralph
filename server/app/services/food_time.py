@@ -25,3 +25,9 @@ def is_future(date_str: str, user: User, now: datetime | None = None) -> bool:
     if len(date_str) != 10:
         raise ValueError(f"Invalid date: {date_str!r}")
     return date.fromisoformat(date_str) > today_for(user, now)
+
+
+def local_time_for(user: User, now: datetime | None = None) -> str:
+    """Current local time of the user as HH:MM."""
+    now = now or datetime.now(timezone.utc)
+    return now.astimezone(_zone(user)).strftime("%H:%M")
