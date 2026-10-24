@@ -364,3 +364,75 @@ class BloodPressureUpdate(BaseModel):
     note: str | None = _NOTE
 
     model_config = ConfigDict(extra="forbid", json_schema_extra={"example": {"pulse": 70, "note": "po káve"}})
+
+
+# --- Overview: calendar and days list (food-008) ---------------------------------------------
+
+MONTH_PATTERN = r"^\d{4}-(0[1-9]|1[0-2])$"
+# max(stool, gas): 1–3 ok, 4–6 mid, 7–10 bad, no values none.
+Severity = Literal["ok", "mid", "bad", "none"]
+
+
+class CalendarDay(BaseModel):
+    date: str
+    stool: int | None
+    gas: int | None
+    severity: Severity
+    # Not deleted entries of every category.
+    entry_count: int
+
+
+class CalendarMonth(BaseModel):
+    schema_version: str = "1.0"
+    month: str
+    today: str
+    days: list[CalendarDay]
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "schema_version": "1.0",
+                "month": "2026-10",
+                "today": "2026-10-24",
+                "days": [{"date": "2026-10-20", "stool": 2, "gas": 5, "severity": "mid", "entry_count": 7}],
+            }
+        }
+    )
+
+
+class DaySummary(BaseModel):
+    date: str
+    stool: int | None
+    gas: int | None
+    severity: Severity
+    sleep_quality: int | None
+    weights: list[float]
+    # "130/85" or "130/85 72" with pulse.
+    bp: list[str]
+    # First food texts in section order (breakfast … unassigned).
+    food_preview: list[str]
+    entry_count: int
+
+
+class DayList(BaseModel):
+    schema_version: str = "1.0"
+    page: int
+    page_size: int
+    total: int
+    days: list[DaySummary]
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "schema_version": "1.0",
+                "page": 1,
+                "page_size": 30,
+                "total": 1,
+                "days": [{
+                    "date": "2026-10-20", "stool": 4, "gas": 6, "severity": "mid", "sleep_quality": 2,
+                    "weights": [80.6], "bp": ["130/85 72"], "food_preview": ["toasty", "kafe", "ryža"],
+                    "entry_count": 9,
+                }],
+            }
+        }
+    )

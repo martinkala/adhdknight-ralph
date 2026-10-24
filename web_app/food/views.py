@@ -1,9 +1,13 @@
+import calendar
+import math
+import re
 from datetime import date as date_type
 from urllib.parse import quote
 
 from django.contrib import messages
 from django.http import Http404, HttpResponse, JsonResponse, QueryDict
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.utils.translation import gettext as _, gettext_lazy
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -82,21 +86,98 @@ def _today(request) -> str | None:
     return api_client.call(request, "GET", "/today").get("date")
 
 
-def _render_home(request, error: str | None = None, existing_date: str | None = None, status: int = 200):
-    today = _today(request)
+MONTH_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
+DAYS_PAGE_SIZE = 30
+SLEEP_LABELS = dict(SLEEP_CHOICES)
+
+
+def _shift_month(month: str, delta: int) -> str:
+    year, mon = map(int, month.split("-"))
+    index = year * 12 + mon - 1 + delta
+    return f"{index // 12:04d}-{index % 12 + 1:02d}"
+
+
+def _calendar_context(cal: dict) -> dict:
+    """Month grid (weeks start on Monday) of the calendar API response; None = padding cell."""
+    month, today = cal["month"], cal["today"]
+    year, mon = map(int, month.split("-"))
+    days = {d["date"]: d for d in cal["days"]}
+    weeks = calendar.Calendar(firstweekday=calendar.MONDAY).monthdatescalendar(year, mon)
+    cells = []
+    for week in weeks:
+        for d in week:
+            iso = d.isoformat()
+            cells.append(None if d.month != mon else {
+                "date": d, "iso": iso, "day": days.get(iso), "is_today": iso == today, "is_future": iso > today,
+            })
+    next_month = _shift_month(month, 1)
+    return {
+        "month": month,
+        "month_date": date_type(year, mon, 1),
+        "weekdays": weeks[0],
+        "cells": cells,
+        "prev_month": _shift_month(month, -1),
+        "next_month": next_month if next_month <= today[:7] else None,
+    }
+
+
+def _render_home(request, error: str | None = None, existing_date: str | None = None, status: int = 200,
+                 month: str | None = None, cal: dict | None = None):
+    if cal is None:
+        cal = api_client.call(request, "GET", "/calendar", params={"month": month} if month else None)
     context = {
-        "today": today,
         "error": error,
         "error_message": _error_message(error) if error else None,
         "existing_date": existing_date,
+        "today": None,
+        "calendar": None,
+        "view": "calendar",
     }
+    if "error" in cal:
+        context["calendar_error"] = _error_message(cal["error"])
+    else:
+        context["today"] = cal["today"]
+        context["calendar"] = _calendar_context(cal)
     return render(request, "food/home.html", context, status=status)
 
 
 def home(request):
+    """Month calendar (food-008 FR-2); `?month=YYYY-MM` keeps the month, future months fall back to today's."""
     if not _require_login(request):
         return redirect("login")
-    return _render_home(request)
+    month = request.GET.get("month", "")
+    if not MONTH_RE.match(month):
+        return _render_home(request)
+    cal = api_client.call(request, "GET", "/calendar", params={"month": month})
+    if "error" not in cal and month > cal["today"][:7]:
+        return redirect("food:home")
+    return _render_home(request, cal=cal)
+
+
+def _summary_row(day: dict) -> dict:
+    return {**day, "day_date": _parse_date(day["date"]),
+            "sleep_label": SLEEP_LABELS.get(day["sleep_quality"]) if day["sleep_quality"] else None}
+
+
+def day_list(request):
+    """Days from the newest, 30 per page (food-008 FR-3)."""
+    if not _require_login(request):
+        return redirect("login")
+    page = _parse_value(request.GET.get("page")) or 1
+    result = api_client.call(request, "GET", "/days", params={"page": page, "page_size": DAYS_PAGE_SIZE})
+    if "error" in result:
+        return render(request, "food/day_error.html", {"error_message": _error_message(result["error"])}, status=502)
+    pages = max(1, math.ceil(result["total"] / DAYS_PAGE_SIZE))
+    context = {
+        "view": "list",
+        "days": [_summary_row(d) for d in result["days"]],
+        "page": page,
+        "pages": pages,
+        "total": result["total"],
+        "prev_page": page - 1 if page > 1 else None,
+        "next_page": page + 1 if page < pages else None,
+    }
+    return render(request, "food/list.html", context)
 
 
 @require_POST
@@ -123,8 +204,11 @@ def new_day(request):
         return _render_home(request, error="invalid_input")
     result = api_client.call(request, "POST", "/days", json={"date": day})
     if "error" in result:
+        # A calendar tap opens the day even if it appeared in the meantime.
+        if result["error"] == "day_exists" and request.POST.get("open_existing"):
+            return redirect("food:day", day=day)
         existing = day if result["error"] == "day_exists" else None
-        return _render_home(request, error=result["error"], existing_date=existing)
+        return _render_home(request, error=result["error"], existing_date=existing, month=existing and existing[:7])
     return redirect("food:day", day=day)
 
 
@@ -207,7 +291,7 @@ def delete_day(request, day):
         messages.error(request, _error_message(result["error"]))
         return redirect("food:day", day=day)
     messages.success(request, _("The day was deleted."))
-    return redirect("food:home")
+    return redirect(f"{reverse('food:home')}?month={day[:7]}")
 
 
 # --- Entries and measurements (food-005) -----------------------------------------------------

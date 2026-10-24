@@ -1,14 +1,23 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.dependencies import get_current_user, get_now
 from app.models.user import User
-from app.schemas.food import DATE_PATTERN, DayCreate, DayDetail, DayUpdate, TodayResponse
-from app.services import food_days
+from app.schemas.food import (
+    DATE_PATTERN,
+    MONTH_PATTERN,
+    CalendarMonth,
+    DayCreate,
+    DayDetail,
+    DayList,
+    DayUpdate,
+    TodayResponse,
+)
+from app.services import food_days, food_overview
 from app.services.food_days import DayNotFound, FoodDayError
 
 router = APIRouter(prefix="/api/v1/food", tags=["food"])
@@ -35,6 +44,28 @@ async def get_today(
     """Today in the user's timezone and whether that day already exists."""
     today = food_days.today_str(current_user, now)
     return TodayResponse(date=today, exists=await food_days.day_exists(db, current_user, today))
+
+
+@router.get("/calendar", response_model=CalendarMonth)
+async def get_calendar(
+    month: Annotated[str | None, Query(pattern=MONTH_PATTERN, examples=["2026-10"])] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    now: datetime = Depends(get_now),
+):
+    """Existing days of the month (default the current month) with digestion values and entry counts."""
+    return await food_overview.calendar(db, current_user, month, now)
+
+
+@router.get("/days", response_model=DayList)
+async def list_days(
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 30,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Days from the newest with a short summary (values, measurements, first food texts)."""
+    return await food_overview.day_list(db, current_user, page, page_size)
 
 
 @router.post(

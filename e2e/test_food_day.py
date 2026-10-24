@@ -142,7 +142,8 @@ def test_delete_day_two_confirmations(logged_in_page, base_url):
     page.get_by_test_id("delete-day-confirm-input").fill(date)
     expect(page.get_by_test_id("delete-day-submit")).to_be_enabled()
     page.get_by_test_id("delete-day-submit").click()
-    expect(page).to_have_url(f"{base_url}/food/")
+    # Back to the calendar month of the deleted day (food-008).
+    expect(page).to_have_url(f"{base_url}/food/?month={date[:7]}")
     expect(page.get_by_test_id("flash-success")).to_be_visible()
 
     response = page.goto(f"/food/day/{date}/")

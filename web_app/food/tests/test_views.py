@@ -73,9 +73,11 @@ class FakeApi:
     def __init__(self, routes):
         self.routes = routes
         self.calls = []
+        self.params = []
 
     def __call__(self, token, method, path, json=None, params=None):
         self.calls.append((method, path, json))
+        self.params.append(params)
         return self.routes.get((method, path), {"error": "server_error", "status_code": 500})
 
 
@@ -85,12 +87,16 @@ def _patch_api(routes):
     return fake, patch("food.api_client.request", fake)
 
 
+def _calendar(month, days=(), today=TODAY):
+    return {"schema_version": "1.0", "month": month, "today": today, "days": list(days)}
+
+
 class FoodNewDayTests(TestCase):
     def setUp(self):
         _login_session(self.client)
 
     def test_home_has_today_button_and_date_form(self):
-        fake, p = _patch_api({("GET", "/today"): {"date": TODAY, "exists": False}})
+        fake, p = _patch_api({("GET", "/calendar"): _calendar("2026-10")})
         with p:
             html = self.client.get("/food/").content.decode()
         self.assertIn('data-testid="open-today"', html)
@@ -117,6 +123,12 @@ class FoodNewDayTests(TestCase):
             response = self.client.post("/food/days/new/", {"date": "2026-10-20"})
         self.assertContains(response, 'data-testid="error-day-exists"')
         self.assertContains(response, 'href="/food/day/2026-10-20/"')
+
+    def test_calendar_tap_on_existing_day_opens_it(self):
+        fake, p = _patch_api({("POST", "/days"): {"error": "day_exists", "status_code": 409}})
+        with p:
+            response = self.client.post("/food/days/new/", {"date": "2026-10-20", "open_existing": "1"})
+        self.assertRedirects(response, "/food/day/2026-10-20/", fetch_redirect_response=False)
 
     def test_new_day_redirects_to_day(self):
         fake, p = _patch_api({("POST", "/days"): _day_detail()})
@@ -217,7 +229,7 @@ class FoodDeleteDayTests(TestCase):
         fake, p = _patch_api({("DELETE", "/days/2026-10-20"): {}})
         with p:
             response = self.client.post("/food/day/2026-10-20/delete/", {"confirm_date": "2026-10-20"})
-        self.assertRedirects(response, "/food/", fetch_redirect_response=False)
+        self.assertRedirects(response, "/food/?month=2026-10", fetch_redirect_response=False)
         self.assertEqual(fake.calls, [("DELETE", "/days/2026-10-20", None)])
 
     def test_delete_requires_post(self):
@@ -605,3 +617,99 @@ class FoodMedsTests(TestCase):
         self.assertRedirects(client.get("/food/settings/meds/"), reverse("login"), fetch_redirect_response=False)
         self.assertEqual(client.post("/food/day/2026-10-20/meds/", {"text": "zn"}).status_code, 401)
         self.assertEqual(client.post("/food/settings/meds/kind/", {"text_norm": "zn"}).status_code, 401)
+
+
+def _cal_day(date, stool=None, gas=None, severity="none", entry_count=0):
+    return {"date": date, "stool": stool, "gas": gas, "severity": severity, "entry_count": entry_count}
+
+
+class FoodCalendarTests(TestCase):
+    def setUp(self):
+        _login_session(self.client)
+
+    def _get(self, url, cal):
+        fake, p = _patch_api({("GET", "/calendar"): cal})
+        with p:
+            response = self.client.get(url)
+        return fake, response
+
+    def test_february_grid(self):
+        fake, response = self._get("/food/?month=2026-02", _calendar("2026-02"))
+        html = response.content.decode()
+        self.assertEqual(fake.params, [{"month": "2026-02"}])
+        self.assertEqual(html.count('data-testid="cal-day"'), 28)
+        self.assertIn('data-date="2026-02-28"', html)
+        self.assertNotIn('data-date="2026-02-29"', html)
+        # 1 February 2026 is a Sunday: six padding cells before it in a week starting on Monday.
+        grid = html[html.index('data-testid="calendar"'):]
+        self.assertEqual(grid[:grid.index('data-date="2026-02-01"')].count('data-testid="cal-pad"'), 6)
+        self.assertIn('data-month="2026-02"', html)
+        self.assertIn('href="?month=2026-01"', html)
+        self.assertIn('href="?month=2026-03"', html)
+
+    def test_dots_links_and_future_days(self):
+        cal = _calendar("2026-10", [_cal_day("2026-10-05", 2, 9, "bad", 3), _cal_day("2026-10-06")])
+        fake, response = self._get("/food/", cal)
+        html = response.content.decode()
+        self.assertEqual(fake.params, [None])
+        self.assertIn('href="/food/day/2026-10-05/" data-testid="cal-day" data-date="2026-10-05"', html)
+        self.assertIn('data-severity="bad" title="Stool 2, gas 9"', html)
+        self.assertIn('data-severity="none" title="No stool / gas values"', html)
+        self.assertEqual(html.count('data-testid="cal-dot"'), 2)
+        # Missing past day and today: submit buttons creating the day; future day: no link.
+        self.assertIn('name="date" value="2026-10-07"', html)
+        self.assertIn('value="2026-10-24" class="cal-cell missing today"', html)
+        self.assertIn('<span class="cal-cell future" data-testid="cal-day" data-date="2026-10-25">', html)
+        self.assertIn('data-testid="cal-next" aria-disabled="true"', html)
+        self.assertIn('data-testid="cal-legend"', html)
+
+    def test_future_month_redirects_to_current(self):
+        fake, response = self._get("/food/?month=2026-11", _calendar("2026-11"))
+        self.assertRedirects(response, "/food/", fetch_redirect_response=False)
+
+    def test_invalid_month_shows_current(self):
+        fake, response = self._get("/food/?month=2026-13", _calendar("2026-10"))
+        self.assertEqual(fake.params, [None])
+        self.assertEqual(response.status_code, 200)
+
+    def test_day_screen_links_back_to_its_month(self):
+        fake, p = _patch_api({("GET", "/days/2026-09-20"): _day_detail("2026-09-20")})
+        with p:
+            html = self.client.get("/food/day/2026-09-20/").content.decode()
+        self.assertIn('href="/food/?month=2026-09" data-testid="back-to-calendar"', html)
+
+
+class FoodListTests(TestCase):
+    def setUp(self):
+        _login_session(self.client)
+
+    def _summary(self, date, **kw):
+        return {"date": date, "stool": None, "gas": None, "severity": "none", "sleep_quality": None,
+                "weights": [], "bp": [], "food_preview": [], "entry_count": 0, **kw}
+
+    def test_row_contains_preview_and_digestion(self):
+        days = [self._summary("2026-10-20", stool=4, gas=6, severity="mid", sleep_quality=3, weights=[80.6],
+                              bp=["130/85 72"], food_preview=["toasty", "kafe"])]
+        fake, p = _patch_api({("GET", "/days"): {"schema_version": "1.0", "page": 1, "page_size": 30,
+                                                 "total": 1, "days": days}})
+        with p:
+            html = self.client.get("/food/list/").content.decode()
+        self.assertEqual(fake.params, [{"page": 1, "page_size": 30}])
+        self.assertIn('href="/food/day/2026-10-20/" data-testid="list-day"', html)
+        self.assertIn('title="Stool / gas">4/6</span>', html)
+        self.assertIn("toasty, kafe", html)
+        self.assertIn("80.6 kg", html)
+        self.assertIn("130/85 72", html)
+        self.assertIn('data-severity="mid"', html)
+        self.assertNotIn('data-testid="list-next-page"', html)
+
+    def test_pagination_links(self):
+        days = [self._summary(f"2026-09-{n:02d}") for n in range(1, 6)]
+        fake, p = _patch_api({("GET", "/days"): {"schema_version": "1.0", "page": 2, "page_size": 30,
+                                                 "total": 65, "days": days}})
+        with p:
+            html = self.client.get("/food/list/?page=2").content.decode()
+        self.assertEqual(fake.params, [{"page": 2, "page_size": 30}])
+        self.assertIn('href="?page=1" data-testid="list-prev-page"', html)
+        self.assertIn('href="?page=3" data-testid="list-next-page"', html)
+        self.assertIn("2 / 3", html)

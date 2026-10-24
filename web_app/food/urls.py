@@ -10,6 +10,7 @@ RECORD_ID = r'(?P<record_id>[0-9A-Za-z-]{1,36})'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('list/', views.day_list, name='list'),
     path('today/', views.open_today, name='open_today'),
     path('days/new/', views.new_day, name='new_day'),
     re_path(rf'^day/{DAY}/$', views.day_view, name='day'),

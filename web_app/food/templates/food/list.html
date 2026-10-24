@@ -1,0 +1,41 @@
+{% extends "food/base_food.html" %}
+{% load i18n food_format %}
+{% block content %}
+{% include "food/_messages.html" %}
+<div class="card food-top" data-testid="food-list">
+    <form method="post" action="{% url 'food:open_today' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-big" data-testid="open-today">{% translate "Today" %}</button>
+    </form>
+    {% include "food/_view_toggle.html" %}
+</div>
+
+{% if days %}
+<ul class="day-list">
+    {% for day in days %}
+    <li>
+        <a class="card list-row" href="{% url 'food:day' day=day.date %}" data-testid="list-day" data-date="{{ day.date }}">
+            <span class="list-head">
+                {% include "food/_severity_dot.html" with dot_testid="list-dot" %}
+                <strong>{{ day.day_date|date:"j. n. Y" }}</strong> <span class="list-weekday">{{ day.day_date|date:"l" }}</span>
+            </span>
+            <span class="list-values" data-testid="list-values">
+                <span data-testid="list-digestion" title="{% translate 'Stool / gas' %}">{{ day.stool|default:"–" }}/{{ day.gas|default:"–" }}</span>
+                {% if day.sleep_label %}<span>{% translate "Sleep" %}: {{ day.sleep_label }}</span>{% endif %}
+                {% for kg in day.weights %}<span>{{ kg|number }} kg</span>{% endfor %}
+                {% for bp in day.bp %}<span>{{ bp }}</span>{% endfor %}
+            </span>
+            {% if day.food_preview %}<span class="list-preview" data-testid="list-preview">{{ day.food_preview|join:", " }}</span>{% endif %}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+<div class="pager" role="navigation" aria-label="{% translate 'Pages' %}">
+    {% if prev_page %}<a class="btn btn-secondary" href="?page={{ prev_page }}" data-testid="list-prev-page">&#8249; {% translate "Newer" %}</a>{% else %}<span></span>{% endif %}
+    <span class="pager-info" data-testid="list-page">{{ page }} / {{ pages }}</span>
+    {% if next_page %}<a class="btn btn-secondary" href="?page={{ next_page }}" data-testid="list-next-page">{% translate "Older" %} &#8250;</a>{% else %}<span></span>{% endif %}
+</div>
+{% else %}
+<div class="card empty" data-testid="list-empty">{% translate "No days yet." %}</div>
+{% endif %}
+{% endblock %}

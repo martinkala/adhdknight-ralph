@@ -1,5 +1,7 @@
 # Specification: food-008 — Prehľad: kalendár a zoznam
 
+## Status: COMPLETE
+
 ## Feature: Mesačný kalendár s farbou podľa tráviacich problémov a zoznamový pohľad (UC1)
 
 ### Overview
@@ -22,9 +24,9 @@ horšiu z hodnôt stolica/vetry. Zoznamový pohľad ukazuje dni pod sebou so str
   food_preview: [text...] (prvých 8 food textov v poradí sekcií), entry_count}`. `page_size` 1–100.
 
 **Acceptance Criteria:**
-- [ ] API testy: kalendár vráti iba dni daného mesiaca a používateľa, zmazané nie
-- [ ] API testy: stránkovanie (`total`, poradie, posledná stránka)
-- [ ] API testy izolácie pre oba endpointy
+- [x] API testy: kalendár vráti iba dni daného mesiaca a používateľa, zmazané nie
+- [x] API testy: stránkovanie (`total`, poradie, posledná stránka)
+- [x] API testy izolácie pre oba endpointy
 
 ### FR-2: Kalendár `/food/` (nahrádza dočasnú stránku z food-004)
 - Mriežka mesiaca, týždeň začína pondelkom (`data-testid="calendar"`, bunky `data-testid="cal-day"`
@@ -40,11 +42,11 @@ horšiu z hodnôt stolica/vetry. Zoznamový pohľad ukazuje dni pod sebou so str
 - URL `?month=YYYY-MM` drží zvolený mesiac. Návrat z detailu dňa vráti na jeho mesiac.
 
 **Acceptance Criteria:**
-- [ ] e2e: dni s (stool 2, gas 3), (4, 1), (2, 9) a deň bez hodnôt → severity ok, mid, bad, none
-- [ ] e2e: ťuk na neexistujúci minulý deň ho vytvorí a otvorí detail
-- [ ] e2e: budúci deň nemá odkaz; `cal-next` je v aktuálnom mesiaci neaktívne
-- [ ] e2e (mobil 360 px): mriežka sa zmestí bez horizontálneho scrollu, bunky ≥ 44 px
-- [ ] Django test: `?month=2026-02` vykreslí február s 28 dňami a správnym prvým dňom v týždni
+- [x] e2e: dni s (stool 2, gas 3), (4, 1), (2, 9) a deň bez hodnôt → severity ok, mid, bad, none
+- [x] e2e: ťuk na neexistujúci minulý deň ho vytvorí a otvorí detail
+- [x] e2e: budúci deň nemá odkaz; `cal-next` je v aktuálnom mesiaci neaktívne
+- [x] e2e (mobil 360 px): mriežka sa zmestí bez horizontálneho scrollu, bunky ≥ 44 px
+- [x] Django test: `?month=2026-02` vykreslí február s 28 dňami a správnym prvým dňom v týždni
 
 ### FR-3: Zoznam `/food/list/`
 - Dni od najnovšieho, 30 na stránku, stránkovanie (`data-testid="list-day"`, `"list-next-page"`).
@@ -52,8 +54,8 @@ horšiu z hodnôt stolica/vetry. Zoznamový pohľad ukazuje dni pod sebou so str
   (skrátený na 1–2 riadky). Ťuk otvorí detail.
 
 **Acceptance Criteria:**
-- [ ] e2e: 35 dní → prvá stránka 30, druhá 5, poradie od najnovšieho
-- [ ] Django test: riadok obsahuje `food_preview` a stolicu/vetry
+- [x] e2e: 35 dní → prvá stránka 30, druhá 5, poradie od najnovšieho
+- [x] Django test: riadok obsahuje `food_preview` a stolicu/vetry
 
 ---
 
@@ -71,15 +73,25 @@ horšiu z hodnôt stolica/vetry. Zoznamový pohľad ukazuje dni pod sebou so str
 ## Completion Signal
 
 ### Implementation Checklist
-- [ ] Calendar + days list API
-- [ ] Kalendár na `/food/`
-- [ ] Zoznam `/food/list/`
+- [x] Calendar + days list API
+- [x] Kalendár na `/food/`
+- [x] Zoznam `/food/list/`
 
 ### Testing Requirements
-- [ ] `./scripts/test-food.sh` → exit 0
-- [ ] Žiadne JS chyby v konzole
+- [x] `./scripts/test-food.sh` → exit 0
+- [x] Žiadne JS chyby v konzole
 
 ### Iteration Instructions
 Ak niečo zlyhá: oprav, spusti testy znova, over kritériá, commitni a pushni. Až keď je všetko zelené: `<promise>DONE</promise>`.
 
-<!-- NR_OF_TRIES: 0 -->
+## Implementation notes
+- `severity` (`ok|mid|bad|none`) is computed on the server and added to both calendar days and `DaySummary`
+  (constitution B1: Android gets the same bands without its own logic).
+- `month` is optional in `GET /calendar` (default = the user's current month), so the web needs one call
+  for both the grid and `today`. A future month in the web URL redirects to `/food/`.
+- Missing past days in the grid are submit buttons of one form posting to `days/new/` with `open_existing=1`
+  (a day created in the meantime just opens). The "Add a day" date form stays below the calendar
+  for days in older months.
+- The day screen has a "‹ Calendar" link to `/food/?month=YYYY-MM`; deleting a day returns to its month.
+
+<!-- NR_OF_TRIES: 1 -->

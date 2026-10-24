@@ -2,6 +2,7 @@
 {% load i18n static %}
 {% block content %}
 {% include "food/_messages.html" %}
+<a class="back-link" href="{% url 'food:home' %}?month={{ day.date|slice:':7' }}" data-testid="back-to-calendar">&#8249; {% translate "Calendar" %}</a>
 <header class="day-header" data-testid="day-header">
     {% if day.prev_date %}
     <a class="day-nav" href="{% url 'food:day' day=day.prev_date %}" data-testid="prev-day" aria-label="{% translate 'Previous day' %}">&#8249;</a>

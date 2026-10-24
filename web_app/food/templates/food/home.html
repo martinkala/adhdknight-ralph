@@ -2,13 +2,48 @@
 {% load i18n %}
 {% block content %}
 {% include "food/_messages.html" %}
-<div class="card" data-testid="food-home">
-    <h2 class="food-title">{% translate "Food diary" %}</h2>
+<div class="card food-top" data-testid="food-home">
     <form method="post" action="{% url 'food:open_today' %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-primary btn-big" data-testid="open-today">{% translate "Today" %}</button>
     </form>
+    {% include "food/_view_toggle.html" with month=calendar.month %}
 </div>
+
+{% if calendar %}
+<div class="card cal-card">
+    <header class="cal-header">
+        <a class="day-nav" href="?month={{ calendar.prev_month }}" data-testid="cal-prev" aria-label="{% translate 'Previous month' %}">&#8249;</a>
+        <h2 data-testid="cal-title" data-month="{{ calendar.month }}">{{ calendar.month_date|date:"F Y" }}</h2>
+        {% if calendar.next_month %}
+        <a class="day-nav" href="?month={{ calendar.next_month }}" data-testid="cal-next" aria-label="{% translate 'Next month' %}">&#8250;</a>
+        {% else %}
+        <span class="day-nav disabled" data-testid="cal-next" aria-disabled="true">&#8250;</span>
+        {% endif %}
+    </header>
+    {# One form for all missing days: a tap creates the day and opens it (food-008 FR-2). #}
+    <form method="post" action="{% url 'food:new_day' %}" class="calendar" data-testid="calendar">
+        {% csrf_token %}
+        <input type="hidden" name="open_existing" value="1">
+        {% for d in calendar.weekdays %}<span class="cal-weekday">{{ d|date:"D" }}</span>{% endfor %}
+        {% for cell in calendar.cells %}
+        {% if not cell %}<span class="cal-pad" data-testid="cal-pad"></span>
+        {% elif cell.day %}<a class="cal-cell{% if cell.is_today %} today{% endif %}" href="{% url 'food:day' day=cell.iso %}" data-testid="cal-day" data-date="{{ cell.iso }}"{% if cell.is_today %} aria-current="date"{% endif %}><span class="cal-num">{{ cell.date.day }}</span>{% include "food/_severity_dot.html" with day=cell.day %}</a>
+        {% elif cell.is_future %}<span class="cal-cell future" data-testid="cal-day" data-date="{{ cell.iso }}">{{ cell.date.day }}</span>
+        {% else %}<button type="submit" name="date" value="{{ cell.iso }}" class="cal-cell missing{% if cell.is_today %} today{% endif %}" data-testid="cal-day" data-date="{{ cell.iso }}"{% if cell.is_today %} aria-current="date"{% endif %} aria-label="{% blocktranslate with date=cell.date|date:'j. n. Y' %}Add the day {{ date }}{% endblocktranslate %}"><span class="cal-num">{{ cell.date.day }}</span></button>
+        {% endif %}
+        {% endfor %}
+    </form>
+    <ul class="cal-legend" data-testid="cal-legend">
+        <li><span class="cal-dot sev-ok"></span>{% translate "OK (1–3)" %}</li>
+        <li><span class="cal-dot sev-mid"></span>{% translate "Problems (4–6)" %}</li>
+        <li><span class="cal-dot sev-bad"></span>{% translate "Bad (7–10)" %}</li>
+        <li><span class="cal-dot sev-none"></span>{% translate "No values" %}</li>
+    </ul>
+</div>
+{% elif calendar_error %}
+<div class="alert alert-error" data-testid="calendar-error">{{ calendar_error }}</div>
+{% endif %}
 
 <div class="card">
     <h3 class="food-subtitle">{% translate "Add a day" %}</h3>

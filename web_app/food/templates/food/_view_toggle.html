@@ -1,0 +1,5 @@
+{% load i18n %}
+<div class="view-toggle" role="navigation" data-testid="view-toggle" aria-label="{% translate 'View' %}">
+    <a href="{% url 'food:home' %}{% if month %}?month={{ month }}{% endif %}" data-testid="view-calendar"{% if view == "calendar" %} class="active" aria-current="page"{% endif %}>{% translate "Calendar" %}</a>
+    <a href="{% url 'food:list' %}" data-testid="view-list"{% if view == "list" %} class="active" aria-current="page"{% endif %}>{% translate "List" %}</a>
+</div>
