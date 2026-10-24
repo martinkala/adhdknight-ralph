@@ -107,6 +107,7 @@ async def delete_day(db: AsyncSession, day: FoodDay) -> None:
             .values(deleted_at=now, updated_at=now)
         )
     day.deleted_at = now
+    day.updated_at = now
     await db.commit()
 
 

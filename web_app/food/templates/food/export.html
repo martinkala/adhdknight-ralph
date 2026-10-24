@@ -1,0 +1,29 @@
+{% extends "food/base_food.html" %}
+{% load i18n %}
+{% block content %}
+<section class="card day-section">
+    <h2 class="food-title">{% translate "Export" %}</h2>
+    <p class="hint">{% translate "Download all your entries, measurements and day values for analysis. Empty dates mean the whole period." %}</p>
+    {% if error_message %}<div class="alert alert-error" data-testid="export-error">{{ error_message }}</div>{% endif %}
+    <form method="get" action="{% url 'food:export' %}" class="export-form" data-testid="export-form">
+        <div class="export-row">
+            <label>{% translate "From" %}
+                <input type="date" name="from" value="{{ date_from }}" data-testid="export-from">
+            </label>
+            <label>{% translate "To" %}
+                <input type="date" name="to" value="{{ date_to }}" data-testid="export-to">
+            </label>
+        </div>
+        <fieldset class="export-formats">
+            <legend>{% translate "Format" %}</legend>
+            {% for value in formats %}
+            <label class="export-format">
+                <input type="radio" name="format" value="{{ value }}" {% if value == format %}checked{% endif %} data-testid="export-format-{{ value }}">
+                {{ value|upper }}
+            </label>
+            {% endfor %}
+        </fieldset>
+        <button type="submit" class="btn btn-primary btn-big" data-testid="export-submit">{% translate "Download" %}</button>
+    </form>
+</section>
+{% endblock %}

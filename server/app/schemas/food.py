@@ -436,3 +436,155 @@ class DayList(BaseModel):
             }
         }
     )
+
+
+# --- Export (food-009 FR-1, also the JSON input of the import in food-011) ---------------------
+
+
+class ExportEntry(BaseModel):
+    text: str
+    quantity: float | None = None
+    unit: str | None = None
+    # Sport only (1–5), null elsewhere.
+    intensity: int | None = None
+
+
+class ExportWeight(BaseModel):
+    kg: float
+    measured_at: str | None = None
+    note: str | None = None
+
+
+class ExportBloodPressure(BaseModel):
+    systolic: int
+    diastolic: int
+    pulse: int | None = None
+    measured_at: str | None = None
+    note: str | None = None
+
+
+class ExportDay(BaseModel):
+    date: str
+    sleep_quality: int | None = None
+    stool: int | None = None
+    gas: int | None = None
+    # Every category of constitution D2, empty lists included.
+    entries: dict[str, list[ExportEntry]] = {}
+    weights: list[ExportWeight] = []
+    blood_pressures: list[ExportBloodPressure] = []
+
+
+class FoodExport(BaseModel):
+    """All not deleted data of the user in a date range, days ascending, without internal IDs."""
+
+    schema_version: str = "1.0"
+    app_id: str = "food_diary"
+    exported_at: datetime
+    days: list[ExportDay]
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "schema_version": "1.0",
+                "app_id": "food_diary",
+                "exported_at": "2026-10-24T18:00:00Z",
+                "days": [{
+                    "date": "2026-10-23", "sleep_quality": None, "stool": 6, "gas": 3,
+                    "entries": {
+                        "breakfast": [{"text": "ryza", "quantity": None, "unit": None, "intensity": None}],
+                        "sport": [{"text": "bike 30 km", "quantity": None, "unit": None, "intensity": 3}],
+                        "lunch": [],
+                    },
+                    "weights": [{"kg": 80.6, "measured_at": None, "note": None}],
+                    "blood_pressures": [{"systolic": 125, "diastolic": 90, "pulse": None, "measured_at": None,
+                                         "note": None}],
+                }],
+            }
+        }
+    )
+
+
+# --- Changes since (food-009 FR-3, Android sync) ----------------------------------------------
+
+
+class _Change(BaseModel):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+    # Filled for deleted entities (tombstones).
+    deleted_at: datetime | None
+
+
+class DayChange(_Change):
+    date: str
+    sleep_quality: int | None
+    stool: int | None
+    gas: int | None
+
+
+class EntryChange(_Change):
+    day_id: str
+    category: str
+    text: str
+    text_norm: str
+    quantity: float | None
+    unit: str | None
+    intensity: int | None
+    position: int
+
+
+class WeightChange(_Change):
+    day_id: str
+    kg: float
+    measured_at: str | None
+    note: str | None
+
+
+class BloodPressureChange(_Change):
+    day_id: str
+    systolic: int
+    diastolic: int
+    pulse: int | None
+    measured_at: str | None
+    note: str | None
+
+
+class MedDictionaryChange(_Change):
+    text_norm: str
+    display_text: str
+    kind: str
+
+
+class FoodChanges(BaseModel):
+    """Entities with `updated_at > since`, deleted included. Send `server_time` as the next `since`;
+    with `has_more` call again right away."""
+
+    schema_version: str = "1.0"
+    server_time: datetime
+    days: list[DayChange]
+    entries: list[EntryChange]
+    weights: list[WeightChange]
+    blood_pressures: list[BloodPressureChange]
+    med_dictionary: list[MedDictionaryChange]
+    has_more: bool
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "schema_version": "1.0",
+                "server_time": "2026-10-24T18:00:00Z",
+                "days": [{"id": "0b6f8a8e-3c1e-4f7a-9d3c-2f1e5a7b9c01", "date": "2026-10-24", "sleep_quality": 2,
+                          "stool": None, "gas": None, "created_at": "2026-10-24T07:00:00Z",
+                          "updated_at": "2026-10-24T07:30:00Z", "deleted_at": None}],
+                "entries": [{"id": "5d1c2b3a-0000-4000-8000-000000000001",
+                             "day_id": "0b6f8a8e-3c1e-4f7a-9d3c-2f1e5a7b9c01", "category": "breakfast",
+                             "text": "toasty", "text_norm": "toasty", "quantity": 2, "unit": None,
+                             "intensity": None, "position": 0, "created_at": "2026-10-24T07:30:00Z",
+                             "updated_at": "2026-10-24T07:40:00Z", "deleted_at": "2026-10-24T07:40:00Z"}],
+                "weights": [],
+                "blood_pressures": [],
+                "med_dictionary": [],
+                "has_more": False,
+            }
+        }
+    )

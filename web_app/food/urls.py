@@ -22,6 +22,7 @@ urlpatterns = [
     path('suggestions/', views.suggestions, name='suggestions'),
     re_path(rf'^day/{DAY}/meds/$', views.add_meds, name='add_meds'),
     re_path(rf'^day/{DAY}/meds/move/$', views.move_med, name='move_med'),
+    path('export/', views.export, name='export'),
     path('settings/meds/', views.meds_dictionary, name='meds_dictionary'),
     path('settings/meds/kind/', views.meds_dictionary_kind, name='meds_dictionary_kind'),
     path('settings/meds/delete/', views.meds_dictionary_delete, name='meds_dictionary_delete'),

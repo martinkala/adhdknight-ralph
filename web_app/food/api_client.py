@@ -51,3 +51,28 @@ def post(token: str, path: str, json: dict | None = None) -> dict:
 
 def call(django_request, method: str, path: str, json: dict | None = None, params: dict | None = None) -> dict:
     return call_with_refresh(django_request, request, method, path, json=json, params=params)
+
+
+def download(token: str, path: str, params: dict | None = None) -> dict:
+    """GET of a file (export): {"content": bytes, "content_type": ..., "content_disposition": ...}
+    or the same error dict as `request`."""
+    try:
+        r = httpx.get(_url(path), params=params, headers={"Authorization": f"Bearer {token}"}, timeout=_TIMEOUT)
+    except (httpx.ConnectError, httpx.TimeoutException):
+        return {"error": "server_unavailable"}
+    if r.status_code == 200:
+        return {
+            "content": r.content,
+            "content_type": r.headers.get("content-type", "application/octet-stream"),
+            "content_disposition": r.headers.get("content-disposition", "attachment"),
+        }
+    if r.status_code == 401:
+        return {"error": "unauthorized"}
+    if 400 <= r.status_code < 500:
+        detail = r.json().get("detail") if r.headers.get("content-type", "").startswith("application/json") else None
+        return {"error": detail if isinstance(detail, str) else "invalid_input", "status_code": r.status_code}
+    return {"error": "server_error", "status_code": r.status_code}
+
+
+def call_download(django_request, path: str, params: dict | None = None) -> dict:
+    return call_with_refresh(django_request, download, path, params=params)

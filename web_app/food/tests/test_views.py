@@ -713,3 +713,64 @@ class FoodListTests(TestCase):
         self.assertIn('href="?page=1" data-testid="list-prev-page"', html)
         self.assertIn('href="?page=3" data-testid="list-next-page"', html)
         self.assertIn("2 / 3", html)
+
+
+class ExportTests(TestCase):
+    def setUp(self):
+        _login_session(self.client)
+
+    def _patch_download(self, result):
+        from unittest.mock import patch
+        self.download_calls = []
+
+        def fake(token, path, params=None):
+            self.download_calls.append((path, params))
+            return result
+        return patch("food.api_client.download", fake)
+
+    def test_anonymous_is_redirected_to_login(self):
+        client = Client()
+        response = client.get("/food/export/")
+        self.assertRedirects(response, reverse("login"), fetch_redirect_response=False)
+
+    def test_form_defaults_to_whole_period(self):
+        with self._patch_download({"error": "server_error"}):
+            response = self.client.get("/food/export/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-testid="export-form"')
+        self.assertContains(response, 'name="from" value=""')
+        self.assertContains(response, 'data-testid="nav-food-export"')
+        self.assertEqual(self.download_calls, [])
+
+    def test_view_forwards_file_and_headers(self):
+        result = {"content": "﻿date,record_type\r\n".encode("utf-8"), "content_type": "text/csv; charset=utf-8",
+                  "content_disposition": 'attachment; filename="food-diary-2026-10-01-2026-10-24.csv"'}
+        with self._patch_download(result):
+            response = self.client.get("/food/export/", {"from": "2026-10-01", "to": "2026-10-24", "format": "csv"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
+        self.assertEqual(response["Content-Disposition"], result["content_disposition"])
+        self.assertEqual(response.content, result["content"])
+        self.assertEqual(self.download_calls,
+                         [("/export", {"format": "csv", "from": "2026-10-01", "to": "2026-10-24"})])
+
+    def test_empty_dates_are_not_sent(self):
+        result = {"content": b"{}", "content_type": "application/json",
+                  "content_disposition": 'attachment; filename="food-diary-2026-10-20-2026-10-24.json"'}
+        with self._patch_download(result):
+            response = self.client.get("/food/export/", {"from": "", "to": "", "format": "json"})
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertEqual(self.download_calls, [("/export", {"format": "json"})])
+
+    def test_api_error_shows_form_with_message(self):
+        with self._patch_download({"error": "invalid_range", "status_code": 422}):
+            response = self.client.get("/food/export/", {"from": "2026-10-24", "to": "2026-10-01", "format": "csv"})
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(response, 'data-testid="export-error"', status_code=400)
+        self.assertContains(response, 'value="2026-10-24"', status_code=400)
+
+    def test_unknown_format_is_rejected(self):
+        with self._patch_download({"error": "server_error"}):
+            response = self.client.get("/food/export/", {"format": "xml"})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.download_calls, [])

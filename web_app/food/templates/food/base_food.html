@@ -7,4 +7,5 @@
 {% block app_nav %}
     <a href="{% url 'food:home' %}" data-testid="nav-food-home">{% translate "Diary" %}</a>
     <a href="{% url 'food:meds_dictionary' %}" data-testid="nav-food-meds">{% translate "Medication and supplements" %}</a>
+    <a href="{% url 'food:export' %}" data-testid="nav-food-export">{% translate "Export" %}</a>
 {% endblock %}

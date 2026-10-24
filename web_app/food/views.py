@@ -56,6 +56,8 @@ _ERRORS = {
     "time_format": gettext_lazy("Enter time as HH:MM."),
     "invalid_kind": gettext_lazy("Choose medication or supplement."),
     "dictionary_item_not_found": gettext_lazy("The item is not in the dictionary anymore."),
+    "invalid_date": gettext_lazy("Enter a valid date."),
+    "invalid_range": gettext_lazy("The start date must not be after the end date."),
 }
 UNIT_CHOICES = ("ks", "l", "ml", "g", "kg")
 # Autocomplete group per entry category (constitution D2); notes have none.
@@ -543,3 +545,36 @@ def weight(request, day, record_id):
         return _measurements_partial(request, day, "weight", "weight_range")
     result = api_client.call(request, "PATCH", f"/weights/{record_id}", json=payload)
     return _measurements_partial(request, day, "weight", result.get("error"))
+
+
+EXPORT_FORMATS = ("csv", "json")
+
+
+def export(request):
+    """Export form; with `format` the file from the API is passed through as a download (food-009 FR-4)."""
+    if not _require_login(request):
+        return redirect("login")
+    context = {
+        "date_from": request.GET.get("from", ""),
+        "date_to": request.GET.get("to", ""),
+        "format": request.GET.get("format", "csv"),
+        "formats": EXPORT_FORMATS,
+    }
+    if "format" not in request.GET:
+        return render(request, "food/export.html", context)
+    if context["format"] not in EXPORT_FORMATS:
+        context["format"] = "csv"
+        context["error_message"] = _error_message("invalid_input")
+        return render(request, "food/export.html", context, status=400)
+
+    params = {"format": context["format"]}
+    for key in ("from", "to"):
+        if context[f"date_{key}"]:
+            params[key] = context[f"date_{key}"]
+    result = api_client.call_download(request, "/export", params=params)
+    if "error" in result:
+        context["error_message"] = _error_message(result["error"])
+        return render(request, "food/export.html", context, status=400 if result.get("status_code") else 502)
+    response = HttpResponse(result["content"], content_type=result["content_type"])
+    response["Content-Disposition"] = result["content_disposition"]
+    return response

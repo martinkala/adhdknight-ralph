@@ -149,3 +149,13 @@
 .pager { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1rem; }
 .pager .btn { display: inline-flex; align-items: center; }
 .pager-info { color: #777; }
+
+/* Export (food-009). */
+.export-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.export-row label { flex: 1 1 9rem; min-width: 0; font-size: 0.875rem; color: #555; }
+.export-row input { display: block; width: 100%; min-height: 44px; padding: 0.5rem; margin-top: 0.25rem;
+                    border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+.export-formats { border: none; display: flex; gap: 1rem; margin-bottom: 0.75rem; }
+.export-formats legend { font-size: 0.875rem; color: #555; margin-bottom: 0.25rem; }
+.export-format { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 44px; cursor: pointer; }
+.export-format input { width: 1.25rem; height: 1.25rem; }
