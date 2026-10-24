@@ -14,13 +14,13 @@
             {% csrf_token %}
             <div class="form-group">
                 <label for="email">E-mail</label>
-                <input type="email" id="email" name="email" required autofocus>
+                <input type="email" id="email" name="email" required autofocus data-testid="login-email">
             </div>
             <div class="form-group">
                 <label for="password">Heslo</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" required data-testid="login-password">
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">Prihlásiť sa</button>
+            <button type="submit" data-testid="login-submit" class="btn btn-primary" style="width:100%;margin-top:0.5rem;">Prihlásiť sa</button>
         </form>
         <p style="margin-top:1rem;font-size:0.875rem;text-align:center;">
             Nemáte účet? <a href="{% url 'register' %}">Registrujte sa</a>

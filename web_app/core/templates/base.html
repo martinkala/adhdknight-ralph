@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
@@ -7,11 +7,27 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #333; }
-        nav { background: #1976D2; color: white; padding: 0 1.5rem; display: flex; align-items: center; height: 56px; }
-        nav a { color: white; text-decoration: none; margin-right: 1.5rem; font-size: 0.95rem; }
+        nav { background: #1976D2; color: white; padding: 0 1rem; display: flex; align-items: center; flex-wrap: wrap; min-height: 56px; }
+        nav a { color: white; text-decoration: none; font-size: 0.95rem; display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.6rem; }
         nav a:hover { opacity: 0.8; }
-        nav .brand { font-weight: 700; font-size: 1.1rem; margin-right: 2rem; }
+        nav .brand { font-weight: 700; font-size: 1.1rem; margin-right: 1rem; white-space: nowrap; }
+        nav .nav-bar { display: flex; align-items: center; min-height: 56px; }
+        nav .nav-links { display: flex; align-items: center; flex: 1; flex-wrap: wrap; }
         nav .spacer { flex: 1; }
+        .app-switch { display: inline-flex; border: 1px solid rgba(255,255,255,0.6); border-radius: 6px; overflow: hidden; margin-right: 1rem; }
+        .app-switch a { padding: 0 0.9rem; }
+        .app-switch a.active { background: white; color: #1976D2; font-weight: 600; }
+        .app-switch a.active:hover { opacity: 1; }
+        .nav-toggle { display: none; background: none; border: 1px solid rgba(255,255,255,0.6); border-radius: 6px; color: white; font-size: 1.3rem; min-width: 44px; min-height: 44px; cursor: pointer; margin-left: auto; }
+        @media (max-width: 599px) {
+            nav .nav-bar { width: 100%; }
+            nav .brand { margin-right: 0.5rem; font-size: 1rem; }
+            .app-switch { margin-right: 0.5rem; }
+            .nav-toggle { display: inline-block; }
+            nav .nav-links { display: none; width: 100%; flex-direction: column; align-items: stretch; padding-bottom: 0.5rem; }
+            nav.open .nav-links { display: flex; }
+            nav .spacer { display: none; }
+        }
         .container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
         .card { background: white; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1rem; }
         .btn { display: inline-block; padding: 0.5rem 1.25rem; border-radius: 4px; border: none; cursor: pointer; font-size: 0.9rem; text-decoration: none; }
@@ -28,20 +44,42 @@
         .form-group input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
         .form-group input:focus { outline: none; border-color: #1976D2; }
     </style>
+    <script src="{% static 'js/htmx.min.js' %}"></script>
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 {% if request.session.user_email %}
-<nav>
-    <span class="brand">ADHD Tracker</span>
-    <a href="{% url 'dashboard' %}">Dashboard</a>
-    <a href="{% url 'trend' %}">Trend</a>
-    <a href="{% url 'account' %}">Účet</a>
-    <a href="{% url 'info' %}">Info</a>
-    <a href="{% url 'debug' %}">Diagnostika</a>
-    <span class="spacer"></span>
-    <a href="{% url 'logout' %}">Odhlásiť</a>
+<nav id="main-nav">
+    <div class="nav-bar">
+        <span class="brand">AdhdKnight</span>
+        <span class="app-switch">
+            <a href="{% url 'dashboard' %}" data-testid="app-switch-adhd" class="{% if active_app == 'adhd' %}active{% endif %}">ADHD</a>
+            <a href="{% url 'food:home' %}" data-testid="app-switch-food" class="{% if active_app == 'food' %}active{% endif %}">Food</a>
+        </span>
+        <button type="button" class="nav-toggle" data-testid="nav-toggle" aria-controls="nav-links" aria-expanded="false" aria-label="Menu">&#9776;</button>
+    </div>
+    <div class="nav-links" id="nav-links">
+        {% block app_nav %}
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+        <a href="{% url 'trend' %}">Trend</a>
+        <a href="{% url 'info' %}">Info</a>
+        <a href="{% url 'debug' %}">Diagnostika</a>
+        {% endblock %}
+        <span class="spacer"></span>
+        <a href="{% url 'account' %}" data-testid="nav-account">Účet</a>
+        <a href="{% url 'logout' %}" data-testid="nav-logout">Odhlásiť</a>
+    </div>
 </nav>
+<script>
+(function() {
+    var nav = document.getElementById('main-nav');
+    var toggle = nav.querySelector('.nav-toggle');
+    toggle.addEventListener('click', function() {
+        var open = nav.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+})();
+</script>
 {% endif %}
 <div class="container">
     {% block content %}{% endblock %}

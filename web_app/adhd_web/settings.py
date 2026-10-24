@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'food',
 ]
 
 SERVER_URL = os.environ.get('FASTAPI_URL', 'http://192.168.77.24:8095')
@@ -81,6 +82,7 @@ LOGGING = {
     'loggers': {
         'django': {'handlers': ['web_file'], 'level': 'INFO', 'propagate': False},
         'core': {'handlers': ['web_file'], 'level': 'INFO', 'propagate': False},
+        'food': {'handlers': ['web_file'], 'level': 'INFO', 'propagate': False},
     },
 }
 
@@ -100,12 +102,13 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [BASE_DIR / 'core' / 'templates'],
-        'APP_DIRS': False,
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.active_app',
             ],
         },
     },
@@ -117,7 +120,8 @@ WSGI_APPLICATION = 'adhd_web.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 #
-# DJANGO_DATABASE_URL unset (local dev) -> SQLite, unchanged.
+# DJANGO_DATABASE_URL unset (local dev) -> SQLite, unchanged. DJANGO_SQLITE_PATH overrides the
+# SQLite file (used by the e2e harness for a throwaway session DB).
 # DJANGO_DATABASE_URL=postgresql://user:pass@127.0.0.1:5432/adhd_web -> Postgres (production, FR-006).
 
 _database_url = os.environ.get('DJANGO_DATABASE_URL', '')
@@ -138,7 +142,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': os.environ.get('DJANGO_SQLITE_PATH', BASE_DIR / 'db.sqlite3'),
         }
     }
 

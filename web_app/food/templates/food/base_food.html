@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Food diary" %}{% endblock %}
+{% block app_nav %}
+    <a href="{% url 'food:home' %}" data-testid="nav-food-home">{% translate "Diary" %}</a>
+{% endblock %}
