@@ -72,14 +72,18 @@ async def test_compute_daily_far_future_returns_422(async_client):
 
 
 @pytest.mark.asyncio
-async def test_sync_batch_tomorrow_returns_422(async_client):
+async def test_sync_batch_tomorrow_is_rejected(async_client):
+    # Per the sync contract the batch is accepted (200) and the future day is reported as rejected.
     token = await _register_and_token(async_client, "futuredate1@example.com")
     response = await async_client.post(
         "/api/v1/sync/batch",
         json=_sync_payload(TOMORROW),
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert response.status_code == 422
+    assert response.status_code == 200
+    body = response.json()
+    assert body["summary"]["records_rejected"] > 0
+    assert any(c.get("resolution") == "rejected_future_date" for c in body["conflicts"])
 
 
 @pytest.mark.asyncio
